@@ -116,11 +116,13 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
         cur_row = current_prices.loc[current_prices["zone_id"] == zid]
         if cur_row.empty:
             continue
-        base_demand = float((zg["occupancy"] * zg["capacity"]).mean())
+        # Use 90th-percentile peak occupancy: Arnott-Inci prices to eliminate
+        # cruising at the busiest hour, not the all-hours mean.
+        peak_occ = float(zg["occupancy"].quantile(0.90))
         capacity = float(zg["capacity"].mean())
         base_price = float(cur_row["price_usd_per_hr"].iloc[0])
         p = optimal_price_arnott_inci(
-            base_demand=base_demand,
+            base_demand=peak_occ * capacity,
             base_price=base_price,
             capacity=capacity,
             elasticity=elasticity,

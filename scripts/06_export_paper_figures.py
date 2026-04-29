@@ -98,15 +98,23 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     plt.close(fig)
     log.info("Wrote %s", cm_path)
 
+    from phillyparking.spatial.synthetic import make_synthetic_segments
+
     proc = data_dir() / "processed"
     seg_path = proc / "segments.parquet"
     panel_path = proc / "demand_panel.parquet"
+    NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
     try:
         segs = load_segments(seg_path)
     except Exception:  # noqa: BLE001
         segs = build_segments()
         segs = assign_zones(segs)
         save_segments(segs, seg_path)
+    n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
+    if n_named < 5:
+        log.warning("Only %d segments in named zones; using synthetic segments for figures", n_named)
+        segs = make_synthetic_segments(n=120, seed=seed)
+        panel_path = proc / "demand_panel_synthetic.parquet"
     panel = pd.read_parquet(panel_path) if panel_path.exists() else baseline_occupancy(segs, seed=seed)
 
     ccc_segs = segs[segs["zone_id"] == "ccc"]

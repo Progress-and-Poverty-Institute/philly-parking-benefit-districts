@@ -12,7 +12,9 @@ def hourly_cruising_dwl(
     avg_cruising_minutes: float = 5.0,
     value_of_time_usd_per_hr: float = 20.0,
 ) -> pd.DataFrame:
-    df = occupancy_panel.merge(segments[["segment_id", "capacity"]], on="segment_id", how="left")
+    df = occupancy_panel.drop(columns=[c for c in ("capacity", "zone_id") if c in occupancy_panel.columns]).merge(
+        segments[["segment_id", "capacity"]], on="segment_id", how="left"
+    )
     demand = df["occupancy"].to_numpy(dtype=float) * df["capacity"].to_numpy(dtype=float)
     threshold = (1.0 - target_vacancy) * df["capacity"].to_numpy(dtype=float)
     excess = np.maximum(demand - threshold, 0.0)
