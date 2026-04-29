@@ -96,7 +96,10 @@ Full results: `outputs/tables/cm_sweep_n200.parquet`; figures: `outputs/figures/
 
 | File | Description |
 |---|---|
-| `outputs/reports/white_paper/philadelphia_curb_pricing_white_paper.md` | ~3,000-word PPI/5th Square white paper draft (Georgist framing) |
+| `outputs/reports/white_paper/Report.pdf` | PPI/5th Square white paper — 18-page LaTeX report (Georgist framing) |
+| `outputs/reports/white_paper/Report.tex` | LaTeX source for the white paper |
+| `outputs/figures/zone_map.png` | Map of five named pricing zones |
+| `outputs/figures/occupancy_and_revenue_detail.png` | Occupancy profile + revenue breakdown by scenario |
 | `outputs/figures/revenue_by_scenario.png` | Bar chart of annual revenue across 3 scenarios |
 | `outputs/figures/laffer_curve_ccc.png` | Laffer curve for CCC zone |
 | `outputs/figures/chatman_manville_sweep.png` | CM sweep (DWL by rule/elasticity) |
