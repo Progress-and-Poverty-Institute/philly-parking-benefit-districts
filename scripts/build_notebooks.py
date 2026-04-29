@@ -490,7 +490,7 @@ nb07 = [
     code(
         "from phillyparking.scenarios.runner import run_all_scenarios\n"
         "from phillyparking.welfare.cruising_dwl import annual_cruising_dwl\n"
-        "from phillyparking.welfare.incidence import gini, incidence_summary\n"
+        "from phillyparking.welfare.incidence import gini, simple_incidence_summary\n"
         "results = run_all_scenarios()\n"
     ),
     md("## Annual cruising DWL per scenario"),
@@ -513,7 +513,7 @@ nb07 = [
         "    'income_decile': rng.integers(1, 11, size=n),\n"
         "    'parking_spend_usd': rng.gamma(shape=2.0, scale=120.0, size=n),\n"
         "})\n"
-        "summary = incidence_summary(incidence_df)\n"
+        "summary = simple_incidence_summary(incidence_df)\n"
         "summary\n"
     ),
     md("## Gini on synthetic distribution"),
