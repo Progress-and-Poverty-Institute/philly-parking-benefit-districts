@@ -47,6 +47,9 @@ outputs/models/**
 outputs/**/*.pkl
 outputs/**/*.joblib
 
+# osmnx / Overpass API geocoder cache (written at project root)
+cache/
+
 # Quarto
 /.quarto/
 _book/
