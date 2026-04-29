@@ -72,6 +72,23 @@ def gini(values: np.ndarray, weights: np.ndarray | None = None) -> float:
     return float(max(g, 0.0))
 
 
+def simple_incidence_summary(incidence_df: pd.DataFrame) -> pd.DataFrame:
+    """Summarize parking burden by income decile from household-level data.
+
+    Expects columns ``income_decile`` and ``parking_spend_usd``.  Returns one
+    row per decile with counts, means, totals, and each decile's share of the
+    aggregate burden.
+    """
+    g = incidence_df.groupby("income_decile", as_index=False).agg(
+        n_households=("parking_spend_usd", "count"),
+        mean_parking_spend_usd=("parking_spend_usd", "mean"),
+        total_parking_spend_usd=("parking_spend_usd", "sum"),
+    )
+    grand = g["total_parking_spend_usd"].sum()
+    g["share_of_burden"] = g["total_parking_spend_usd"] / grand if grand > 0 else 0.0
+    return g
+
+
 def incidence_summary(
     trips_with_decile: pd.DataFrame,
     cs_change_per_trip: pd.Series,
