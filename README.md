@@ -77,6 +77,33 @@ Running on 120 synthetic segments:
 Real Philadelphia has ~10× the metered inventory, so the central real-data estimate would be
 ~$40–50M — consistent with PPA annual reports.
 
+## Scenario comparison (synthetic baseline, 120 segments)
+
+| Metric | Status Quo | Seattle Rule | Full PBD (Arnott-Inci) |
+|---|---|---|---|
+| Annual revenue | $4.31M | $3.61M | $3.56M |
+| Mean price — CCC | $4.00/hr | $4.50/hr | $3.51/hr |
+| Mean price — CCA | $3.50/hr | $1.50/hr | $2.27/hr |
+| Cruising DWL | $6K | $97K | $74K |
+| Revenue to PBD | $0 | $0 | $1.07M (30%) |
+
+The **Chatman-Manville sweep** (n=200 replications, ε ∈ [−0.2, −0.7], 3 noise levels, 5 years)
+confirms the paper's core hypothesis: `min_vacancy_peak` targeting achieves **~53× lower
+cruising DWL** and **2.5× higher revenue** at year 5 versus `avg_occupancy` targeting.
+Full results: `outputs/tables/cm_sweep_n200.parquet`; figures: `outputs/figures/cm_sweep_n200_*.png`.
+
+## Paper outputs
+
+| File | Description |
+|---|---|
+| `outputs/reports/white_paper/philadelphia_curb_pricing_white_paper.md` | ~3,000-word PPI/5th Square white paper draft (Georgist framing) |
+| `outputs/figures/revenue_by_scenario.png` | Bar chart of annual revenue across 3 scenarios |
+| `outputs/figures/laffer_curve_ccc.png` | Laffer curve for CCC zone |
+| `outputs/figures/chatman_manville_sweep.png` | CM sweep (DWL by rule/elasticity) |
+| `outputs/figures/cm_sweep_n200_*.png` | Full n=200 sweep: DWL, revenue, peak-occ share |
+| `outputs/tables/cm_sweep_n200.parquet` | Raw CM sweep data for academic paper |
+| `outputs/tables/comparison_table.csv` | Wide-format scenario comparison |
+
 ## PPA Data (RTKL)
 
 A complete Right-to-Know Law request packet for PPA transaction data is at [`docs/rtkl/`](docs/rtkl/).

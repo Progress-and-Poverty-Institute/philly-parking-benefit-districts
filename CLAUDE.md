@@ -72,6 +72,36 @@ if cur_row.empty:
     continue
 ```
 
+**Use 90th-percentile peak occupancy as base_demand, not the all-hours mean.** The 168-hour
+panel averages overnight occupancy (~0.20) into the mean, which can push the computed optimal
+price to the floor ($1/hr floor) after a few iterations. The Arnott-Inci price targets
+cruising elimination at the *busiest hour*, not the average hour:
+
+```python
+peak_occ = float(zg["occupancy"].quantile(0.90))
+p = optimal_price_arnott_inci(base_demand=peak_occ * capacity, ...)
+```
+
+## Script 06 synthetic fallback
+
+`scripts/06_export_paper_figures.py` must apply the same named-zone check as script 05:
+if fewer than 5 segments in named zones, fall back to `make_synthetic_segments(n=120)`.
+Without this, the Laffer curve figure is silently skipped because real OSM segments
+have only ~2/473 landing in named-zone bboxes.
+
+## `hourly_cruising_dwl` drop-before-merge
+
+`welfare/cruising_dwl.hourly_cruising_dwl` merges `segments[["segment_id", "capacity"]]`
+onto the panel. If the panel already carries `capacity` (e.g., from an earlier merge in
+`chatman_manville_sweep`), the merge produces `capacity_x`/`capacity_y` and
+`df["capacity"]` raises `KeyError`. Always drop conflicting columns first:
+
+```python
+df = occupancy_panel.drop(
+    columns=[c for c in ("capacity", "zone_id") if c in occupancy_panel.columns]
+).merge(segments[["segment_id", "capacity"]], on="segment_id", how="left")
+```
+
 ## Gini coefficient
 
 `welfare/incidence.py` computes Gini via Lorenz curve. The curve **must** prepend (0, 0):
