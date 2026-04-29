@@ -1,0 +1,17 @@
+---
+title: "Discussion"
+---
+
+# Discussion
+
+## Policy implications
+
+Demand-responsive pricing combined with a Parking Benefit District revenue-sharing structure can reduce cruising while building neighborhood political support for higher meter prices.
+
+## Limitations
+
+Incidence analysis currently uses a synthetic decile-uniform distribution; integrating LODES origin block-groups with ACS deciles is a clear next step. Real PPA transaction data would tighten the elasticity priors substantially.
+
+## Future work
+
+Online calibration, equity weights in the targeting rule, and a Philadelphia-specific replication of SF*park*'s reservation-price survey.

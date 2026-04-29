@@ -1,0 +1,51 @@
+# Pricing-rule parameters. See phillyparking.pricing.* for consumers.
+
+seattle_rule:
+  # Adjust price up/down by `step` based on observed occupancy.
+  step_usd: 0.50
+  # Peak window over which peak occupancy is computed (24h clock, weekday).
+  peak_window: [11, 14]   # weekday lunch peak; configurable per zone
+  # Quantile of hourly occupancy to use as the peak-occ statistic.
+  peak_quantile: 0.90
+  # Thresholds.
+  occ_high: 0.85          # if peak_occ >= occ_high → +step
+  occ_low: 0.70           # if avg_occ < occ_low → −step
+  # Optional second tier: if peak_occ >= occ_very_high, raise by 2*step.
+  occ_very_high: 0.95
+  # Max number of step increments per adjustment cycle.
+  max_step_per_cycle: 2
+
+chatman_manville:
+  # Toggle for the academic experiment.
+  modes:
+    - avg_occupancy
+    - min_vacancy_peak
+  avg_occupancy:
+    target_low: 0.70
+    target_high: 0.85
+  min_vacancy_peak:
+    # Maintain at least this vacancy at the 95th-percentile-busiest hour.
+    min_vacancy: 0.15
+    peak_quantile: 0.95
+
+arnott_inci:
+  # Target vacancy at which cruising is just eliminated.
+  target_vacancy: 0.15
+  # Value of time for cruising drivers (USD/hour). 2024 USDOT default for local
+  # personal travel ≈ $17.90; bump for downtown trips with higher avg income.
+  value_of_time_usd_per_hr: 20.00
+
+occupancy_estimator:
+  # Multiplicative correction factor for unpaid parking (RPP holders, placards,
+  # scofflaws). Seattle's program uses ~1.15. Tunable per zone.
+  no_pay_correction_factor:
+    ccc: 1.10
+    cca: 1.12
+    ucity: 1.18
+    south_philly: 1.20
+    fishtown: 1.18
+    default: 1.15
+
+# No-go bounds applied after every algorithm; never let prices drift outside these.
+global_floor_usd: 0.50
+global_ceiling_usd: 10.00

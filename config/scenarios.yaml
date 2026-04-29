@@ -1,0 +1,55 @@
+# Top-level scenario definitions used by phillyparking.scenarios.runner.
+# Each scenario is a (pricing_policy × residential_permit_policy × elasticity) bundle.
+
+scenarios:
+  status_quo:
+    description: "Post-July-2025 PPA rates, frozen; flat $75/yr RPP."
+    pricing_policy:
+      kind: fixed
+    rpp_policy:
+      kind: flat
+      annual_fee_usd: 75.00
+    elasticity_scenario: central
+    rolls_forward_years: 0
+    notes: "Baseline counterfactual."
+
+  seattle:
+    description: "Annual ±$0.50 zone-level adjustment, time-of-day differentiated."
+    pricing_policy:
+      kind: seattle_rule
+      cycle_years: 1
+      time_of_day_bands: [[8, 12], [12, 16], [16, 20]]
+    rpp_policy:
+      kind: flat
+      annual_fee_usd: 75.00
+    elasticity_scenario: central
+    rolls_forward_years: 5
+    notes: "Operational benchmark; auditable, transparent, low political risk."
+
+  full_pbd:
+    description: "Market-priced curb + market-priced residential permits + revenue return to PBD."
+    pricing_policy:
+      kind: arnott_inci
+      target_vacancy: 0.15
+      cycle_years: 1
+    rpp_policy:
+      kind: market_clearing
+      revenue_share_to_pbd: 0.30   # Mexico City EcoParq precedent
+    elasticity_scenario: central
+    rolls_forward_years: 10
+    notes: "Full Shoupian PBD with Georgist land-rent capture framing."
+
+# Sensitivity sweep for the academic Chatman-Manville paper.
+chatman_manville_sweep:
+  elasticity_values: [-0.20, -0.30, -0.40, -0.50, -0.60, -0.70]
+  demand_noise_sigma: [0.05, 0.10, 0.20]
+  rules: [avg_occupancy, min_vacancy_peak]
+  n_replications: 100
+  rolls_forward_years: 5
+  metrics:
+    - cruising_dwl_total
+    - revenue_total
+    - revenue_var
+    - peak_occupancy_share_above_85
+    - consumer_surplus_change
+    - incidence_gini

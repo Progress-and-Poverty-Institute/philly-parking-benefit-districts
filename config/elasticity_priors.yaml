@@ -1,0 +1,49 @@
+# Price elasticity of parking demand priors.
+# Source: Lehner & Peer (2019), "The price elasticity of parking: A meta-analysis,"
+# Transportation Research A 121: 177-191 (50-study seemingly-unrelated regression).
+# Anchored on revealed-preference estimates only (RP); SP estimates are systematically
+# larger and less credible (per the meta-analysis).
+
+# Central prior on price elasticity of volume (EPV).
+central:
+  mean: -0.40
+  sd: 0.15
+  distribution: normal
+
+# Context shifts applied additively to the mean. These reflect findings that
+# elasticity is more negative (more elastic) for:
+# - longer-run / equilibrium adjustments
+# - higher prevailing prices (Lehner-Peer table 5)
+# - residential land use (more substitution to off-street / mode shift)
+context_shifts:
+  cbd: 0.00
+  mixed_use: -0.05
+  residential: -0.10
+  long_run: -0.30        # equilibrium with mode/destination shift
+
+# Elasticity of dwell time (separately small).
+# Used to decompose volume response into entry vs. duration effects.
+dwell_time:
+  mean: -0.15
+  sd: 0.05
+
+# Cross-elasticities (curb → off-street, transit, ride-hail).
+# Source: Calthrop, Proost & Van Dender (2000), Inci (2015) review.
+cross:
+  curb_to_garage: { mean: 0.30, sd: 0.10 }   # positive: garage substitutes for curb
+  curb_to_transit: { mean: 0.05, sd: 0.03 }
+  curb_to_rideshare: { mean: 0.10, sd: 0.05 }
+  curb_to_forgo: { mean: 0.05, sd: 0.03 }    # trip not made
+
+# Three named scenarios used by revenue/welfare forecasts.
+scenarios:
+  pessimistic: -0.70
+  central: -0.40
+  optimistic: -0.20
+
+# Hierarchical pooling structure for the PyMC model.
+# Three levels: zone < neighborhood < city.
+hierarchy:
+  city_mu_prior: { mean: -0.40, sd: 0.20 }
+  neighborhood_sd_prior: { mean: 0.10, sd: 0.05 }   # half-normal
+  zone_sd_prior: { mean: 0.05, sd: 0.03 }           # half-normal

@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phillyparking"
+version = "0.1.0"
+description = "Demand-based curb parking pricing model for Philadelphia"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Russell Richie" },
+]
+
+dependencies = [
+  # Core data
+  "pandas>=2.2",
+  "numpy>=1.26",
+  "polars>=0.20",
+  "duckdb>=1.0",
+  "pyarrow>=15",
+  # Geospatial
+  "geopandas>=0.14",
+  "shapely>=2.0",
+  "osmnx>=1.9",
+  "pyproj>=3.6",
+  "rtree>=1.2",
+  # Stats / ML / Bayes
+  "scikit-learn>=1.4",
+  "xgboost>=2.0",
+  "statsmodels>=0.14",
+  "pymc>=5.10",
+  "arviz>=0.17",
+  # Discrete choice
+  "xlogit>=0.2.7",
+  # Spatial econometrics
+  "libpysal>=4.9",
+  "spreg>=1.4",
+  # Optimization
+  "cvxpy>=1.4",
+  # Plotting
+  "matplotlib>=3.8",
+  "seaborn>=0.13",
+  "plotly>=5.20",
+  "folium>=0.16",
+  # IO / utilities
+  "requests>=2.31",
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0",
+  "tqdm>=4.66",
+  "click>=8.1",
+  # Census / transit
+  "cenpy>=1.0",
+  "gtfs-kit>=10.0",
+]
+
+[project.optional-dependencies]
+app = ["streamlit>=1.32", "pydeck>=0.8"]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=4.1",
+  "ruff>=0.3",
+  "black>=24.0",
+  "nbstripout>=0.7",
+  "ipykernel>=6.29",
+  "jupyter>=1.0",
+]
+paper = ["quarto-cli; platform_system != 'Windows'"]
+
+[project.scripts]
+phillyparking = "phillyparking.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "slow: tests that take more than a few seconds",
+  "network: tests that require network access",
+  "data: tests that require downloaded data",
+]

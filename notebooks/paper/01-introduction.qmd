@@ -1,0 +1,15 @@
+---
+title: "Introduction"
+---
+
+# Introduction
+
+Philadelphia's curb-parking prices are set administratively, not by demand. This chapter reviews the policy context, the SF*park* and Seattle precedents, and the Chatman–Manville critique of average-occupancy targeting.
+
+## Motivation
+
+Why demand-based pricing matters for cruising, transit ridership, and neighborhood revenue.
+
+## Contribution
+
+This paper contributes (1) a Bayesian estimate of zone-level elasticities using publicly available data, (2) a side-by-side simulation of avg-occupancy vs. min-vacancy-at-peak targeting, and (3) a Parking Benefit District allocation model.

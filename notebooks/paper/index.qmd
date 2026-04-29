@@ -1,0 +1,10 @@
+---
+title: "Demand-Based Curb Parking Pricing for Philadelphia"
+author: "Russell Richie"
+---
+
+# Preface {.unnumbered}
+
+This book presents a demand-responsive curb-parking pricing model for Philadelphia, calibrated against open public data and rolled forward under a hierarchical Bayesian elasticity model. It accompanies the `phillyparking` Python package.
+
+The chapters that follow cover motivation, methods, simulation results, and policy implications including the proposed Parking Benefit District revenue-sharing structure.

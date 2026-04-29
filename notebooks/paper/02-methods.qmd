@@ -1,0 +1,31 @@
+---
+title: "Methods"
+include-in-header:
+  text: |
+    \usepackage{xurl}
+    \usepackage[htt]{hyphenat}
+    \sloppy
+    \emergencystretch=3em
+---
+
+# Methods
+
+## Data
+
+We assemble a segment-level panel from OpenDataPhilly meters and streets, ACS demographics, LEHD LODES origin–destination jobs, OpenStreetMap points-of-interest, and SEPTA GTFS stops. Each segment is assigned to a pricing zone (CCC, UC, NL, …).
+
+## Demand model
+
+A synthetic baseline occupancy field is fit so that Center City peak occupancy approaches the 0.92 SF*park* target. Real PPA transaction data, when available, is converted to occupancy via the standard duration-weighted estimator.
+
+## Elasticity
+
+We fit a hierarchical Bayesian model with zone-level random slopes on log-price using PyMC, with weakly informative priors centered on the meta-analytic value of $-0.40$.
+
+## Pricing rules
+
+We compare three rules: the Seattle band-adjustment rule, Chatman–Manville average-occupancy targeting, and Chatman–Manville minimum-vacancy-at-peak targeting. We also report the Arnott–Inci optimal-price benchmark.
+
+## Simulation
+
+For each rule × elasticity scenario we roll forward 3 years across 30 Monte Carlo replications and report mean cruising deadweight loss, revenue, peak-share above 0.85, and a Gini coefficient on the simulated incidence distribution.

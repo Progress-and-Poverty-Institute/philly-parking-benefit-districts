@@ -1,0 +1,18 @@
+project:
+  type: book
+book:
+  title: "Demand-Based Curb Parking Pricing for Philadelphia"
+  author: "Russell Richie"
+  chapters:
+    - index.qmd
+    - 01-introduction.qmd
+    - 02-methods.qmd
+    - 03-results.qmd
+    - 04-discussion.qmd
+format:
+  pdf:
+    documentclass: article
+  html:
+    theme: cosmo
+execute:
+  freeze: auto

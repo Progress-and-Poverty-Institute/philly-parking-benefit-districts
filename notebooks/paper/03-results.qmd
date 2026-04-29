@@ -1,0 +1,31 @@
+---
+title: "Results"
+---
+
+# Results
+
+Results from the simulation sweep are summarized below.
+
+```{python}
+#| label: fig-revenue
+#| fig-cap: "Annual revenue under three elasticity scenarios."
+import matplotlib.pyplot as plt
+from phillyparking.scenarios.runner import run_all_scenarios
+from phillyparking.scenarios.compare import comparison_table
+results = run_all_scenarios()
+table = comparison_table(results)
+fig, ax = plt.subplots(figsize=(6, 4))
+if 'revenue' in table.columns:
+    table['revenue'].plot.bar(ax=ax)
+    ax.set_ylabel('annual revenue ($)')
+plt.tight_layout()
+plt.show()
+```
+
+## Chatman–Manville comparison
+
+Min-vacancy-at-peak targeting reduces cruising DWL relative to average-occupancy targeting; full results in @fig-revenue and the analysis notebook `08_chatman_manville_test.ipynb`.
+
+## Revenue and PBD allocation
+
+Projected annual revenue and the 30% PBD share by zone.
