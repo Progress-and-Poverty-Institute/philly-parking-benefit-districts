@@ -1,5 +1,7 @@
 # Philadelphia Curb Parking Pricing Model
 
+**GitHub**: [Progress-and-Poverty-Institute/philly-parking-benefit-districts](https://github.com/Progress-and-Poverty-Institute/philly-parking-benefit-districts)
+
 A demand-responsive curb parking pricing model for Philadelphia, supporting three deliverables:
 
 1. **PPI / 5th Square white paper** — Georgist framing of curb pricing as land-rent capture.
@@ -14,6 +16,9 @@ See [research/demand-based-curb-parking-pricing-model-for-philadelphia---claude-
 # 1. Create environment
 conda env create -f environment.yml
 conda activate phillyparking
+# NOTE: if conda create fails with a libmamba DLL error, install packages directly:
+#   C:/Users/druss/miniconda3/python.exe -m pip install -r <(grep -v '#' environment.yml | grep '  - ' | sed 's/  - //')
+# then: pip install -e . and continue from step 3.
 
 # 2. Install package in editable mode
 pip install -e .
@@ -58,6 +63,26 @@ scripts/                  # CLI entry points
 
 - **Public sources** (Open Data Philly, Census ACS, LEHD LODES, SEPTA GTFS, PennDOT, OSM): downloaded by `scripts/01_download_public_data.py`. Some endpoints require a free Census API key (set `CENSUS_API_KEY` in `.env`).
 - **PPA meter transactions**: not yet available. The pipeline runs against `phillyparking.io.ppa_stub`, which generates schema-faithful synthetic transactions. When a Right-to-Know Law (RTKL) request closes, swap by setting `PPA_DATA_SOURCE=real` in `.env` and pointing `PPA_DATA_PATH` at the dump.
+
+## Key calibration numbers (synthetic baseline)
+
+Running on 120 synthetic segments:
+
+| Zone | Weekday lunch peak occ | Overnight occ | Status-quo annual revenue |
+|---|---|---|---|
+| CCC (Center City Core) | ~0.83 | ~0.30 | ~$1.8M |
+| Other zones | 0.62–0.67 | 0.20–0.25 | varies |
+| **All 120 segments** | — | — | **~$4.3M** |
+
+Real Philadelphia has ~10× the metered inventory, so the central real-data estimate would be
+~$40–50M — consistent with PPA annual reports.
+
+## PPA Data (RTKL)
+
+A complete Right-to-Know Law request packet for PPA transaction data is at [`docs/rtkl/`](docs/rtkl/).
+Submit the request to `OpenRecordsOfficer@philapark.org` using the OOR standard form. When real
+data arrives, set `PPA_DATA_SOURCE=real` in `.env` and point `PPA_DATA_PATH` at the dump; the
+stub interface is schema-identical.
 
 ## License
 
