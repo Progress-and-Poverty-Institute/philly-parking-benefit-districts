@@ -58,3 +58,11 @@ _freeze/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# LaTeX build artifacts
+outputs/**/*.aux
+outputs/**/*.lof
+outputs/**/*.log
+outputs/**/*.lot
+outputs/**/*.out
+outputs/**/*.toc
