@@ -9,6 +9,7 @@ A demand-responsive curb parking pricing model for Philadelphia, supporting thre
 3. **Operational simulation/pricing tool** — Seattle-style transparent rule-based pricing, with ML/RL as advanced mode.
 
 See [research/demand-based-curb-parking-pricing-model-for-philadelphia---claude-2026-04-28.md](research/demand-based-curb-parking-pricing-model-for-philadelphia---claude-2026-04-28.md) for the literature review and design rationale, and `docs/PLAN.md` (mirrored from the planning session) for the implementation roadmap.
+Press coverage, rankings and other secondary sources are logged in `docs/external_sources.md`.
 
 ## Quickstart
 
