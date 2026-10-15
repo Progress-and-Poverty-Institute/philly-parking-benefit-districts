@@ -14,17 +14,16 @@ seattle_rule:
   max_step_per_cycle: 2
 
 chatman_manville:
-  # Toggle for the academic experiment.
-  modes:
-    - avg_occupancy
-    - min_vacancy_peak
-  avg_occupancy:
-    target_low: 0.70
-    target_high: 0.85
-  min_vacancy_peak:
-    # Maintain at least this vacancy at the 95th-percentile-busiest hour.
-    min_vacancy: 0.15
-    peak_quantile: 0.95
+  # The targeting rules of the Chatman-Manville sweep (pricing/targeting_rules.py). Every
+  # rule steps +-step_usd on its own statistic against the same band: above occ_high raise,
+  # below occ_low cut, inside hold. The rules differ only in the statistic and its window.
+  # min_vacancy_peak raises when the peak_quantile of occupancy exceeds occ_high, i.e. when
+  # fewer than 1 - occ_high of spaces are vacant at the busiest hours. A guard test keeps
+  # this band equal to seattle_rule's.
+  occ_low: 0.70
+  occ_high: 0.85
+  step_usd: 0.50
+  peak_quantile: 0.95
 
 arnott_inci:
   # Target vacancy at which cruising is just eliminated.

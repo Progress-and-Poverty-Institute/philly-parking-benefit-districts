@@ -1,16 +1,20 @@
 """Generate the white paper's scenario table and the figures that no other script produces.
 
 Reads the comparison table and saved scenarios written by scripts 05 and 06, plus the
-Chatman-Manville sweep table, and writes:
+Chatman-Manville sweep table (with its `.meta.json` provenance), and writes:
 
   outputs/reports/white_paper/tables/scenario_comparison.tex
   outputs/figures/zone_map.png
   outputs/figures/occupancy_and_revenue_detail.png
   outputs/figures/cm_sweep_n200_{cruising_dwl_total,revenue_total,peak_occupancy_share_above_85}.png
+  outputs/tables/cm_sweep_cells.csv               median and range per elasticity x noise x rule x year
+  outputs/tables/cm_sweep_paired.csv              each rule against the peak rule, same replication
+  outputs/tables/cm_sweep_window_dependence.csv   per comparator, across cells, last year
 
 `--check` regenerates the table in memory and exits 1 if the file on disk differs (the
 figures are not compared byte for byte). `--rebuild-cm-sweep` reruns the 200-replication
-sweep and rewrites outputs/tables/cm_sweep_n200.parquet first; it takes several minutes.
+sweep and rewrites outputs/tables/cm_sweep_n200.parquet and its .meta.json first; it takes
+about half an hour (five rules, 24 cells).
 """
 from __future__ import annotations
 
@@ -25,7 +29,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from phillyparking._config import outputs_dir  # noqa: E402
-from phillyparking.scenarios.compare import chatman_manville_sweep  # noqa: E402
+from phillyparking.scenarios.cm_sweep import (  # noqa: E402
+    cell_table, chatman_manville_sweep, load_sweep, paired_table, save_sweep, window_dependence,
+)
 from phillyparking.scenarios.runner import default_results_dir, load_saved_scenarios  # noqa: E402
 from phillyparking.viz.report_figures import (  # noqa: E402
     cm_sweep_year_chart, occupancy_and_revenue_detail, zone_map_figure,
@@ -37,6 +43,7 @@ log = logging.getLogger(__name__)
 CM_METRICS = ("cruising_dwl_total", "revenue_total", "peak_occupancy_share_above_85")
 CM_N_REPLICATIONS = 200
 CM_YEARS = 5
+CM_REFERENCE = "min_vacancy_peak"
 
 
 def table_path() -> Path:
@@ -86,9 +93,22 @@ def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
         log.info("Rerunning the Chatman-Manville sweep (n=%d, %d years)", CM_N_REPLICATIONS, CM_YEARS)
         sweep = chatman_manville_sweep(n_replications=CM_N_REPLICATIONS,
                                        rolls_forward_years=CM_YEARS, seed=seed)
-        sweep.to_parquet(sweep_path)
-        log.info("Wrote %s", sweep_path)
-    sweep = pd.read_parquet(sweep_path)
+        save_sweep(sweep, sweep_path)
+        log.info("Wrote %s and its provenance", sweep_path)
+    sweep = load_sweep(sweep_path)
+    prov = sweep.attrs.get("provenance", {})
+    log.info("Sweep provenance: %s, n_replications=%s, seed=%s, commit=%s",
+             prov.get("segment_source"), prov.get("n_replications"), prov.get("seed"),
+             (prov.get("git") or {}).get("commit"))
+
+    tables = outputs_dir() / "tables"
+    paired = paired_table(sweep, CM_REFERENCE)
+    for name, frame in (("cm_sweep_cells.csv", cell_table(sweep)),
+                        ("cm_sweep_paired.csv", paired),
+                        ("cm_sweep_window_dependence.csv", window_dependence(paired))):
+        frame.to_csv(tables / name, index=False, float_format="%.6g")
+        log.info("Wrote %s", tables / name)
+
     for metric in CM_METRICS:
         out = figs / f"cm_sweep_n200_{metric}.png"
         fig = cm_sweep_year_chart(sweep, metric, save_to=out)

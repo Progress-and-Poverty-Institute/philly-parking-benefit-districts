@@ -13,7 +13,9 @@ import pandas as pd
 
 CM_METRIC_LABELS = {
     "cruising_dwl_total": "Annual cruising DWL (USD)",
+    "cruising_dwl_priced_hours": "Annual cruising DWL, priced hours (USD)",
     "revenue_total": "Annual Revenue (USD)",
+    "revenue_priced_hours": "Annual revenue, priced hours (USD)",
     "peak_occupancy_share_above_85": "Share of zones with peak occupancy above 85%",
 }
 
@@ -33,26 +35,34 @@ def _save(fig, save_to) -> None:
 def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, save_to: Path | None = None):
     """Chatman-Manville sweep: `metric` by year for each rule, one panel per noise level.
 
-    The line is the mean and the band is +/- 1 SD over every row of that (noise level,
-    rule, year) cell, i.e. over replications and elasticity values together.
+    Each point is built from per-cell medians (median over replications within an
+    elasticity x noise x rule x year cell). The line is the median of those cell medians
+    across elasticity values and the band is their minimum to maximum, so the band is the
+    spread between cells, not a standard deviation of pooled rows. A DWL metric is drawn on a
+    log axis when every value is positive, because rules differ by an order of magnitude.
     """
     import matplotlib.pyplot as plt
 
-    sigmas = sorted(sweep["noise_sigma"].unique())
+    cells = sweep.groupby(["elasticity", "noise_sigma", "rule", "year"])[metric].median().reset_index()
+    sigmas = sorted(cells["noise_sigma"].unique())
     n_rep = int(sweep["replication"].nunique())
-    fig, axes = plt.subplots(1, len(sigmas), figsize=(5.5 * len(sigmas), 4), squeeze=False, sharey=True)
+    n_eps = int(cells["elasticity"].nunique())
+    fig, axes = plt.subplots(1, len(sigmas), figsize=(4.6 * len(sigmas), 4), squeeze=False, sharey=True)
     for ax, sigma in zip(axes[0], sigmas):
-        sub = sweep[sweep["noise_sigma"] == sigma]
-        for rule, g in sub.groupby("rule"):
-            agg = g.groupby("year")[metric].agg(["mean", "std"]).sort_index()
-            ax.plot(agg.index, agg["mean"], marker="o", label=rule)
-            ax.fill_between(agg.index, agg["mean"] - agg["std"], agg["mean"] + agg["std"], alpha=0.2)
+        sub = cells[cells["noise_sigma"] == sigma]
+        for rule, g in sub.groupby("rule", sort=False):
+            agg = g.groupby("year")[metric].agg(["median", "min", "max"]).sort_index()
+            ax.plot(agg.index, agg["median"], marker="o", label=rule)
+            ax.fill_between(agg.index, agg["min"], agg["max"], alpha=0.15)
         ax.set_title(f"Demand noise sigma={sigma}")
         ax.set_xlabel("Year")
         ax.set_xticks(sorted(sweep["year"].unique()))
-        ax.legend()
+        if metric.startswith("cruising_dwl") and (cells[metric] > 0).all():
+            ax.set_yscale("log")
+    axes[0][0].legend(fontsize=8)
     axes[0][0].set_ylabel(CM_METRIC_LABELS.get(metric, metric))
-    fig.suptitle(f"Chatman-Manville sweep (n={n_rep}): {metric}")
+    fig.suptitle(f"Chatman-Manville sweep (n={n_rep} replications): {metric}; "
+                 f"line = median, band = range over {n_eps} elasticity cells")
     fig.tight_layout()
     _save(fig, save_to)
     return fig

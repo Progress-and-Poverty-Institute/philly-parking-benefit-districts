@@ -54,7 +54,8 @@ def band_label(band) -> str:
     return f"{int(band[0])}-{int(band[1])}"
 
 
-def _zone_bounds(zone_id: str | None, fallback: SeattleRuleConfig) -> tuple[float, float]:
+def zone_bounds(zone_id: str | None, fallback: SeattleRuleConfig) -> tuple[float, float]:
+    """(floor, ceiling) for a zone from `zones.yaml`; the global bounds for an unlisted zone."""
     if zone_id is None:
         return fallback.floor, fallback.ceiling
     zones = load_config("zones")["zones"]
@@ -76,7 +77,7 @@ def adjust_price(
     cut one step; inside [occ_low, occ_high] hold.
     """
     cfg = config or load_seattle_config()
-    floor, ceiling = _zone_bounds(zone_id, cfg)
+    floor, ceiling = zone_bounds(zone_id, cfg)
 
     if band_occupancy >= cfg.occ_very_high:
         n_steps, direction = cfg.max_step_per_cycle, "up"

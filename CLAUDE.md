@@ -125,6 +125,25 @@ as both phases (`diagnostics["phases"]`, and `<name>_phase_a` / `_phase_b` colum
 comparison table), never as one year's state. With the dead band, a cycle can still occur at
 low rates where one $0.50 step changes the price by a larger ratio than 0.85/0.70.
 
+## Chatman-Manville sweep: one rule module, paired runs
+
+`pricing/targeting_rules.py` is the only implementation of the sweep's rules
+(`min_vacancy_peak`, `avg_occupancy`, `avg_priced_hours`, `avg_priced_bands`, `seattle_rule`);
+`scenarios/cm_sweep.py` runs them and builds the summaries. All rules step +-$0.50 against the same
+0.70 / 0.85 band (`chatman_manville:` in `pricing_rules.yaml`, kept equal to Seattle's by a test)
+and differ only in the statistic and window. The four zone-level rules honour `zones.yaml` floors
+and ceilings; priced-hours rules hold an unpriced zone. Noise is `sigma * z` with `z` fixed per
+replication, so every rule, elasticity and sigma sees the same draw (paired). The sweep prices
+all 168 hours, so every DWL and revenue metric has a `_total` and a `_priced_hours` form.
+
+Report per cell, never pooled: `cell_table` (median and range), `paired_table` (each rule over the
+peak rule, per replication), `window_dependence` (across cells). `ordering_violations` is the
+identity that the 168-hour mean rule never beats the peak rule (mean <= q95); it holds by
+construction on a diurnal panel. The sweep is a mechanism illustration on a fixture: a real test
+would need a DGP with within-zone dispersion and an off-peak price response. Provenance is in
+`outputs/tables/cm_sweep_n200.meta.json`. Regenerate with
+`scripts/07_export_report_assets.py --rebuild-cm-sweep` (about half an hour).
+
 ## Script 06 synthetic fallback
 
 `scripts/06_export_paper_figures.py` must apply the same named-zone check as script 05:
