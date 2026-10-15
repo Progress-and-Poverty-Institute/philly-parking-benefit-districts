@@ -71,20 +71,30 @@ def chatman_manville_results_chart(
     metric: str = "cruising_dwl_total",
     save_to: Path | None = None,
 ):
+    """`metric` against elasticity for each rule in the sweep's last year, one panel per noise level.
+
+    Each point is the median over replications of one elasticity x noise x rule cell in the
+    final year; nothing is pooled across years or cells. A DWL metric is drawn on a log axis
+    when every value is positive, because the rules differ by an order of magnitude.
+    """
     import matplotlib.pyplot as plt
 
-    sigmas = sorted(sweep["noise_sigma"].unique())
-    fig, axes = plt.subplots(1, len(sigmas), figsize=(5 * len(sigmas), 4), squeeze=False, sharey=True)
+    last = sweep[sweep["year"] == sweep["year"].max()]
+    cells = last.groupby(["noise_sigma", "rule", "elasticity"])[metric].median().reset_index()
+    sigmas = sorted(cells["noise_sigma"].unique())
+    fig, axes = plt.subplots(1, len(sigmas), figsize=(4.6 * len(sigmas), 4), squeeze=False, sharey=True)
     for ax, sigma in zip(axes[0], sigmas):
-        sub = sweep[sweep["noise_sigma"] == sigma]
-        for rule, g in sub.groupby("rule"):
-            agg = g.groupby("elasticity")[metric].mean()
-            ax.plot(agg.index, agg.values, marker="o", label=rule)
+        for rule, g in cells[cells["noise_sigma"] == sigma].groupby("rule", sort=False):
+            g = g.sort_values("elasticity")
+            ax.plot(g["elasticity"], g[metric], marker="o", label=rule)
         ax.set_title(f"sigma={sigma}")
         ax.set_xlabel("Elasticity")
-        ax.legend()
+        if metric.startswith("cruising_dwl") and (cells[metric] > 0).all():
+            ax.set_yscale("log")
+    axes[0][0].legend(fontsize=8)
     axes[0][0].set_ylabel(metric)
-    fig.suptitle(f"Chatman-Manville sweep: {metric}")
+    fig.suptitle(f"Chatman-Manville sweep, year {int(last['year'].max())}: {metric} (median over replications)")
+    fig.tight_layout()
     if save_to is not None:
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_to, dpi=150, bbox_inches="tight")

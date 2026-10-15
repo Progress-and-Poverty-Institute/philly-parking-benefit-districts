@@ -41,17 +41,13 @@ scenarios:
     rolls_forward_years: 10   # maximum reviews; the runner stops at a fixed point
     notes: "Full Shoupian PBD with Georgist land-rent capture framing."
 
-# Sensitivity sweep for the academic Chatman-Manville paper.
+# Sensitivity sweep for the academic Chatman-Manville paper (scenarios/cm_sweep.py).
+# Every rule sees the same noise draw in a replication (paired). Rules are defined in
+# pricing/targeting_rules.py; the first is the reference the others are compared with.
 chatman_manville_sweep:
   elasticity_values: [-0.20, -0.30, -0.40, -0.50, -0.60, -0.70]
-  demand_noise_sigma: [0.05, 0.10, 0.20]
-  rules: [avg_occupancy, min_vacancy_peak]
-  n_replications: 100
+  demand_noise_sigma: [0.0, 0.05, 0.10, 0.20]
+  rules: [min_vacancy_peak, avg_occupancy, avg_priced_hours, avg_priced_bands, seattle_rule]
+  start_price_usd: 2.00
+  n_replications: 200
   rolls_forward_years: 5
-  metrics:
-    - cruising_dwl_total
-    - revenue_total
-    - revenue_var
-    - peak_occupancy_share_above_85
-    - consumer_surplus_change
-    - incidence_gini

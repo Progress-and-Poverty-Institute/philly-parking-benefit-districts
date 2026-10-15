@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from phillyparking._config import data_dir, outputs_dir
 from phillyparking.scenarios.runner import ScenarioResults, default_results_dir
-from phillyparking.scenarios.compare import comparison_table, chatman_manville_sweep
+from phillyparking.scenarios.compare import comparison_table
+from phillyparking.scenarios.cm_sweep import chatman_manville_sweep
 from phillyparking.spatial.segments import load_segments, build_segments, save_segments
 from phillyparking.spatial.zones import assign_zones
 from phillyparking.demand.synthetic_baseline import baseline_occupancy

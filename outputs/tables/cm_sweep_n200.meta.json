@@ -1,0 +1,48 @@
+{
+  "baseline": "baseline_occupancy(segments, seed=seed)",
+  "config_sha256": {
+    "allocation": "9973d2abac6c8cc9fbe51b1c38a8d07da10f4bdf3d685bbf6406d8e435803f19",
+    "elasticity_priors": "56be8e207cfa99df54d786030f65b4422be0956fff6a6df554c389f66797ad1a",
+    "pricing_rules": "0444d4c8d88c5c9902c9f3adcf60d98527b9afed3fec21162413c30e849e72bc",
+    "scenarios": "59cab79de46953e60ca6fab26e5daa29af4115793ce65f2577c22c7b81b05830",
+    "zones": "b2d26241f729b89ee3a10e58fa72f5cfc8d289058761ab2c972490a30d05f8e2"
+  },
+  "created_utc": "2026-10-15T20:21:54+00:00",
+  "elasticity_values": [
+    -0.2,
+    -0.3,
+    -0.4,
+    -0.5,
+    -0.6,
+    -0.7
+  ],
+  "git": {
+    "commit": "79fab84f69fd6ed215bdbe66211aa1fd5a4cef89",
+    "dirty": true
+  },
+  "n_replications": 200,
+  "noise_sigmas": [
+    0.0,
+    0.05,
+    0.1,
+    0.2
+  ],
+  "pairing": "noise = sigma * z, z fixed per replication; shared by all rules, elasticities and sigmas",
+  "rolls_forward_years": 5,
+  "rules": [
+    "min_vacancy_peak",
+    "avg_occupancy",
+    "avg_priced_hours",
+    "avg_priced_bands",
+    "seattle_rule"
+  ],
+  "seed": 42,
+  "segment_source": {
+    "function": "make_synthetic_segments",
+    "kind": "synthetic_fixture",
+    "n": 20,
+    "n_segments": 20,
+    "seed": 0
+  },
+  "start_price_usd": 2.0
+}

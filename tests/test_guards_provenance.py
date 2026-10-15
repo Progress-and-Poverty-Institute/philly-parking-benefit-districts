@@ -296,19 +296,21 @@ def test_zone_map_draws_every_configured_box():
         plt.close(fig)
 
 
-def test_cm_sweep_chart_plots_group_means_by_year():
+def test_cm_sweep_chart_plots_median_of_cell_medians_by_year():
     import matplotlib.pyplot as plt
     rng = np.random.default_rng(0)
-    rows = [{"noise_sigma": s, "rule": r, "year": y, "replication": k, "revenue_total": 100.0 * (y + (r == "a")) + rng.normal()}
-            for s in (0.1, 0.2) for r in ("a", "b") for y in (1, 2, 3) for k in range(4)]
+    rows = [{"elasticity": e, "noise_sigma": s, "rule": r, "year": y, "replication": k,
+             "revenue_total": 100.0 * (y + (r == "a")) * (1 + abs(e)) + rng.normal()}
+            for e in (-0.2, -0.4, -0.6) for s in (0.1, 0.2) for r in ("a", "b") for y in (1, 2, 3) for k in range(4)]
     sweep = pd.DataFrame(rows)
     fig = cm_sweep_year_chart(sweep, "revenue_total")
     try:
         assert len(fig.axes) == 2
         line = next(l for l in fig.axes[0].get_lines() if l.get_label() == "a")
-        expected = sweep[(sweep.noise_sigma == 0.1) & (sweep.rule == "a")].groupby("year")["revenue_total"].mean()
+        sub = sweep[(sweep.noise_sigma == 0.1) & (sweep.rule == "a")]
+        cell_med = sub.groupby(["elasticity", "year"])["revenue_total"].median().unstack("elasticity")
         assert list(line.get_xdata()) == [1, 2, 3]
-        assert np.allclose(line.get_ydata(), expected.to_numpy())
+        assert np.allclose(line.get_ydata(), cell_med.median(axis=1).to_numpy())
     finally:
         plt.close(fig)
 
