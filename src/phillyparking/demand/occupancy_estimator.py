@@ -1,9 +1,13 @@
-"""Seattle's transactions-to-occupancy method (research doc §3.3 / §5.4).
+"""Seattle's transactions-to-occupancy method (research doc §3.3 / §5.4), for stub-schema
+transactions (`io.ppa_stub.TX_SCHEMA`: segment_id, start_time, end_time).
 
-Aggregates paid sessions into per-(segment, hour-of-week) occupancy by counting
-session minutes within each clock hour and dividing by capacity * 60. A
-multiplicative no-pay correction accounts for unpaid users (RPP, placards,
-scofflaws).
+Real Parking Authority exports go through `phillyparking.ingest.ppa`, which maps their
+columns, carries the posted rate by calendar period and states unpaid use in config. Both
+use the same session-to-clock-hour split (`ingest.ppa.explode_to_hours`).
+
+occupancy(s, h) = paid minutes in hour-of-week h / (capacity_s x 60 x number of calendar
+dates with that weekday in the data's date range) x no_pay_correction[zone]. The correction
+is a required argument: there is no default in code.
 """
 from __future__ import annotations
 
@@ -12,87 +16,57 @@ import logging
 import numpy as np
 import pandas as pd
 
-from phillyparking._config import load_config
+from phillyparking.ingest.ppa import explode_to_hours
 
 logger = logging.getLogger(__name__)
-
-
-def _no_pay_correction_lookup() -> dict[str, float]:
-    return load_config("pricing_rules")["occupancy_estimator"]["no_pay_correction_factor"]
-
-
-def _explode_session_minutes(transactions: pd.DataFrame) -> pd.DataFrame:
-    """Return one row per (session, clock-hour) with minutes spent in that hour."""
-    df = transactions[["segment_id", "start_time", "end_time"]].copy()
-    df["start_time"] = pd.to_datetime(df["start_time"])
-    df["end_time"] = pd.to_datetime(df["end_time"])
-    df["hour_start"] = df["start_time"].dt.floor("h")
-    df["hour_end"] = (df["end_time"] - pd.Timedelta(microseconds=1)).dt.floor("h")
-    df["n_hours"] = ((df["hour_end"] - df["hour_start"]) // pd.Timedelta(hours=1)).astype(int) + 1
-
-    # Repeat each row n_hours times.
-    df = df.loc[df.index.repeat(df["n_hours"].to_numpy())].reset_index(drop=True)
-    offsets = df.groupby(level=0).cumcount() if False else None
-    # Compute the offset within each original session by using a running counter
-    # per session id (approximate via cumcount over a stable session key).
-    df["session_idx"] = (df["hour_start"] != df["hour_start"].shift()) | \
-                        (df["segment_id"] != df["segment_id"].shift()) | \
-                        (df["end_time"] != df["end_time"].shift())
-    # Simpler approach: assign session id and use cumcount.
-    session_id = (df["start_time"].astype("int64").astype(str) + "|" +
-                  df["end_time"].astype("int64").astype(str) + "|" +
-                  df["segment_id"].astype(str))
-    df["__sid"] = session_id
-    df["offset_h"] = df.groupby("__sid").cumcount()
-    df["bucket_start"] = df["hour_start"] + pd.to_timedelta(df["offset_h"], unit="h")
-    df["bucket_end"] = df["bucket_start"] + pd.Timedelta(hours=1)
-
-    overlap_start = np.maximum(df["start_time"].to_numpy(), df["bucket_start"].to_numpy())
-    overlap_end = np.minimum(df["end_time"].to_numpy(), df["bucket_end"].to_numpy())
-    minutes = (overlap_end - overlap_start) / np.timedelta64(1, "m")
-    df["minutes_in_hour"] = np.clip(minutes.astype(float), 0.0, 60.0)
-
-    df["dow"] = df["bucket_start"].dt.dayofweek
-    df["hour"] = df["bucket_start"].dt.hour
-    df["hour_of_week"] = df["dow"] * 24 + df["hour"]
-    return df[["segment_id", "hour_of_week", "minutes_in_hour", "bucket_start"]]
 
 
 def transactions_to_occupancy(
     transactions: pd.DataFrame,
     segments: pd.DataFrame,
-    no_pay_correction: dict[str, float] | None = None,
+    no_pay_correction: dict[str, float],
 ) -> pd.DataFrame:
     """Aggregate paid sessions to per-(segment, hour-of-week) occupancy.
 
-    occupancy(s, h) = sum_minutes / (capacity_s * 60 * n_observed_weeks)
-    Multiplied by no_pay_correction[zone_id] (default 1.15).
+    `no_pay_correction`: multiplier per zone_id plus a required "default" (1.0 = paid
+    occupancy only). Weekday counts come from the calendar between the first and last
+    session date, so a week with no sessions still counts as observed.
     """
-    correction = no_pay_correction or _no_pay_correction_lookup()
-    default_corr = correction.get("default", 1.15)
-
+    if no_pay_correction is None or "default" not in no_pay_correction:
+        raise ValueError("no_pay_correction must be given with a 'default' entry "
+                         "(1.0 = paid occupancy only)")
     seg = pd.DataFrame(segments)[["segment_id", "capacity", "zone_id"]].copy()
     seg["zone_id"] = seg["zone_id"].astype(str)
-    seg["correction"] = seg["zone_id"].map(correction).fillna(default_corr)
+    seg["correction"] = seg["zone_id"].map(no_pay_correction).fillna(
+        float(no_pay_correction["default"]))
 
     if len(transactions) == 0:
-        out = seg[["segment_id"]].assign(hour_of_week=0, occupancy=0.0,
-                                         n_paid_sessions=0, n_paid_minutes=0.0)
-        return out.iloc[0:0]
+        return pd.DataFrame(columns=["segment_id", "hour_of_week", "occupancy",
+                                     "n_paid_sessions", "n_paid_minutes"])
 
-    expanded = _explode_session_minutes(transactions)
+    tx = transactions[["segment_id", "start_time", "end_time"]].reset_index(drop=True)
+    start, end = pd.to_datetime(tx["start_time"]), pd.to_datetime(tx["end_time"])
+    hrs = explode_to_hours(start, end)
+    hrs["segment_id"] = tx["segment_id"].to_numpy()[hrs["session"]]
+    hrs["hour_of_week"] = hrs["bucket"].dt.dayofweek * 24 + hrs["bucket"].dt.hour
 
-    # n_observed_weeks: number of distinct weeks in the data, used to convert
-    # a per-week panel from accumulated minutes.
-    n_weeks = max(1, expanded["bucket_start"].dt.isocalendar().week.nunique())
+    dates = pd.date_range(hrs["bucket"].min().normalize(), hrs["bucket"].max().normalize(),
+                          freq="D")
+    n_days = np.bincount(dates.dayofweek, minlength=7)
 
-    grp = expanded.groupby(["segment_id", "hour_of_week"], observed=True).agg(
-        n_paid_minutes=("minutes_in_hour", "sum"),
-        n_paid_sessions=("minutes_in_hour", "size"),
+    grp = hrs.groupby(["segment_id", "hour_of_week"]).agg(
+        n_paid_minutes=("minutes", "sum"),
+        n_paid_sessions=("minutes", "size"),
     ).reset_index()
-
     grp = grp.merge(seg[["segment_id", "capacity", "correction"]], on="segment_id", how="left")
-    grp["occupancy"] = (grp["n_paid_minutes"] * grp["correction"]) / (grp["capacity"] * 60.0 * n_weeks)
+    if grp["capacity"].isna().any():
+        missing = grp.loc[grp["capacity"].isna(), "segment_id"].unique()[:5].tolist()
+        raise ValueError(f"transactions on segments absent from `segments`: {missing}")
+    days = n_days[grp["hour_of_week"].to_numpy() // 24]
+    grp["occupancy"] = (grp["n_paid_minutes"] * grp["correction"]) / (grp["capacity"] * 60.0 * days)
+    over = grp["occupancy"] > 1.0
+    if over.any():
+        logger.warning("%d segment-hours exceed capacity; clipped to 1", int(over.sum()))
     grp["occupancy"] = grp["occupancy"].clip(0.0, 1.0)
     return grp[["segment_id", "hour_of_week", "occupancy", "n_paid_sessions", "n_paid_minutes"]]
 
@@ -101,7 +75,7 @@ def occupancy_panel_from_stub(segments: pd.DataFrame, n_days: int = 28, seed: in
     """Convenience: generate stub transactions, then convert to occupancy panel."""
     from phillyparking.io.ppa_stub import generate_transactions
     tx = generate_transactions(segments, n_days=n_days, seed=seed)
-    return transactions_to_occupancy(tx, segments)
+    return transactions_to_occupancy(tx, segments, no_pay_correction={"default": 1.0})
 
 
 def hourly_to_weekly(panel: pd.DataFrame) -> pd.DataFrame:

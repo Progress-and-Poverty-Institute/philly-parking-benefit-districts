@@ -188,9 +188,10 @@ _FMT = "%m/%d/%Y %H:%M"
 def make_known_answer_export() -> dict[str, pd.DataFrame]:
     """A small export in an export-like schema whose occupancy is known exactly.
 
-    Three block faces (column names as in `config/ppa_ingest.yaml`): `BF-CCC-1` (Center City
+    Four block faces (column names as in `config/ppa_ingest.yaml`): `BF-CCC-1` (Center City
     Core, meters M001 with 4 spaces and M002 with 2), `BF-UC-1` (University City, M003, 5
-    spaces) and `BF-CCA-1` (Center City Area, M004, 3 spaces, no sessions at all). Rates:
+    spaces), `BF-CCA-1` (Center City Area, M004, 3 spaces, no sessions at all) and `BF-CCA-2`
+    (Center City Area, M005, 4 spaces). Rates:
     Core $3.00 -> $4.00 and Area $2.50 -> $3.50 on 1 July 2025, University City $2.00
     throughout. Sessions, on every date of the window:
 
@@ -199,18 +200,19 @@ def make_known_answer_export() -> dict[str, pd.DataFrame]:
       hour 9 and 15/360 at hour 10, in both periods.
     - BF-UC-1, Saturdays: 5 cars 10:00-12:00 (occupancy 1.0 at hours 10 and 11); Fridays:
       1 car 23:30 to Saturday 00:30 (30/300 in Friday hour 23 and Saturday hour 0).
+    - BF-CCA-2, weekdays: 1 car 08:00-11:00 (occupancy 1/4 at hours 8, 9, 10).
 
     Returns {"sessions", "inventory", "rates", "expected"}; `expected` lists every nonzero
     cell as (segment_id, period, hour_of_week, paid_occupancy). Every other cell is 0.
     """
     inventory = pd.DataFrame({
-        "MeterNumber": ["M001", "M002", "M003", "M004"],
-        "BlockFace": ["BF-CCC-1", "BF-CCC-1", "BF-UC-1", "BF-CCA-1"],
-        "Spaces": ["4", "2", "5", "3"],
+        "MeterNumber": ["M001", "M002", "M003", "M004", "M005"],
+        "BlockFace": ["BF-CCC-1", "BF-CCC-1", "BF-UC-1", "BF-CCA-1", "BF-CCA-2"],
+        "Spaces": ["4", "2", "5", "3", "4"],
         "RateArea": ["Center City Core", "Center City Core", "University City",
-                     "Center City Area"],
-        "Longitude": ["-75.1600", "-75.1601", "-75.1950", "-75.1700"],
-        "Latitude": ["39.9520", "39.9521", "39.9530", "39.9400"],
+                     "Center City Area", "Center City Area"],
+        "Longitude": ["-75.1600", "-75.1601", "-75.1950", "-75.1700", "-75.1720"],
+        "Latitude": ["39.9520", "39.9521", "39.9530", "39.9400", "39.9405"],
     })
     rates = pd.DataFrame({
         "RateArea": ["Center City Core", "Center City Core", "Center City Area",
@@ -219,7 +221,7 @@ def make_known_answer_export() -> dict[str, pd.DataFrame]:
         "HourlyRate": ["3.00", "4.00", "2.50", "3.50", "2.00"],
     })
     rate = {("M001", 0): 3.0, ("M001", 1): 4.0, ("M002", 0): 3.0, ("M002", 1): 4.0,
-            ("M003", 0): 2.0, ("M003", 1): 2.0}
+            ("M003", 0): 2.0, ("M003", 1): 2.0, ("M005", 0): 2.5, ("M005", 1): 3.5}
     cut = pd.Timestamp("2025-07-01")
     rows = []
 
@@ -237,6 +239,7 @@ def make_known_answer_export() -> dict[str, pd.DataFrame]:
             for k in range(3 if day < cut else 2):
                 add("M001" if k % 2 == 0 else "M002", day + pd.Timedelta(hours=12), 120)
             add("M001", day + pd.Timedelta(hours=9, minutes=30), 45)
+            add("M005", day + pd.Timedelta(hours=8), 180)
         if dow == 5:
             for _ in range(5):
                 add("M003", day + pd.Timedelta(hours=10), 120)
@@ -250,7 +253,10 @@ def make_known_answer_export() -> dict[str, pd.DataFrame]:
             exp += [("BF-CCC-1", period, d * 24 + 12, cars / 6),
                     ("BF-CCC-1", period, d * 24 + 13, cars / 6),
                     ("BF-CCC-1", period, d * 24 + 9, 30 / 360),
-                    ("BF-CCC-1", period, d * 24 + 10, 15 / 360)]
+                    ("BF-CCC-1", period, d * 24 + 10, 15 / 360),
+                    ("BF-CCA-2", period, d * 24 + 8, 0.25),
+                    ("BF-CCA-2", period, d * 24 + 9, 0.25),
+                    ("BF-CCA-2", period, d * 24 + 10, 0.25)]
         exp += [("BF-UC-1", period, 5 * 24 + 10, 1.0), ("BF-UC-1", period, 5 * 24 + 11, 1.0),
                 ("BF-UC-1", period, 4 * 24 + 23, 0.1), ("BF-UC-1", period, 5 * 24 + 0, 0.1)]
     expected = pd.DataFrame(exp, columns=["segment_id", "period", "hour_of_week",

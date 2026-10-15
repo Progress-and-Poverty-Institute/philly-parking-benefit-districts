@@ -171,7 +171,7 @@ def baseline_occupancy(
     seg = pd.DataFrame(segments).reset_index(drop=True)
     n = len(seg)
 
-    kernels = _kernels()                 # (3, 168) — each in roughly [0, 1]
+    kernels = _kernels()                 # (3, 168) â€” each in roughly [0, 1]
     mix = _mix_weights(seg, temperature=float(anchors["mix_temperature"]), anchors=anchors)
     kernel_intensity = mix @ kernels     # (n, 168) per-segment temporal shape
 

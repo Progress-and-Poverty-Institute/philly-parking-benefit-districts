@@ -26,8 +26,8 @@ documented parameter (`unpaid_use` in the config), never a default in code.
 **Failing loudly.** A missing mapped column, an unmapped rate-area label, a location with no
 spaces, a session with no end or a negative or over-long duration, more than the allowed share
 of sessions with no inventory match or with a posted rate the schedule contradicts, a period
-in which a zone has no scheduled rate, and occupancy over capacity all raise
-`PPAIngestError`. Counts of everything dropped are in the returned report.
+in which a zone has no scheduled rate or no paid session at all (a gap in the export, not zero
+demand), and occupancy over capacity all raise `PPAIngestError`. Counts of everything dropped are in the returned report.
 """
 from __future__ import annotations
 
@@ -373,6 +373,14 @@ def build_panel(sessions: pd.DataFrame, inventory: pd.DataFrame, rates: pd.DataF
         ex = panel.loc[over, ["segment_id", "period", "hour_of_week", "occupancy"]].head(5)
         raise PPAIngestError(f"{int(over.sum())} cells exceed capacity x {tol} (spaces too low "
                              f"in the inventory, or unpaid_share too high):\n{ex.to_string()}")
+    zp = panel.groupby(["zone_id", "period"])["paid_minutes"].sum()
+    empty = zp[zp <= 0].index.tolist()
+    if empty:
+        raise PPAIngestError(f"(zone, period) with no paid session at all: {empty}. That is a "
+                             f"gap in the export, not zero demand; drop the zone from the "
+                             f"inventory or narrow --window")
+    report["segment_periods_without_sessions"] = int(
+        (panel.groupby(["segment_id", "period"])["paid_minutes"].sum() <= 0).sum())
     report["cells_clipped_to_1"] = int((panel["occupancy"] > 1.0).sum())
     panel["occupancy"] = panel["occupancy"].clip(upper=1.0)
     panel = panel.merge(prices, on=["zone_id", "period"], how="left")
