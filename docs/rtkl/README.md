@@ -5,6 +5,21 @@ The pricing model runs on a synthetic segment fixture and synthetic demand
 would let it estimate occupancy and price response for real zones. This folder holds the
 requests for that data.
 
+## Status of this project's requests
+
+**Requests A and B: sent 2026-10-15; response due by 23 October 2026.** The cover email and
+both attachments went to `OpenRecordsOfficer@philapark.org` at 3:45 p.m. without the request
+forms. The two completed forms followed in a reply in the same thread at 4:38 p.m. That was after
+the 4:30 p.m. cutoff, so the requests count as received Friday 16 October. The five business days
+run 19 to 23 October. The Authority may extend once, by up to 30 calendar days. No tracking
+numbers yet: record them here when the Authority replies. The filled forms carry the requester's
+home address and are not tracked.
+
+| Request | Contents | Sent | Tracking no. | Due | Outcome |
+|---|---|---|---|---|---|
+| A | sessions outside the No. 26-0145 area, RPP permits, citations, data dictionaries | 2026-10-15 | — | 2026-10-23 | pending |
+| B | meter inventory with spaces, rate schedules, occupancy studies, revenue by zone | 2026-10-15 | — | 2026-10-23 | pending |
+
 ## Requests in flight elsewhere
 
 The sibling project `C:\projects\philly-road-pricing` filed **Request No. 26-0145** on
