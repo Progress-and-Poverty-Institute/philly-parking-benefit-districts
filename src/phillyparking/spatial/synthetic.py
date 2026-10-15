@@ -61,7 +61,10 @@ def make_synthetic_segments(n: int = 25, seed: int = 0) -> gpd.GeoDataFrame:
             "pois_count": int(rng.integers(0, 60)),
             "transit_trips_per_hr": float(rng.uniform(0, 40)),
         })
-    return gpd.GeoDataFrame(rows, crs=4326)
+    gdf = gpd.GeoDataFrame(rows, crs=4326)
+    gdf.attrs["segment_source"] = {"kind": "synthetic_fixture", "function": "make_synthetic_segments",
+                                   "n": int(n), "seed": int(seed)}
+    return gdf
 
 
 def make_synthetic_panel(segments: pd.DataFrame, seed: int = 0) -> pd.DataFrame:

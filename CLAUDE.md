@@ -167,6 +167,27 @@ The RTKL packet for PPA transaction data is at `docs/rtkl/`. It is ready to subm
 `docs/rtkl/README.md` for the submission procedure. PPA's RTKL email:
 `OpenRecordsOfficer@philapark.org`.
 
+## Saved results, provenance and report assets
+
+Scripts 05 and 06 and the Streamlit app all use `runner.default_results_dir()`
+(`outputs/models/<scenario>/`); the app only loads (`load_saved_scenarios`) and stops with
+an instruction to run script 05 if results are missing; it never recomputes.
+Each scenario's `meta.json` carries `provenance`: segment source (fixture name, n and seed,
+or a file path; script 05 also records why it fell back), SHA-256 of every `config/*.yaml`,
+git commit and dirty flag, the elasticity used, seed and a UTC timestamp. Rerun 05 from a
+clean tree if the commit matters. `make_synthetic_segments` and `load_segments` set
+`segments.attrs["segment_source"]`; a frame that lost its attrs is recorded as `unknown`.
+
+`comparison_table` reads `allocate().to_dict()` keys (`pbd_usd`, `school_district_usd`,
+`general_fund_usd`) strictly, so a renamed key raises instead of reading as 0.
+`run_scenario` raises on a NaN or out-of-range occupancy panel and lists zones absent from
+`zones.yaml` (the fixture's `other`) in `diagnostics["unpriced_zones"]`; they earn nothing.
+
+`scripts/07_export_report_assets.py` writes the white paper's `scenario_comparison.tex` (at
+the saved scenarios' own scale, no multiplier) and the zone map, occupancy/revenue and
+Chatman-Manville year figures from config and saved results. Order: 05, 06, 07. `--check`
+exits 1 if the table is stale; `--rebuild-cm-sweep` reruns the 200-replication sweep.
+
 ## Streamlit app
 
 Streamlit app is at `app/streamlit_app.py`. It reads precomputed outputs from `outputs/models/`

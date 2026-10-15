@@ -27,7 +27,7 @@ st.title("Revenue Forecast")
 
 @st.cache_data
 def _segments_and_panel(seed: int = 42):
-    from tests.fixtures import make_synthetic_segments
+    from phillyparking.spatial.synthetic import make_synthetic_segments
 
     segments = make_synthetic_segments(n=20)
     panel = baseline_occupancy(segments, seed=seed)

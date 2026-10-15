@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from phillyparking._config import load_config, outputs_dir
+from phillyparking.scenarios.provenance import build_provenance
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class ScenarioResults:
     cs_change_total: float
     allocation: dict
     diagnostics: dict = field(default_factory=dict)
+    provenance: dict = field(default_factory=dict)
 
     def save(self, path) -> Path:
         path = Path(path)
@@ -39,6 +41,7 @@ class ScenarioResults:
             "cs_change_total": self.cs_change_total,
             "allocation": self.allocation,
             "diagnostics": self.diagnostics,
+            "provenance": self.provenance,
         }
         with open(path / "meta.json", "w") as f:
             json.dump(meta, f, indent=2, default=str)
@@ -59,7 +62,44 @@ class ScenarioResults:
             cs_change_total=float(meta["cs_change_total"]),
             allocation=meta["allocation"],
             diagnostics=meta.get("diagnostics", {}),
+            provenance=meta.get("provenance", {}),
         )
+
+
+SCENARIO_NAMES = ("status_quo", "seattle", "full_pbd")
+
+
+def default_results_dir() -> Path:
+    """Where scripts 05 and 06 write scenario results, and where the app reads them."""
+    return outputs_dir() / "models"
+
+
+def load_saved_scenarios(base: Path | None = None, names=SCENARIO_NAMES) -> dict[str, "ScenarioResults"]:
+    """Load saved scenarios from `<base>/<name>/`; raise if any is missing.
+
+    Never recomputes: a result is only as good as the run that wrote it, and the app
+    must show that run's numbers, not a silent re-run on a different segment set.
+    """
+    base = Path(base) if base is not None else default_results_dir()
+    missing = [n for n in names if not (base / n / "meta.json").exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"No saved results for {missing} under {base}; run scripts/05_run_scenarios.py first."
+        )
+    return {n: ScenarioResults.load(base / n) for n in names}
+
+
+def check_panel(panel: pd.DataFrame, what: str = "occupancy panel") -> None:
+    """Fail loudly on a panel the runner would otherwise turn into NaN revenue."""
+    missing = [c for c in ("segment_id", "hour_of_week", "occupancy") if c not in panel.columns]
+    if missing:
+        raise ValueError(f"{what} lacks columns {missing}")
+    n_nan = int(panel["occupancy"].isna().sum())
+    if n_nan:
+        raise ValueError(f"{what} has {n_nan} NaN occupancy values of {len(panel)}")
+    lo, hi = float(panel["occupancy"].min()), float(panel["occupancy"].max())
+    if lo < 0.0 or hi > 1.0:
+        raise ValueError(f"{what} has occupancy outside [0, 1]: min {lo:.3f}, max {hi:.3f}")
 
 
 def _zone_current_prices() -> pd.DataFrame:
@@ -166,17 +206,8 @@ def _same_prices(a: pd.Series, b: pd.Series) -> bool:
 
 
 def _allocation(total_revenue: float, pbd_share: float) -> dict:
-    try:
-        from phillyparking.revenue.allocation import allocate
-        alloc_obj = allocate(total_revenue, pbd_share)
-        return alloc_obj.to_dict() if hasattr(alloc_obj, "to_dict") else dict(alloc_obj)
-    except (ImportError, ModuleNotFoundError):
-        return {
-            "total_revenue_usd": total_revenue,
-            "pbd_share": pbd_share,
-            "pbd_revenue_usd": total_revenue * pbd_share,
-            "general_fund_usd": total_revenue * (1.0 - pbd_share),
-        }
+    from phillyparking.revenue.allocation import allocate
+    return allocate(total_revenue, pbd_share).to_dict()
 
 
 def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_target_vacancy,
@@ -259,6 +290,7 @@ def run_scenario(
     elasticity_scenario: str = "central",
     rolls_forward_years: int | None = None,
     seed: int = 42,
+    segment_source: dict | None = None,
 ) -> ScenarioResults:
     from phillyparking.elasticity.scenarios import get_scenario, apply_elasticity
 
@@ -270,7 +302,9 @@ def run_scenario(
         rolls_forward_years = int(scfg.get("rolls_forward_years", 0))
 
     segments, baseline_panel = _baseline(segments, baseline_panel, seed=seed)
-    elasticity = get_scenario(elasticity_scenario).elasticity
+    check_panel(baseline_panel, "baseline panel")
+    elasticity_spec = get_scenario(elasticity_scenario)
+    elasticity = elasticity_spec.elasticity
 
     current_prices = _zone_current_prices()
     baseline_with_price = baseline_panel.merge(
@@ -289,6 +323,17 @@ def run_scenario(
     prices = current_prices.copy()
     diagnostics: dict = {"policy": policy_kind, "max_years": rolls_forward_years,
                          "dwl_target_vacancy": dwl_target_vac}
+    # Zones the fixture or the real segments carry that zones.yaml does not configure have
+    # no price and no priced hours: they earn nothing and are not scored for cruising.
+    configured = set(current_prices["zone_id"])
+    unpriced = segments.loc[~segments["zone_id"].isin(configured)]
+    if len(unpriced):
+        diagnostics["unpriced_zones"] = {
+            str(z): {"n_segments": int(len(g)), "capacity": float(g["capacity"].sum())}
+            for z, g in unpriced.groupby("zone_id")
+        }
+        logger.warning("%s: %d segments in zones absent from zones.yaml (%s) earn no revenue",
+                       name, len(unpriced), sorted(diagnostics["unpriced_zones"]))
 
     if policy_kind == "fixed":
         diagnostics.update(years_run=0, converged=True, converged_year=0)
@@ -298,8 +343,7 @@ def run_scenario(
             bands = policy["time_of_day_bands"]
             step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands)  # noqa: E731
         else:
-            target_vac = float(policy.get("target_vacancy", 0.15))
-            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, target_vac, elasticity)  # noqa: E731
+            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, dwl_target_vac, elasticity)  # noqa: E731
         # Review annually until the prices stop changing (a fixed point) or repeat with
         # period 2, up to rolls_forward_years reviews. Nothing else in the map moves from
         # year to year, so the state at a fixed point is the rule's long-run outcome and
@@ -352,6 +396,10 @@ def run_scenario(
     m = _state_metrics(panel, prices, segments, baseline_panel, current_prices,
                        dwl_target_vac, pbd_share, seed)
 
+    check_panel(panel, "scenario panel")
+    if not np.isfinite(m["total_revenue"]):
+        raise ValueError(f"{name}: total revenue is not finite")
+
     return ScenarioResults(
         name=name,
         elasticity_scenario=elasticity_scenario,
@@ -362,6 +410,7 @@ def run_scenario(
         cs_change_total=m["cs_change_total"],
         allocation=m["allocation"],
         diagnostics=diagnostics,
+        provenance=build_provenance(segments, elasticity_spec, seed, segment_source),
     )
 
 
@@ -369,9 +418,11 @@ def run_all_scenarios(
     segments: pd.DataFrame | None = None,
     baseline_panel: pd.DataFrame | None = None,
     seed: int = 42,
+    segment_source: dict | None = None,
 ) -> dict[str, ScenarioResults]:
     cfg = load_config("scenarios")["scenarios"]
     out = {}
     for name in cfg:
-        out[name] = run_scenario(name, segments=segments, baseline_panel=baseline_panel, seed=seed)
+        out[name] = run_scenario(name, segments=segments, baseline_panel=baseline_panel, seed=seed,
+                                segment_source=segment_source)
     return out

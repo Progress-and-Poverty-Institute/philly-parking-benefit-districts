@@ -207,3 +207,26 @@ def test_seattle_holding_band_converges_at_once():
     segs, panel = _one_zone("fishtown", 0.75, 0.2)
     d = run_scenario("seattle", segments=segs, baseline_panel=panel).diagnostics
     assert d["converged"] and d["converged_year"] == 1 and "phases" not in d
+
+
+def test_pricer_and_scorer_fall_back_to_the_same_pricing_rules_target(fixture_data, tmp_path, monkeypatch):
+    """With no scenario `target_vacancy`, both read `pricing_rules.yaml` (not a literal in the runner)."""
+    cfg = tmp_path / "config"
+    shutil.copytree(project_root() / "config", cfg)
+    sc = yaml.safe_load((cfg / "scenarios.yaml").read_text(encoding="utf-8"))
+    del sc["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+    (cfg / "scenarios.yaml").write_text(yaml.safe_dump(sc), encoding="utf-8")
+    pr = yaml.safe_load((cfg / "pricing_rules.yaml").read_text(encoding="utf-8"))
+    pr["arnott_inci"]["target_vacancy"] = 0.25
+    (cfg / "pricing_rules.yaml").write_text(yaml.safe_dump(pr), encoding="utf-8")
+    monkeypatch.setenv("PHILLYPARKING_CONFIG_DIR", str(cfg))
+    load_config.cache_clear()
+    try:
+        segs, panel = fixture_data
+        r = run_scenario("full_pbd", segments=segs, baseline_panel=panel, seed=7)
+    finally:
+        monkeypatch.delenv("PHILLYPARKING_CONFIG_DIR")
+        load_config.cache_clear()
+    assert r.diagnostics["dwl_target_vacancy"] == 0.25
+    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, 0.25), rel=1e-9)
+    assert _busiest_priced_zone_hour(r, segs)["ccc"] == pytest.approx(0.75, abs=2e-3)

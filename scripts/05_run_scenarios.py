@@ -7,11 +7,12 @@ from pathlib import Path
 import click
 import pandas as pd
 
-from phillyparking._config import data_dir, outputs_dir
+from phillyparking._config import data_dir
 from phillyparking.spatial.segments import load_segments, build_segments, save_segments
 from phillyparking.spatial.zones import assign_zones
 from phillyparking.demand.synthetic_baseline import baseline_occupancy
-from phillyparking.scenarios.runner import run_scenario
+from phillyparking.scenarios.provenance import describe_file_source, segment_source
+from phillyparking.scenarios.runner import default_results_dir, run_scenario
 from phillyparking.scenarios.compare import comparison_table
 
 log = logging.getLogger(__name__)
@@ -40,12 +41,14 @@ def main(scenario: str | None, seed: int, out_dir: str | None, verbose: bool) ->
     NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
     try:
         segs = load_segments(seg_path)
+        seg_source = describe_file_source(seg_path)
         log.info("Loaded segments (n=%d)", len(segs))
     except Exception as exc:  # noqa: BLE001
-        log.warning("No saved segments (%s); building synthetic", exc)
+        log.warning("No saved segments (%s); building from the public layers", exc)
         segs = build_segments()
         segs = assign_zones(segs)
         save_segments(segs, seg_path)
+        seg_source = {**describe_file_source(seg_path), "built_this_run": True}
 
     n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
     if n_named < 5:
@@ -56,23 +59,27 @@ def main(scenario: str | None, seed: int, out_dir: str | None, verbose: bool) ->
             "meaningful demo.", n_named,
         )
         segs = make_synthetic_segments(n=120, seed=seed)
+        seg_source = {**segment_source(segs), "fallback_reason": f"{n_named} segments in named zones"}
         panel_path.unlink(missing_ok=True)
 
     if panel_path.exists():
         panel = pd.read_parquet(panel_path)
+        seg_source["panel"] = describe_file_source(panel_path)
     else:
         log.info("No saved panel; computing baseline_occupancy")
         panel = baseline_occupancy(segs, seed=seed)
         panel.to_parquet(panel_path)
+        seg_source["panel"] = {"kind": "baseline_occupancy", "seed": seed}
 
-    base = Path(out_dir) if out_dir else (outputs_dir() / "models")
+    base = Path(out_dir) if out_dir else default_results_dir()
     base.mkdir(parents=True, exist_ok=True)
 
     names = [scenario] if scenario else list(ALL_SCENARIOS)
     results = {}
     for name in names:
         log.info("Running scenario: %s", name)
-        r = run_scenario(name, segments=segs, baseline_panel=panel, seed=seed)
+        r = run_scenario(name, segments=segs, baseline_panel=panel, seed=seed,
+                         segment_source=seg_source)
         target = base / name
         r.save(target)
         log.info("  saved -> %s (revenue=$%.0f)", target,
