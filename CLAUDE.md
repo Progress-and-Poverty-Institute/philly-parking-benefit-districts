@@ -133,6 +133,8 @@ The Map page requires `streamlit-folium` — install separately if missing.
 ## Tests
 
 Run with `C:/Users/druss/miniconda3/python.exe -m pytest tests/` from the project root.
-The full test suite includes an e2e test (`test_e2e.py`) that runs all three scenarios on a
-10-segment synthetic fixture; it is slow (~30 s) and can be skipped with `-k "not e2e"` for
-rapid iteration.
+The full suite takes about 10 minutes, almost all of it in one test:
+`test_hierarchical_bayes.py::test_fit_recovers_true_elasticity`. PyTensor finds no C compiler
+on this machine ("g++ not detected"), so PyMC samples in pure Python. Every other test,
+including the e2e test, runs in seconds. For rapid iteration, skip the PyMC test with
+`-k "not hierarchical_bayes"`.

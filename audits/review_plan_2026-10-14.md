@@ -135,8 +135,11 @@ except `gini`, the `context_shifts` and `cross` priors, the `rpp` block of `zone
 
 ### 3.5 Guard set
 
-106 tests in 22 files. Observed on 2026-10-14: the suite did not finish within 300 s (result of
-the full timed run to be appended to §3.5 when available). The notebooks have never been
+106 tests in 22 files. Full run on 2026-10-14: 106 passed in 579 s. One test,
+`test_hierarchical_bayes.py::test_fit_recovers_true_elasticity`, took 571 s of that. PyTensor
+finds no C compiler on this machine ("g++ not detected") and samples in pure Python. Every
+other test finishes in under 3 s, including the e2e test (0.6 s). The fast subset is
+`-k "not hierarchical_bayes"`. The notebooks have never been
 executed (no outputs in any `.ipynb`), notebook 04 calls `named_scenario('low')` which does not
 exist in config, and notebook 08 aggregates columns (`cruising_dwl`, `revenue`, `gini`) that
 `chatman_manville_sweep` does not emit. No `--check` mode, no CI, no README number generation.
@@ -255,7 +258,7 @@ assumption, **I** inference, **C** code. Priority **L** = load-bearing for a hea
 |---|---|---|---|
 | J1 | Calibration, spatial CV, and manual-count back-test modules exist but nothing feeds them (no ML model is trained on the result path; `data/external/` has no counts). The project has **no external validation of any kind**. | `validation/*`, `data/external/` | A, I, **L** |
 | J2 | Tests check internal consistency (column names, monotone directions, round-trips), not correctness against an independent calculation. The e2e test asserts only `revenue > 0`. Test the guards: perturb a threshold or a unit (e.g. priced hours) and record which tests fire. | `tests/` | C |
-| J3 | `CLAUDE.md` says the suite runs in ~30 s; it exceeded 300 s. Agents should know the real cost before running it. | `CLAUDE.md` | C |
+| J3 | `CLAUDE.md` names the e2e test as the slow one (~30 s). The slow test is actually the PyMC test (§3.5), and the e2e test takes under a second. | `CLAUDE.md` | C |
 
 ### K. The real-data swap path
 
