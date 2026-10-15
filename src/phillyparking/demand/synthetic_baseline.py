@@ -1,10 +1,14 @@
 """Hour-of-week synthetic baseline occupancy predictor.
 
-Calibrated to ~85% peak occupancy reported for Center City Philadelphia.
-This module is load-bearing while real PPA transaction data is unavailable.
-The model is hand-tuned (no ML libraries): segment features feed a latent
-demand intensity, time-of-week kernels supply the temporal shape, and a
-sigmoid keeps occupancy in [0, 1].
+Load-bearing while real Parking Authority data is unavailable. Hand-tuned, not fitted:
+segment covariates feed a latent demand intensity and a land-use mix, time-of-week kernels
+supply the temporal shape, and each segment's profile is scaled linearly between its own
+off-peak floor and peak.
+
+Every anchor is absolute (`config/demand_baseline.yaml`): covariates are standardised
+against fixed centers and scales, and intensity maps to peak occupancy through fixed
+bounds, so a segment's baseline does not depend on which other segments are loaded. The
+anchors are stated assumptions, not measurements; see the config.
 """
 from __future__ import annotations
 
@@ -12,6 +16,8 @@ import logging
 
 import numpy as np
 import pandas as pd
+
+from phillyparking._config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +28,6 @@ def hour_of_week(ts: pd.Series) -> pd.Series:
     """Map a timestamp series to {0..167}, 0 = Mon 00:00."""
     ts = pd.to_datetime(ts)
     return ts.dt.dayofweek * 24 + ts.dt.hour
-
-
-def _zscore(x: np.ndarray) -> np.ndarray:
-    sd = x.std()
-    return (x - x.mean()) / sd if sd > 0 else x - x.mean()
 
 
 def _logit(p: float | np.ndarray) -> float | np.ndarray:
@@ -109,61 +110,82 @@ def _kernels() -> np.ndarray:
     return np.vstack([_office_kernel(), _retail_kernel(), _residential_kernel()])
 
 
-def _mix_weights(seg_features: pd.DataFrame, temperature: float = 1.0) -> np.ndarray:
+def baseline_anchors() -> dict:
+    return load_config("demand_baseline")
+
+
+def _z(seg_features: pd.DataFrame, col: str, anchors: dict) -> np.ndarray:
+    a = anchors["covariates"][col]
+    x = seg_features[col].to_numpy(dtype=float)
+    if np.isnan(x).any():
+        raise ValueError(f"baseline_occupancy: {int(np.isnan(x).sum())} segments have NaN {col}")
+    return (np.log1p(x) - float(a["center"])) / float(a["scale"])
+
+
+def _mix_weights(seg_features: pd.DataFrame, temperature: float = 1.0,
+                 anchors: dict | None = None) -> np.ndarray:
     """Per-segment soft mix over (office, retail, residential). Shape (n, 3).
 
-    `temperature` > 1 sharpens the softmax so dominant land-use wins more clearly.
+    Each column is mix_weight x (log1p(covariate) - center), so the mix of a segment does not
+    depend on the others. `temperature` > 1 sharpens the softmax.
     """
-    jobs = seg_features["jobs_within_200m"].to_numpy(dtype=float)
-    pois = seg_features["pois_count"].to_numpy(dtype=float)
-    pop = seg_features["pop_density"].to_numpy(dtype=float)
+    anchors = anchors or baseline_anchors()
+    cov = anchors["covariates"]
     raw = np.column_stack([
-        np.log1p(jobs),
-        np.log1p(pois) * 1.2,
-        np.log1p(pop) * 0.9,
+        float(cov[c]["mix_weight"]) * (np.log1p(seg_features[c].to_numpy(dtype=float))
+                                       - float(cov[c]["center"]))
+        for c in ("jobs_within_200m", "pois_count", "pop_density")
     ])
-    raw = raw - raw.mean(axis=0, keepdims=True)
     e = np.exp(raw * temperature)
     return e / e.sum(axis=1, keepdims=True)
 
 
-def _latent_intensity(seg_features: pd.DataFrame) -> np.ndarray:
-    """Per-segment scalar λ_s on the logit scale."""
-    jobs_z = _zscore(np.log1p(seg_features["jobs_within_200m"].to_numpy(dtype=float)))
-    pois_z = _zscore(np.log1p(seg_features["pois_count"].to_numpy(dtype=float)))
-    pop_z = _zscore(np.log1p(seg_features["pop_density"].to_numpy(dtype=float)))
-    transit_z = _zscore(np.log1p(seg_features["transit_trips_per_hr"].to_numpy(dtype=float)))
-    return 0.55 * jobs_z + 0.35 * pois_z + 0.25 * pop_z - 0.15 * transit_z
+def _latent_intensity(seg_features: pd.DataFrame, anchors: dict | None = None) -> np.ndarray:
+    """Per-segment scalar intensity: sum of intensity_weight x anchored z-score."""
+    anchors = anchors or baseline_anchors()
+    return sum(float(a["intensity_weight"]) * _z(seg_features, c, anchors)
+               for c, a in anchors["covariates"].items())
 
 
 def baseline_occupancy(
     segments: pd.DataFrame,
     seed: int = 42,
-    peak_target: float = 0.92,
-    offpeak_floor: float = 0.20,
-    low_demand_peak: float = 0.62,
+    peak_target: float | None = None,
+    offpeak_floor: float | None = None,
+    low_demand_peak: float | None = None,
+    anchors: dict | None = None,
 ) -> pd.DataFrame:
     """Tidy panel: [segment_id, hour_of_week, occupancy, occupancy_sd] of length n_seg * 168.
 
-    Each segment's peak (and off-peak) occupancy is interpolated by demand
-    intensity, so the highest-λ segment hits `peak_target` while the lowest-λ
-    segment still hits a plausible commercial-corridor peak (`low_demand_peak`,
-    default 0.62 — anchored to literature for non-CBD priced zones).
+    Each segment's peak (and off-peak) occupancy is interpolated by its demand intensity
+    between `low_demand_peak` (at `intensity_low`) and `peak_target` (at `intensity_high`).
+    Levels default to `config/demand_baseline.yaml`. The panel's `attrs["calibration"]`
+    records the shares of segments at the cap and the floor.
     """
+    anchors = anchors or baseline_anchors()
+    peak_target = float(anchors["peak_target"] if peak_target is None else peak_target)
+    offpeak_floor = float(anchors["offpeak_floor"] if offpeak_floor is None else offpeak_floor)
+    low_demand_peak = float(anchors["low_demand_peak"] if low_demand_peak is None
+                            else low_demand_peak)
     rng = np.random.default_rng(seed)
     seg = pd.DataFrame(segments).reset_index(drop=True)
     n = len(seg)
 
-    kernels = _kernels()                 # (3, 168) — each in roughly [0, 1]
-    mix = _mix_weights(seg, temperature=2.5)   # (n, 3) sharpened softmax
+    kernels = _kernels()                 # (3, 168) � each in roughly [0, 1]
+    mix = _mix_weights(seg, temperature=float(anchors["mix_temperature"]), anchors=anchors)
     kernel_intensity = mix @ kernels     # (n, 168) per-segment temporal shape
 
-    lam = _latent_intensity(seg)         # (n,) z-scored
-    lam_lo, lam_hi = np.quantile(lam, [0.05, 0.95])
-    lam_norm = np.clip((lam - lam_lo) / max(lam_hi - lam_lo, 1e-6), 0.0, 1.0)
+    lam = _latent_intensity(seg, anchors)
+    lam_lo, lam_hi = float(anchors["intensity_low"]), float(anchors["intensity_high"])
+    lam_norm = np.clip((lam - lam_lo) / (lam_hi - lam_lo), 0.0, 1.0)
+    at_cap, at_floor = float((lam >= lam_hi).mean()), float((lam <= lam_lo).mean())
+    if max(at_cap, at_floor) > float(anchors.get("max_clipped_share", 1.0)):
+        logger.warning("baseline_occupancy: %.0f%% of segments at the peak cap and %.0f%% at the "
+                       "floor; the anchors in config/demand_baseline.yaml do not suit these "
+                       "covariates", 100 * at_cap, 100 * at_floor)
 
     seg_peak = low_demand_peak + (peak_target - low_demand_peak) * lam_norm
-    seg_off = offpeak_floor + 0.10 * lam_norm
+    seg_off = offpeak_floor + float(anchors["offpeak_span"]) * lam_norm
 
     k_max = kernel_intensity.max(axis=1)
     k_min = kernel_intensity.min(axis=1)
@@ -171,7 +193,7 @@ def baseline_occupancy(
     slope = (seg_peak - seg_off) / span
     intercept = seg_off - slope * k_min
     occ = intercept[:, None] + slope[:, None] * kernel_intensity
-    occ = np.clip(occ, 0.0, 0.99)
+    occ = np.clip(occ, 0.0, 1.0)
 
     sd = 0.04 + 0.02 * (1.0 - np.abs(occ - 0.5) * 2.0)
     sd = sd + rng.normal(0, 1e-9, size=sd.shape)
@@ -182,7 +204,21 @@ def baseline_occupancy(
         "occupancy": occ.reshape(-1),
         "occupancy_sd": sd.reshape(-1),
     })
+    rows.attrs["calibration"] = {"share_at_cap": at_cap, "share_at_floor": at_floor}
     return rows
+
+
+def panel_cache_key(segments: pd.DataFrame, seed: int) -> str:
+    """Key for a cached baseline panel: segment ids and covariates, anchors, seed."""
+    import hashlib
+    import json
+
+    cols = ["segment_id", *baseline_anchors()["covariates"]]
+    body = pd.DataFrame(segments)[[c for c in cols if c in segments.columns]]
+    h = hashlib.sha256(pd.util.hash_pandas_object(body, index=False).values.tobytes())
+    h.update(json.dumps(baseline_anchors(), sort_keys=True).encode())
+    h.update(str(int(seed)).encode())
+    return h.hexdigest()
 
 
 def expand_panel(

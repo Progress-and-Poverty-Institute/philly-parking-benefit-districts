@@ -17,8 +17,7 @@ from phillyparking._config import data_dir, outputs_dir
 from phillyparking.scenarios.runner import ScenarioResults, default_results_dir
 from phillyparking.scenarios.compare import comparison_table
 from phillyparking.scenarios.cm_sweep import chatman_manville_sweep
-from phillyparking.spatial.segments import load_segments, build_segments, save_segments
-from phillyparking.spatial.zones import assign_zones
+from phillyparking.spatial.segments import load_segments
 from phillyparking.demand.synthetic_baseline import baseline_occupancy
 from phillyparking.revenue.forecast import revenue_curve
 from phillyparking.viz.charts import (
@@ -114,20 +113,15 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
 
     proc = data_dir() / "processed"
     seg_path = proc / "segments.parquet"
-    panel_path = proc / "demand_panel.parquet"
     NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
-    try:
-        segs = load_segments(seg_path)
-    except Exception:  # noqa: BLE001
-        segs = build_segments()
-        segs = assign_zones(segs)
-        save_segments(segs, seg_path)
-    n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
+    segs = load_segments(seg_path) if seg_path.exists() else None
+    n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum()) if segs is not None else 0
     if n_named < 5:
         log.warning("Only %d segments in named zones; using synthetic segments for figures", n_named)
         segs = make_synthetic_segments(n=120, seed=seed)
-        panel_path = proc / "demand_panel_synthetic.parquet"
-    panel = pd.read_parquet(panel_path) if panel_path.exists() else baseline_occupancy(segs, seed=seed)
+    # Computed, not read from a cache: it is cheap, and a cached panel could belong to
+    # other segments or anchors.
+    panel = baseline_occupancy(segs, seed=seed)
 
     ccc_segs = segs[segs["zone_id"] == "ccc"]
     if len(ccc_segs):

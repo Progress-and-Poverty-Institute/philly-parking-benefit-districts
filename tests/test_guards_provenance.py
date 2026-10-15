@@ -209,7 +209,7 @@ def test_results_written_by_script_05_are_found_by_the_app_loader(tmp_path, monk
     monkeypatch.setenv("PHILLYPARKING_DATA_DIR", str(tmp_path / "data"))
     (tmp_path / "data" / "processed").mkdir(parents=True)
     mod = _load_script("05_run_scenarios.py")
-    monkeypatch.setattr(mod, "load_segments", lambda path: make_synthetic_segments(n=30, seed=5))
+    make_synthetic_segments(n=30, seed=5).to_parquet(tmp_path / "data" / "processed" / "segments.parquet")
 
     with pytest.raises(FileNotFoundError, match="05_run_scenarios"):
         load_saved_scenarios()
