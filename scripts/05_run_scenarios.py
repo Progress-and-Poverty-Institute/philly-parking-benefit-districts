@@ -109,6 +109,7 @@ def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None,
     )
 
     proc = data_dir() / "processed"
+    proc.mkdir(parents=True, exist_ok=True)
     seg_path = proc / "segments.parquet"
     panel_path = proc / "demand_panel.parquet"
 
