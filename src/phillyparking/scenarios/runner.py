@@ -223,8 +223,8 @@ def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_
     dwl = annual_cruising_dwl(panel, segments, target_vacancy=dwl_target_vacancy)
     total_revenue = float(revenue_df["annual_revenue_usd"].sum())
     zone_prices = zone_mean_price(prices).rename("price_usd_per_hr")
-    cs_total = _synthetic_cs_change(
-        segments, baseline_panel, panel, current_prices, zone_prices.reset_index(), seed=seed,
+    cs_total = _annual_cs_change(
+        segments, baseline_panel, current_prices, zone_prices.reset_index(), seed=seed,
     )
     return {
         "revenue": revenue_df,
@@ -237,19 +237,20 @@ def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_
     }
 
 
-def _synthetic_cs_change(
-    segments: pd.DataFrame,
-    baseline_panel: pd.DataFrame,
-    scenario_panel: pd.DataFrame,
-    baseline_prices: pd.DataFrame,
-    scenario_prices: pd.DataFrame,
-    n_synthetic_trips: int = 200,
-    seed: int = 42,
-) -> float:
-    from phillyparking.welfare.consumer_surplus import (
-        NestedLogitSpec, utilities, consumer_surplus_change,
-    )
+def _zone_trip_cs_change(p_base: float, p_scen: float, n_trips: int, seed: int) -> float:
+    """Mean nested-logit consumer-surplus change, in USD per trip, of moving a zone's curb
+    price from `p_base` to `p_scen`.
 
+    Each trip has a random garage price and random walk times, drawn from `seed` and shared
+    by the baseline and scenario utilities, so the change reflects the curb price alone and
+    every scenario run with the same seed sees the same trips. The trips are illustrative
+    inputs (no trip-origin data exists), not observations.
+    """
+    from phillyparking.welfare.consumer_surplus import NestedLogitSpec, consumer_surplus_change_batch
+
+    # alpha_price and beta_walk are assumptions, not estimates: -0.40 per $ and -0.10 per
+    # minute of walking imply a value of walking time of $15/hour. alpha_price is not the
+    # demand elasticity, though it shares its value.
     spec = NestedLogitSpec(
         nests={"auto": ["curb", "garage"], "non_auto": ["transit", "forgo"]},
         nest_lambda={"auto": 0.7, "non_auto": 0.9},
@@ -257,29 +258,62 @@ def _synthetic_cs_change(
         beta_walk=-0.10,
         asc={"curb": 0.0, "garage": -0.5, "transit": -1.0, "forgo": -2.0},
     )
+    alts = ["curb", "garage", "transit", "forgo"]
+    asc = np.array([spec.asc[a] for a in alts])
     rng = np.random.default_rng(seed)
-    seg_sample = segments.sample(n=min(n_synthetic_trips, len(segments)), replace=True, random_state=seed)
+    garage = 5.0 + rng.uniform(-1, 1, n_trips)
+    walks = np.column_stack([
+        rng.uniform(1, 5, n_trips), rng.uniform(3, 8, n_trips), rng.uniform(5, 12, n_trips),
+        np.zeros(n_trips),
+    ])
+
+    def utilities(curb_price: float) -> np.ndarray:
+        prices = np.column_stack([np.full(n_trips, curb_price), garage,
+                                  np.full(n_trips, 2.5), np.zeros(n_trips)])
+        return spec.alpha_price * prices + spec.beta_walk * walks + asc
+
+    return float(consumer_surplus_change_batch(spec, alts, utilities(p_base), utilities(p_scen)).mean())
+
+
+def _annual_cs_change(
+    segments: pd.DataFrame,
+    baseline_panel: pd.DataFrame,
+    baseline_prices: pd.DataFrame,
+    scenario_prices: pd.DataFrame,
+    n_trips_per_zone: int = 200,
+    seed: int = 42,
+) -> float:
+    """First-order annual consumer-surplus change in USD, commensurable with annual revenue.
+
+    Per zone: the mean per-trip logsum change (`_zone_trip_cs_change`, USD) times the zone's
+    status-quo paid space-hours per year. Both prices in the logsum are dollars per hour, so
+    one paid space-hour is the unit of choice, and the scale factor is
+    `annual_revenue(...)["paid_hours"]` on the baseline panel at the baseline prices: the
+    zone's capacity x its own priced hours per year x capacity-weighted priced-hour
+    occupancy (`revenue.forecast._zone_revenue`). Holding the status-quo hours fixed makes
+    this a first-order (lower-bound for a price cut) figure that ignores the extra hours the
+    new price attracts and any change in search time, which is the effect the cruising
+    proxy is meant to capture; it cannot register that, so it is not a welfare total.
+
+    A zone with paid hours must have a price in both tables; none is invented.
+    """
+    from phillyparking.pricing.priced_hours import hourly_prices
+    from phillyparking.revenue.forecast import annual_revenue
+
+    paid = annual_revenue(segments, baseline_panel, hourly_prices(baseline_prices))
+    paid_hours = paid.set_index("zone_id")["paid_hours"]
     bp = baseline_prices.set_index("zone_id")["price_usd_per_hr"]
     sp = scenario_prices.set_index("zone_id")["price_usd_per_hr"]
 
     total = 0.0
-    for _, seg in seg_sample.iterrows():
-        zid = seg["zone_id"]
-        p_b = float(bp.get(zid, 2.0))
-        p_s = float(sp.get(zid, 2.0))
-        garage = 5.0 + rng.uniform(-1, 1)
-        walk_curb = rng.uniform(1, 5)
-        walk_garage = rng.uniform(3, 8)
-        walk_transit = rng.uniform(5, 12)
-        prices_b = pd.DataFrame({"price_usd": [p_b, garage, 2.5, 0.0]},
-                                index=["curb", "garage", "transit", "forgo"])
-        prices_s = pd.DataFrame({"price_usd": [p_s, garage, 2.5, 0.0]},
-                                index=["curb", "garage", "transit", "forgo"])
-        walks = pd.DataFrame({"walk_min": [walk_curb, walk_garage, walk_transit, 0.0]},
-                             index=["curb", "garage", "transit", "forgo"])
-        Vb = utilities(spec, prices_b, walks)
-        Vs = utilities(spec, prices_s, walks)
-        total += consumer_surplus_change(spec, Vb, Vs)
+    for zi, (zid, hours) in enumerate(paid_hours.items()):
+        if hours <= 0:
+            continue
+        if zid not in bp.index or zid not in sp.index:
+            raise KeyError(f"zone {zid!r} has paid hours but no baseline or scenario price")
+        total += float(hours) * _zone_trip_cs_change(
+            float(bp[zid]), float(sp[zid]), n_trips_per_zone, seed + zi,
+        )
     return float(total)
 
 

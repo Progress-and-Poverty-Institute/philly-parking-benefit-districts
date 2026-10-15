@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 
 import click
@@ -46,7 +47,12 @@ def _revenue_by_scenario_chart(table: pd.DataFrame, save_to: Path) -> None:
     plt.close(fig)
 
 
-def _synthetic_incidence() -> pd.DataFrame:
+def _placeholder_incidence() -> pd.DataFrame:
+    """Constants (50 and -10 in every decile), not a computation: no incidence stage exists.
+
+    Kept only so the white paper's figure reference resolves; the figure says
+    PLACEHOLDER on it. Replace with a real decile frame when trip origins are joined to ACS.
+    """
     deciles = np.arange(1, 11)
     return pd.DataFrame({
         "decile": deciles,
@@ -91,9 +97,10 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     log.info("Wrote %s", rev_path)
 
     inc_path = figs / "incidence_by_decile.png"
-    fig = incidence_bar_chart(_synthetic_incidence(), save_to=inc_path)
+    fig = incidence_bar_chart(_placeholder_incidence(), save_to=inc_path, placeholder=True)
     plt.close(fig)
-    log.info("Wrote %s (synthetic --- replace when LODES join lands)", inc_path)
+    log.warning("Wrote %s as a PLACEHOLDER (constants, not a result; no incidence stage exists)",
+                inc_path)
 
     log.info("Running chatman_manville_sweep")
     sweep = chatman_manville_sweep(n_replications=20, rolls_forward_years=3, seed=seed)
@@ -137,6 +144,14 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     table_path = tables / "comparison_table.csv"
     table.to_csv(table_path)
     log.info("Wrote %s", table_path)
+
+    for name in ("scenario_ranges.csv", "scenario_runs.csv"):
+        src = base / name
+        if src.exists():
+            shutil.copyfile(src, tables / name)
+            log.info("Wrote %s", tables / name)
+        else:
+            log.warning("%s not found; rerun scripts/05_run_scenarios.py for the ranges", src)
 
     print(f"paper exports complete -> {figs}, {tables}")
 

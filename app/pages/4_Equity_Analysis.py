@@ -91,7 +91,7 @@ the city is giving away to whichever residents happen to hold permits today.
             "mean_cs_change": mean_cs_change,
         }
     )
-    st.pyplot(incidence_bar_chart(incidence))
+    st.pyplot(incidence_bar_chart(incidence, placeholder=True))
 
     st.subheader("Georgist framing: where does the revenue go?")
     st.markdown(
