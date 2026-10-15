@@ -50,3 +50,33 @@ def test_logsum_finite():
     spec = _flat_spec()
     V = _vu(spec, curb_price=2.0)
     assert abs(logsum(spec, V)) < 100.0
+
+
+def test_batch_logsum_matches_the_per_trip_functions():
+    """The vectorized path the runner uses must agree with `utilities` / `consumer_surplus_change`."""
+    import numpy as np
+    from phillyparking.welfare.consumer_surplus import consumer_surplus_change_batch
+
+    spec = NestedLogitSpec(
+        nests={"auto": ["curb", "garage"], "non_auto": ["transit", "forgo"]},
+        nest_lambda={"auto": 0.7, "non_auto": 0.9},
+        alpha_price=-0.40, beta_walk=-0.10,
+        asc={"curb": 0.0, "garage": -0.5, "transit": -1.0, "forgo": -2.0},
+    )
+    alts = ["curb", "garage", "transit", "forgo"]
+    rng = np.random.default_rng(0)
+    n = 25
+    prices = np.column_stack([rng.uniform(1, 6, n), rng.uniform(4, 6, n), np.full(n, 2.5), np.zeros(n)])
+    prices_after = prices.copy()
+    prices_after[:, 0] -= 1.0
+    walks = np.column_stack([rng.uniform(1, 5, n), rng.uniform(3, 8, n), rng.uniform(5, 12, n), np.zeros(n)])
+    asc = np.array([spec.asc[a] for a in alts])
+    batch = consumer_surplus_change_batch(
+        spec, alts, spec.alpha_price * prices + spec.beta_walk * walks + asc,
+        spec.alpha_price * prices_after + spec.beta_walk * walks + asc,
+    )
+    for i in range(n):
+        w = pd.DataFrame({"walk_min": walks[i]}, index=alts)
+        before = utilities(spec, pd.DataFrame({"price_usd": prices[i]}, index=alts), w)
+        after = utilities(spec, pd.DataFrame({"price_usd": prices_after[i]}, index=alts), w)
+        assert batch[i] == __import__("pytest").approx(consumer_surplus_change(spec, before, after))

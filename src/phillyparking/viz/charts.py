@@ -29,10 +29,20 @@ def revenue_fan_chart(
     return fig
 
 
+PLACEHOLDER_NOTE = "PLACEHOLDER: constants, not a result"
+
+
 def incidence_bar_chart(
     incidence: pd.DataFrame,
     save_to: Path | None = None,
+    placeholder: bool = False,
 ):
+    """Mean payment and mean CS change by income decile.
+
+    No pipeline stage produces decile incidence yet (it needs trip origins joined to ACS
+    income). Pass `placeholder=True` for any frame that is not computed from data: the title
+    and a stamp across the plot then say so, in the figure itself.
+    """
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -44,9 +54,12 @@ def incidence_bar_chart(
     ax.set_xticklabels(incidence["decile"].astype(str))
     ax.set_xlabel("Income decile")
     ax.set_ylabel("USD")
-    ax.set_title("Incidence by decile")
+    ax.set_title("Incidence by decile" + (f" ({PLACEHOLDER_NOTE})" if placeholder else ""))
     ax.legend()
     ax.axhline(0, color="k", linewidth=0.5)
+    if placeholder:
+        ax.text(0.5, 0.5, "PLACEHOLDER\nnot data", transform=ax.transAxes, ha="center", va="center",
+                fontsize=44, color="red", alpha=0.25, rotation=25, fontweight="bold")
     if save_to is not None:
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_to, dpi=150, bbox_inches="tight")

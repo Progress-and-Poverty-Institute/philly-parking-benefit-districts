@@ -76,3 +76,24 @@ def aggregate_cs_change(
         w = float(weights.loc[tid]) if weights is not None and tid in weights.index else 1.0
         total += w * dcs
     return float(total)
+
+
+def logsum_batch(spec: NestedLogitSpec, alts: list[str], V: np.ndarray) -> np.ndarray:
+    """`logsum` for many trips at once: `V` is (n_trips, len(alts)) with columns in `alts` order."""
+    col = {a: i for i, a in enumerate(alts)}
+    inclusive = []
+    for nest_name, nest_alts in spec.nests.items():
+        lam = spec.nest_lambda[nest_name]
+        v = V[:, [col[a] for a in nest_alts]] / lam
+        m = v.max(axis=1)
+        inclusive.append(lam * (m + np.log(np.exp(v - m[:, None]).sum(axis=1))))
+    arr = np.column_stack(inclusive)
+    m = arr.max(axis=1)
+    return m + np.log(np.exp(arr - m[:, None]).sum(axis=1))
+
+
+def consumer_surplus_change_batch(
+    spec: NestedLogitSpec, alts: list[str], V_before: np.ndarray, V_after: np.ndarray,
+) -> np.ndarray:
+    """`consumer_surplus_change` per trip, in dollars, for utilities arrays in `alts` order."""
+    return (logsum_batch(spec, alts, V_after) - logsum_batch(spec, alts, V_before)) / (-spec.alpha_price)

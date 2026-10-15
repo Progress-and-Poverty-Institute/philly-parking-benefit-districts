@@ -29,6 +29,7 @@ def _table_column(prices_by_zone: dict, total_revenue: float, dwl_total: float, 
         "gf_to_general_fund": float(allocation["general_fund_usd"]),
         "sdp_revenue": float(allocation["school_district_usd"]),
         "pbd_revenue": float(allocation["pbd_usd"]),
+        "pbd_unfunded": float(allocation["pbd_unfunded_usd"]),
         "review_year": review_year,
         "converged": int(bool(converged)),
     }

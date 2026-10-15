@@ -178,8 +178,8 @@ git commit and dirty flag, the elasticity used, seed and a UTC timestamp. Rerun 
 clean tree if the commit matters. `make_synthetic_segments` and `load_segments` set
 `segments.attrs["segment_source"]`; a frame that lost its attrs is recorded as `unknown`.
 
-`comparison_table` reads `allocate().to_dict()` keys (`pbd_usd`, `school_district_usd`,
-`general_fund_usd`) strictly, so a renamed key raises instead of reading as 0.
+`comparison_table` reads `allocate().to_dict()` keys (`pbd_usd`, `pbd_unfunded_usd`,
+`school_district_usd`, `general_fund_usd`) strictly, so a renamed key raises instead of reading as 0.
 `run_scenario` raises on a NaN or out-of-range occupancy panel and lists zones absent from
 `zones.yaml` (the fixture's `other`) in `diagnostics["unpriced_zones"]`; they earn nothing.
 
@@ -187,6 +187,31 @@ clean tree if the commit matters. `make_synthetic_segments` and `load_segments` 
 the saved scenarios' own scale, no multiplier) and the zone map, occupancy/revenue and
 Chatman-Manville year figures from config and saved results. Order: 05, 06, 07. `--check`
 exits 1 if the table is stale; `--rebuild-cm-sweep` reruns the 200-replication sweep.
+
+## Allocation, consumer surplus, ranges
+
+`revenue/allocation.py` follows 75 Pa.C.S. § 6109(g) (Act 84 of 2012; citation, text and
+retrieval date in `config/allocation.yaml`): General Fund first, up to the $35M minimum, then
+the PBD share from what is left, then the School District. The statute has no PBD payee, and
+the City's amount is not reduced by expenses, so a PBD can only be paid from the School
+District's excess; the unpaid part of its share is `pbd_unfunded_usd`. At the fixture's scale
+(a few $M against a $35M minimum) the General Fund takes everything, so PBD and School District
+rows are $0 and the PBD's claim shows as unfunded: read the allocation as an order of payment,
+not a forecast. The model uses gross meter revenue and no escalator, the statute net revenue
+citywide and an escalated minimum.
+
+`cs_change_total` is annual dollars: per zone, the mean nested-logit logsum change per trip
+(`runner._zone_trip_cs_change`, vectorised in `welfare/consumer_surplus.py`) times that zone's
+status-quo paid space-hours (`annual_revenue(...)["paid_hours"]`), first order, no search-time
+term. A zone with paid hours and no price raises; no default price is invented.
+
+Script 05 also writes `scenario_ranges.csv` and `scenario_runs.csv` (copied to `outputs/tables/`
+by 06): the other two named elasticities at the headline seed, and the central elasticity at
+fixture seeds 0..n-1 (`--n-seeds`, default 20). On segments that are not the synthetic fixture
+the occupancy panel does not depend on the seed, so the seed range moves only the CS trips.
+`pessimistic` (-0.7) gives the highest revenue because both reforms are net price cuts. A Seattle
+two-cycle pools both phases in each range cell. `incidence_by_decile.png` is a constant
+placeholder, stamped as such in the figure; `Report.tex` still includes it.
 
 ## Streamlit app
 

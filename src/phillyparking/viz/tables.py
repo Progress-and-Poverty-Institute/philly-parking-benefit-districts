@@ -34,12 +34,13 @@ def _rate(v: float) -> str:
 ROWS = (
     ("Annual meter revenue", "total_revenue", _usd_m),
     ("Revenue to neighborhoods (PBD)", "pbd_revenue", _usd_m),
+    ("PBD share not payable after the General Fund minimum", "pbd_unfunded", _usd_m),
     ("Revenue to school district", "sdp_revenue", _usd_m),
     ("Revenue to general fund", "gf_to_general_fund", _usd_m),
     ("Mean meter rate --- CCC", "mean_price_ccc", _rate),
     ("Mean meter rate --- CCA", "mean_price_cca", _rate),
     ("Annual cruising DWL", "cruising_dwl_total", _usd),
-    ("Consumer surplus change", "cs_change_total", _usd),
+    ("Consumer surplus change (annual, first order)", "cs_change_total", _usd_m),
 )
 
 

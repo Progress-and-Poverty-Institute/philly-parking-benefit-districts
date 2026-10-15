@@ -65,10 +65,12 @@ def test_table_column_reads_the_allocation_keys_allocate_emits():
     total = 100e6
     gf_min = RevenueAllocation(total_revenue_usd=total).general_fund_minimum_usd
     col = _table_column({}, total, 0.0, 0.0, allocate(total, share).to_dict(), 1, True)
-    expected_pbd = total * share
-    expected_gf = min(total - expected_pbd, gf_min)
-    assert col["pbd_revenue"] == pytest.approx(expected_pbd)
+    # Statutory order: General Fund minimum first, then the PBD, then the School District.
+    expected_gf = min(total, gf_min)
+    expected_pbd = min(total * share, total - expected_gf)
     assert col["gf_to_general_fund"] == pytest.approx(expected_gf)
+    assert col["pbd_revenue"] == pytest.approx(expected_pbd)
+    assert col["pbd_unfunded"] == pytest.approx(total * share - expected_pbd)
     assert col["sdp_revenue"] == pytest.approx(total - expected_pbd - expected_gf)
     assert col["sdp_revenue"] > 0 and col["pbd_revenue"] > 0
 
@@ -86,9 +88,11 @@ def test_comparison_table_allocation_rows_conserve_revenue(results):
     for col in table.columns:
         parts = table.loc[["pbd_revenue", "sdp_revenue", "gf_to_general_fund"], col].sum()
         assert parts == pytest.approx(table.loc["total_revenue", col])
-    assert table.loc["pbd_revenue", "full_pbd"] == pytest.approx(share * table.loc["total_revenue", "full_pbd"])
-    assert table.loc["pbd_revenue", "full_pbd"] > 0
-    assert table.loc["pbd_revenue", "status_quo"] == 0.0
+    # The PBD's claim is its share of revenue; what is paid plus what the General Fund minimum
+    # leaves unpaid adds back to it.
+    paid_plus_unpaid = table.loc["pbd_revenue", "full_pbd"] + table.loc["pbd_unfunded", "full_pbd"]
+    assert paid_plus_unpaid == pytest.approx(share * table.loc["total_revenue", "full_pbd"])
+    assert table.loc["pbd_revenue", "status_quo"] == 0.0 and table.loc["pbd_unfunded", "status_quo"] == 0.0
 
 
 # --- A1: a zone the config does not price --------------------------------------------------
@@ -269,10 +273,12 @@ def test_tracked_scenario_table_matches_tracked_comparison_csv():
     )
 
 
-def test_tracked_comparison_csv_has_real_pbd_revenue():
+def test_tracked_comparison_csv_accounts_for_the_pbd_share():
     comp = pd.read_csv(project_root() / "outputs" / "tables" / "comparison_table.csv", index_col=0)
     share = _raw("scenarios")["scenarios"]["full_pbd"]["rpp_policy"]["revenue_share_to_pbd"]
-    assert comp.loc["pbd_revenue", "full_pbd"] == pytest.approx(share * comp.loc["total_revenue", "full_pbd"])
+    claim = share * comp.loc["total_revenue", "full_pbd"]
+    assert comp.loc["pbd_revenue", "full_pbd"] + comp.loc["pbd_unfunded", "full_pbd"] == pytest.approx(claim)
+    assert claim > 0
 
 
 def test_zone_map_draws_every_configured_box():
