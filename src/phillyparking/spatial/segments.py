@@ -164,4 +164,6 @@ def save_segments(segments: gpd.GeoDataFrame, path: Path | None = None) -> Path:
 
 def load_segments(path: Path | None = None) -> gpd.GeoDataFrame:
     path = Path(path) if path else _default_path()
-    return gpd.read_parquet(path)
+    segs = gpd.read_parquet(path)
+    segs.attrs["segment_source"] = {"kind": "file", "path": str(path.resolve())}
+    return segs

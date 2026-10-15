@@ -12,10 +12,10 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from phillyparking._config import outputs_dir  # noqa: E402
 from phillyparking.scenarios.runner import (  # noqa: E402
     ScenarioResults,
-    run_all_scenarios,
+    default_results_dir,
+    load_saved_scenarios,
 )
 
 
@@ -24,28 +24,17 @@ st.set_page_config(page_title="Philly Curb Pricing", layout="wide")
 
 @st.cache_resource
 def get_scenarios() -> dict[str, ScenarioResults]:
-    """Load cached scenario results from disk, or run them and persist.
+    """Load the scenario results scripts 05 and 06 write (`default_results_dir()`).
 
-    Cached for the lifetime of the Streamlit process so all pages share one copy.
+    Cached for the lifetime of the Streamlit process so all pages share one copy. It never
+    recomputes: if the results are missing the app stops and says how to produce them, so
+    the numbers shown always come from a recorded run (see `provenance` in each meta.json).
     """
-    base = outputs_dir() / "models" / "scenarios"
-    names = ["status_quo", "seattle", "full_pbd"]
-    base.mkdir(parents=True, exist_ok=True)
-
-    have_all = all((base / n / "meta.json").exists() for n in names)
-    if have_all:
-        try:
-            return {n: ScenarioResults.load(base / n) for n in names}
-        except Exception:
-            pass  # fall through and recompute
-
-    results = run_all_scenarios()
-    for n, r in results.items():
-        try:
-            r.save(base / n)
-        except Exception:
-            pass
-    return results
+    try:
+        return load_saved_scenarios(default_results_dir())
+    except FileNotFoundError as exc:
+        st.error(str(exc))
+        st.stop()
 
 
 def _sidebar() -> None:
@@ -106,6 +95,8 @@ Use the sidebar on the left to navigate between pages.
         results = get_scenarios()
 
     st.success(f"Loaded {len(results)} scenarios: {', '.join(results.keys())}")
+    src = next(iter(results.values())).provenance.get("segment_source", {})
+    st.caption(f"Segment source: {src or 'not recorded (results predate provenance)'}")
 
     cols = st.columns(3)
     for col, (name, r) in zip(cols, results.items()):

@@ -13,7 +13,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from phillyparking._config import data_dir, outputs_dir
-from phillyparking.scenarios.runner import ScenarioResults
+from phillyparking.scenarios.runner import ScenarioResults, default_results_dir
 from phillyparking.scenarios.compare import comparison_table, chatman_manville_sweep
 from phillyparking.spatial.segments import load_segments, build_segments, save_segments
 from phillyparking.spatial.zones import assign_zones
@@ -67,7 +67,7 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
-    base = Path(results_dir) if results_dir else (outputs_dir() / "models")
+    base = Path(results_dir) if results_dir else default_results_dir()
     figs = outputs_dir() / "figures"
     tables = outputs_dir() / "tables"
     figs.mkdir(parents=True, exist_ok=True)
