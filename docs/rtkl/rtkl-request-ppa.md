@@ -1,124 +1,106 @@
-# Records Requested — paste into the OOR Standard Form
+# Right-to-Know requests to the PPA: records not covered by No. 26-0145
 
-> **Submitted to Agency Name**: The Philadelphia Parking Authority (Attn: AORO)
->
-> **Person Making Request**: Russell Richie
-> **Company**: Progress and Poverty Institute / 5th Square
-> **Email**: drussellmrichie@gmail.com
->
-> **Records Delivery**: Yes, electronic (CSV / Parquet / Excel acceptable)
-> **Fee threshold**: notify me before processing if fees exceed **$50**.
-> **Legal-resident affirmation box**: ✅ checked.
+Two requests, each on its own copy of the PPA's 2025 Right-to-Know Request Form, sent in one
+email (`submission-email.md`). Each request below is the attachment for its form.
+
+**Why two.** Request A asks for data exports, which may need legal review and redaction.
+Request B asks for documents the Authority already holds, which may be answered faster.
+Separate requests let the Authority answer B without waiting on A.
+
+**What is left out, and why.** The sibling project `philly-road-pricing` filed Request
+No. 26-0145 on 2026-10-06. It covers paid on-street sessions inside the area bounded by the
+Vine Street Expressway (I-676), the Delaware Expressway (I-95), South Street and the Schuylkill
+Expressway (I-76), from January 2025 to June 2026, with that area's meter locations, enforcement
+hours and rate schedules. On 2026-10-14 the Authority extended its response to 13 November 2026.
+Nothing below asks for those records again. When they arrive, they cover Center City Core and
+most of Center City Area across the 1 July 2025 rate rise.
+
+**Records as held.** The Authority's form says it will not compile lists, prepare summaries or
+create documents. So every item asks for existing records or an export of existing fields, and
+each says it accepts the coarsest level at which the records exist.
+
+**Form fields** (from the road-pricing project's notes of 2026-10-06; confirm against the form
+before sending): one form per request; date, name, address and email; strike everything but
+E-MAIL in item 3; item 5 "See Attachment A" (or B); item 6 electronic copies; set the fee
+notification at $50. The Authority requires fees to be paid before it releases records.
 
 ---
 
-## Records Requested
+## Attachment A: on-street parking data outside the area of Request No. 26-0145
 
-I am requesting the following records relating to on-street paid parking,
-residential permit parking, and parking citations issued by the Philadelphia
-Parking Authority. The records are sought to support a non-commercial research
-project on demand-responsive curb pricing in Philadelphia. Where any portion of
-a record is exempt under 65 P.S. § 67.708, I am requesting that the Authority
-**redact only the exempt portion and release the balance**, as required by
-Section 706.
+Under the Pennsylvania Right-to-Know Law (65 P.S. § 67.101 et seq.), I request the following
+records in electronic form (CSV, Excel or the export format of the system that holds them).
 
-For the period **January 1, 2023 through the most recent month for which data
-exists**, please provide:
+This request does not seek any record requested in Request No. 26-0145, filed 6 October 2026.
+That request covers on-street parking transactions inside the area bounded by the Vine Street
+Expressway (I-676), the Delaware Expressway (I-95), South Street and the Schuylkill Expressway
+(I-76). I refer to that area below as "the No. 26-0145 area".
 
-### 1. Parking meter and meterUP / Parkmobile transaction records
+**1. Paid on-street parking sessions outside the No. 26-0145 area**, from 1 January 2025 through
+30 June 2026, through every payment channel the Authority operates (meters, pay stations or
+kiosks, the meterUP app, and any other app or channel), with these fields where they exist:
 
-A session-level export of all paid parking transactions occurring at on-street
-metered spaces in the City of Philadelphia, including all of the following
-fields where they exist in the Authority's source systems:
+  a. session start date and time;
+  b. session end date and time, or the duration purchased;
+  c. amount paid;
+  d. meter, pay station, zone or block-face identifier;
+  e. posted rate or rate category applied;
+  f. payment channel.
 
-- Transaction or session identifier
-- Meter identifier and / or block-face / segment identifier
-- Cross-streets or address of the metered location
-- Latitude and longitude (or the existing PPA spatial reference)
-- Posted hourly rate at the time of the transaction
-- Session start timestamp (date and time)
-- Session end or expiration timestamp
-- Paid duration in minutes
-- Amount paid in U.S. dollars
-- Payment channel (single-space meter, multi-space pay station, meterUP,
-  Parkmobile, other)
-- Payment method (cash, credit card, mobile)
-- A masked or hashed plate identifier sufficient to compute return-visit
-  frequency without re-identifying any individual
+If producing every session would be unduly burdensome, I will accept instead any existing
+totals held for each meter, pay station or zone by date and hour (sessions, minutes purchased,
+amount paid). If that is also burdensome, I will accept item 1 limited to University City and to
+the parts of the Center City rate areas outside the No. 26-0145 area.
 
-I request the data in **electronic form (CSV, Parquet, or Excel)**, delivered
-via email or shared drive. To minimize processing burden, I am happy to
-accept the data **as it exists in the Authority's data warehouse or vendor
-back-end (Flowbird, Parkmobile / EasyPark)**, without reformatting.
+**2. Residential Permit Parking permit records**, for permits issued, renewed or in force from
+1 January 2023 to the most recent month available, with these fields where they exist: a permit
+identifier (redacted or replaced if necessary), RPP zone or district, issue and expiration dates,
+vehicle class, permit type (annual, temporary, motorcycle, low-income waiver or other), and fee
+paid.
 
-### 2. Residential Permit Parking (RPP) issuance records
+**3. On-street parking citations** issued from 1 January 2025 through 30 June 2026 for meter and
+permit violations (for example expired meter, overtime at a meter, and parking without a permit
+in a permit zone), citywide, with these fields where they exist: citation date and time;
+location (block face, street and cross street, or coordinates); violation code and description;
+and fine amount.
 
-A row-per-permit export of all RPP permits issued, renewed, or expiring in the
-above period, including:
+**4. Data dictionaries, code books or field descriptions** for the records in items 1 to 3.
 
-- Permit identifier (anonymized or hashed if necessary)
-- RPP zone
-- Issue date and expiration date
-- Vehicle class (passenger, motorcycle, commercial, etc.)
-- Permit type (annual, temporary 15-day, temporary 30-day, motorcycle, low-
-  income waiver, etc.)
-- Annual fee paid
-- Whether a low-income waiver was applied (yes/no — no income data needed)
+I am not requesting license plate numbers, names, addresses, payment card details, account
+identifiers, or any other information identifying a person or vehicle. I have no objection to
+their redaction or omission, and I ask that any exempt field be redacted and the remainder of
+the record released, under Section 706 of the Act.
 
-### 3. On-street parking citation records
+---
 
-A row-per-citation export for citations issued at on-street locations
-(including expired meter, no permit in RPP zone, street-cleaning, double-
-parking, bus-zone, bike-lane, fire-hydrant, and similar codes), including:
+## Attachment B: existing reference records on on-street parking
 
-- Citation identifier (anonymized)
-- Citation date and time
-- Block-face / segment identifier and / or street and cross-streets
-- Citation code and short description
-- Fine amount and any escalation
-- Outcome (paid, dismissed, in appeal, in collections)
-- Vehicle class if recorded
+Under the Pennsylvania Right-to-Know Law (65 P.S. § 67.101 et seq.), I request copies of the
+following existing records, in electronic form. This request does not seek any record requested
+in Request No. 26-0145, filed 6 October 2026.
 
-### 4. Reference / metadata files
+**1. The current inventory of on-street meters, pay stations and meterUP zones in the City**,
+showing for each, where the records hold it: its identifier, location (block face, street and
+cross street, or coordinates), the number of parking spaces it serves, hours of enforcement, and
+time limit. Where the location list produced for No. 26-0145 already includes these fields for
+locations inside its area, those locations need not be produced again.
 
-For interpretation of items 1–3:
+**2. On-street parking rate schedules and time-limit schedules in effect from 1 January 2023 to
+the present**, with their effective dates, for all metered areas outside the area of
+No. 26-0145, and the meterUP tiered-pricing schedules for the whole City over the same period.
 
-- A current export of all metered locations including identifier, cross-
-  streets, geometry, posted rates, hours of paid operation, and any time-of-
-  day rate banding.
-- The current RPP zone boundaries (shapefile or GeoJSON).
-- A code book / data dictionary for the transaction, permit, and citation
-  exports.
+**3. Studies, reports, surveys, counts or data on the occupancy or utilization of on-street
+parking spaces in Philadelphia**, prepared by or for the Authority from 1 January 2019 to the
+present, including any analysis of the expected or observed effect of the 1 July 2025 rate change
+on parking use or revenue.
 
-### 5. Format and access
+**4. Existing reports, financial statements or budget documents showing on-street meter revenue
+by zone, district or rate area**, for fiscal years 2023 through 2026, as held.
 
-I am willing to accept the records in **whichever format imposes the lowest
-processing cost on the Authority**. If a bulk export would generate a
-"Specialized Documents" charge, please notify me before processing so we can
-discuss scope. I would prefer:
+---
 
-- **Email delivery if files are under ~50 MB total**, since under PPA's
-  published fee schedule, "Records Delivered via Email — No additional fee
-  may be imposed."
-- **A shared drive or SFTP link** if larger.
-- A single CD or USB drive (per the published fee schedule, up to $3.00 per
-  disc or actual cost) if electronic transfer is not feasible.
+For both requests: I would welcome a conversation about narrowing the scope before any denial.
+The records will support a non-commercial research project on curb parking pricing in
+Philadelphia; the law does not require a reason, and none is a condition of the request.
 
-### 6. Statutory framing
-
-These records are presumptively public under 65 P.S. § 67.301 and are not
-subject to any of the enumerated exemptions in § 67.708 except as to specific
-personally identifying fields (license plate, name, address). Where such
-fields exist, **I am requesting that they be redacted or hashed rather than
-withholding the entire record** (Section 706, severability of records).
-
-If the Authority believes that any portion of this request is unduly
-burdensome under § 67.703, I welcome the opportunity to **narrow the scope
-in consultation with the Open Records Officer** before any denial. A reduced
-scope — e.g., one calendar year for a single zone — would still be useful for
-the research, and is less likely to trigger fee or burden concerns.
-
-Thank you for your prompt attention. I look forward to your response within
-the statutory five business days, or notice of any extension under § 67.902.
-
-— Russell Richie
+— Russell Richie, Progress and Poverty Institute / 5th Square, drussellmrichie@gmail.com

@@ -1,110 +1,72 @@
-# Philadelphia Parking Authority — Right-to-Know Law (RTKL) Request Packet
+# Philadelphia Parking Authority: Right-to-Know Law request packet
 
-This folder contains a ready-to-submit RTKL request packet for the data the
-demand-based pricing model needs. The model runs on synthetic stubs today; real
-PPA transaction data is the gating dependency for credible numerical
-recommendations.
+The pricing model runs on a synthetic segment fixture and synthetic demand
+(`audits/audit_2026-10-14.md`). Observed parking data from the Parking Authority is what
+would let it estimate occupancy and price response for real zones. This folder holds the
+requests for that data.
+
+## Requests in flight elsewhere
+
+The sibling project `C:\projects\philly-road-pricing` filed **Request No. 26-0145** on
+2026-10-06: paid on-street sessions inside the area bounded by I-676, I-95, South Street and
+I-76, January 2025 to June 2026, with that area's meter locations, hours and rate schedules. The
+Authority extended its response to **13 November 2026**. Its status is kept in that repo's
+`docs/data_request_priorities.md` (section 1.2). Those records cover Center City Core and most of
+Center City Area across the 1 July 2025 rate rise, which is the price variation the elasticity
+model needs. The requests here exclude them by name.
 
 ## Files
 
-- `rtkl-request-ppa.md` — the substantive request text (drop into the Records
-  Requested box of the Pennsylvania OOR standard form).
-- `cover-letter-council.md` — short cover note to send to a sympathetic Council
-  office (Squilla, Gauthier, or O'Rourke) asking them to co-sign or transmit.
-- `oor-appeal-template.md` — pre-drafted appeal letter to file with the
-  Pennsylvania Office of Open Records if PPA denies.
+- `rtkl-request-ppa.md`: the two requests filed from this project (A: data exports; B: existing
+  reference records), each the attachment to its own request form, with field-by-field form
+  notes.
+- `submission-email.md`: the cover email and the verified submission rules.
+- `cover-letter-council.md`: optional note asking a Council office to endorse or transmit a
+  request.
+- `oor-appeal-template.md`: appeal letter to the Office of Open Records if a request is denied.
 
-## Submission procedure (per PPA's Right-to-Know Law Policy)
+## Submission rules
 
-PPA *only* accepts requests on the OOR standard form. **Anonymous or verbal
-requests are not considered.** The form is at:
+Read from the Authority's transparency page and its Right to Know Law Policy on 2026-10-15
+(details and citations in `submission-email.md`):
 
-  https://www.openrecords.pa.gov/Documents/RTKL/RTKRequestForm.pdf
+- Requests only on the Authority's own Request Form (2025 version, linked from
+  <https://philapark.org/transparency/>), one form per request.
+- By email to `OpenRecordsOfficer@philapark.org`, by fax, or by mail or hand to 701 Market
+  Street, Suite 5400. No anonymous or verbal requests. No reason is required.
+- After 4:30 p.m. counts as the next business day.
 
-Submit the completed form to PPA's Open Records Officer **one of three ways**:
+**Fees** (the policy's Exhibit B): no fee for email delivery or redaction; "specialized
+documents" up to actual cost, paid before release. Set the form's fee-notification threshold so
+the Authority asks before charging.
 
-| Mode | Address |
-|---|---|
-| Email (preferred) | OpenRecordsOfficer@philapark.org |
-| Mail or hand delivery | The Philadelphia Parking Authority, Attn: Open Records Officer, 701 Market Street, Suite 5400, Philadelphia, PA 19106 |
-| Fax | 215-683-9619 |
+## Timeline
 
-**Form gotchas — easy to miss:**
-
-1. **Check the legal-resident affirmation box.** The form warns: *"failure to
-   check this box may result in the denial of my request and the dismissal of
-   any appeal filed with the Office of Open Records."* This is non-trivial —
-   PPA can reject your appeal on this technicality alone.
-2. **"Submitted to Agency Name"** at the top must read exactly:
-   `The Philadelphia Parking Authority (Attn: AORO)`.
-3. **"Records Requested"** must be a request for *records*, not a question.
-   Avoid "Why does..." or "Can you tell me..." phrasings. Always frame as
-   "Please provide records..."
-4. **Set a fee threshold.** The form asks "Notify me before processing if fees
-   will be more than $___." For a research request, set $50 — forces PPA to
-   negotiate before generating large invoices, and gives you cost intel for
-   appeals.
-5. **Choose electronic delivery.** Per PPA's fee schedule, "Records Delivered
-   via Email — No additional fee may be imposed." Pick "Yes, electronic" under
-   "DO YOU WANT COPIES?" to avoid per-page charges.
-
-## PPA fee schedule (relevant excerpts)
-
-- Records via email: **no fee**
-- Black & white copies: up to $0.25/page
-- Specialized documents (likely how PPA classifies bulk transaction exports):
-  **up to actual cost** — this is the biggest fee risk
-- Postage: actual USPS first-class
-
-## Response timeline (statutory)
-
-| Stage | Statutory deadline |
-|---|---|
-| PPA must grant, deny, or invoke 30-day extension | **5 business days** from receipt |
-| If 30-day extension invoked | up to **30 calendar days** total |
-| If PPA does not respond | request is **deemed denied** |
-| Your window to appeal to OOR | **15 business days** from PPA's denial / deemed denial |
-| OOR must issue final determination | **30 days** from appeal receipt |
-| Either side's window to appeal OOR ruling to Commonwealth Court | **30 calendar days** |
-
-So worst case: ~75 days from submission to final OOR determination, plus
-court time if either party escalates.
-
-## Strategic context
-
-- **PPA has a small open-data footprint.** OpenDataPhilly lists only one PPA
-  dataset (the Parking Locator). No transaction or occupancy data is
-  proactively published. So everything substantive must come via RTKL.
-- **PPA is a state authority**, not a city department (per Act 22 of 2001).
-  RTKL is the only mandatory disclosure mechanism for non-employees.
-- **Researchers have rarely obtained bulk transaction data**, per the
-  research-doc literature review. A coordinated request via a Council office
-  carries far more weight than an individual request.
-- **City Controller's office** has standing to push for PPA data and has
-  audited PPA finances (Rhynhart 2020); a Controller-routed request may also
-  succeed where a direct one fails.
+| Stage | Deadline | Source |
+|---|---|---|
+| Grant, deny, or notice of extension | 5 business days from the business day after receipt | PPA policy 4(c)–(d) |
+| Extension | up to 30 calendar days, longer by agreement | PPA policy 4(c) |
+| No response by the deadline | deemed denied | PPA policy 4(c) |
+| Appeal to the Office of Open Records | 15 business days from the denial's mailing date | PPA policy 7 |
+| OOR final determination; appeal to court | not checked here | the OOR's current guidance |
 
 ## Recommended sequence
 
-1. Send the cover letter (`cover-letter-council.md`) to Squilla's, Gauthier's,
-   or O'Rourke's chief of staff. Ask whether they'll either (a) submit on PPI
-   letterhead with their endorsement, or (b) introduce you to PPA's
-   Government Affairs lead before you submit.
-2. While waiting, submit the OOR form yourself. Do not wait — the 5-day clock
-   helps you regardless.
-3. Track the response date PPA stamps on the form (item 4(d)–(e) of the
-   policy: PPA assigns a tracking number on receipt). Mark your calendar.
-4. If PPA invokes the 30-day extension, that's normal for bulk-data requests
-   and not adversarial.
-5. If PPA denies, file the OOR appeal within 15 business days using the
-   template. The OOR ruled in favor of requesters in ~60% of decided appeals
-   in recent years.
+1. Send the two requests (`submission-email.md`). The five-day clock starts on receipt.
+2. Optionally, ask a Council office to endorse or transmit (`cover-letter-council.md`).
+3. Record each tracking number and due date in this file when the Authority replies.
+4. An extension is routine for bulk data. If a request is denied, the denial must cite the
+   exemption relied on; appeal within 15 business days using `oor-appeal-template.md`.
 
-## What if PPA only releases partial data?
+## Using a partial release
 
-- Even **one zone-month** of real transactions is enough to calibrate the
-  synthetic baseline intercept and fit a non-degenerate elasticity posterior
-  for that zone. Don't reject a partial release.
-- If PPA cites Section 708(b)(17) (records identifying a specific individual)
-  to redact, that's standard for parking transaction data — accept session-
-  level data with anonymized plate hashes.
+- **Elasticity needs a price change.** A zone has one posted rate at a time, so a slice of
+  sessions without a rate change cannot identify its elasticity (audit finding 5). The useful
+  minimum is any zone observed across the 1 July 2025 rate rise; No. 26-0145 is designed to
+  supply that for the central zones.
+- **Paid sessions are not occupancy.** Permit holders, placard users and non-payers park without
+  paying. Converting sessions to occupancy needs the number of spaces each meter serves
+  (Request B, item 1) and some measure of unpaid use (occupancy studies, B item 3, or citation
+  rates, A item 3).
+- **Redacted fields are acceptable.** The requests ask for nothing that identifies a person or
+  vehicle, so a release under Section 708(b) with those fields removed still serves the model.

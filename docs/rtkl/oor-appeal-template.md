@@ -1,5 +1,13 @@
 # OOR Appeal — Template
 
+> **Check before use.** This template was written for an earlier version of the request and its
+> legal citations have not been verified. In particular: it cites § 67.708(b)(17) as the exemption
+> for records identifying an individual, but (b)(17) concerns noncriminal investigations and
+> personal identification information falls under § 67.708(b)(6); the OOR docket cited for
+> *Bagwell* has no verified source; and it says the request offered hashed plate identifiers,
+> whereas the current requests ask for no identifying fields at all. Rewrite the grounds against
+> the Authority's actual denial and the current Act before filing.
+
 > File with the Pennsylvania Office of Open Records within **15 business days**
 > of PPA's denial or deemed denial. Per PPA's RTKL Policy §7 and the OOR's
 > appeal process, the appeal must (a) be in writing, (b) state the grounds for

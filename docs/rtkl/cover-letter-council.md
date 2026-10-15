@@ -31,9 +31,10 @@ PPA could use to evaluate rate changes.
 **Why we need PPA data.** The model currently runs on synthetic transaction
 stubs, which is sufficient to demonstrate methodology but cannot produce
 defensible numerical recommendations for any specific zone or rate change.
-Even one calendar year of session-level meter data — already collected by
-PPA's payment vendors — would let us calibrate elasticities, validate
-occupancy estimates, and produce credible revenue forecasts.
+Session-level meter data spanning the July 2025 rate change, which PPA's
+payment vendors already collect, would let us estimate how demand responds to
+price, check occupancy estimates against observed use, and ground revenue
+forecasts in Philadelphia's own data.
 
 **Why we're asking for your help.** PPA has not historically released bulk
 transaction data on request. A coordinated RTKL request from a Council office,
@@ -47,11 +48,14 @@ institutional weight than an individual researcher's request. Three options:
 3. **Introduce us to PPA's Government Affairs lead** so we can negotiate
    scope before any formal submission.
 
-The substantive request is short — meter / meterUP transactions (with hashed
-plates, session-level), RPP permit issuance, and citation data, for the most
-recent two years, in whatever electronic format imposes the lowest processing
-cost on PPA. We are explicitly willing to scope down to a single zone-year if
-that addresses any burden concerns.
+The substantive requests are short. One asks for meter and meterUP session data
+outside Center City for January 2025 to June 2026, residential permit records, and
+meter and permit citations. The other asks for records the Authority already
+holds: the meter inventory with space counts, rate schedules, any occupancy
+studies, and meter revenue by zone. Center City sessions are already the subject
+of a separate request (PPA No. 26-0145). We ask for no information identifying a
+person or vehicle, and we are willing to narrow the scope if any part is
+burdensome.
 
 **Distributional argument.** Under Acts 9/39/84, on-street parking revenue
 above the $35M General Fund minimum flows to the School District of
