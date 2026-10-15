@@ -1,0 +1,209 @@
+"""Scenario-level guards on hours, revenue units, the Arnott-Inci peak and the DWL threshold.
+
+Every expected value is recomputed here from the raw YAML and the scenario's own panel,
+independently of `pricing.priced_hours`, so a change to the mask, to the revenue hours or
+to a threshold in the code makes these fail.
+"""
+from __future__ import annotations
+
+import shutil
+
+import numpy as np
+import pandas as pd
+import pytest
+import yaml
+
+from phillyparking._config import load_config, project_root
+from phillyparking.demand.synthetic_baseline import baseline_occupancy
+from phillyparking.scenarios.runner import run_scenario
+from phillyparking.spatial.synthetic import make_synthetic_segments
+
+pytestmark = pytest.mark.slow
+
+
+def _raw(name: str) -> dict:
+    with open(project_root() / "config" / f"{name}.yaml", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _yaml_priced(zone_id: np.ndarray, how: np.ndarray) -> np.ndarray:
+    zones = {z["id"]: z["priced_hours"] for z in _raw("zones")["zones"]}
+    day, hour = how // 24, how % 24
+    out = np.zeros(len(how), dtype=bool)
+    for zid, ph in zones.items():
+        for key, on_day in (("weekday", day < 5), ("saturday", day == 5), ("sunday", day == 6)):
+            w = ph.get(key)
+            if w is not None:
+                out |= (zone_id == zid) & on_day & (hour >= w[0]) & (hour < w[1])
+    return out
+
+
+@pytest.fixture(scope="module")
+def fixture_data():
+    segs = make_synthetic_segments(n=60, seed=7)
+    return segs, baseline_occupancy(segs, seed=7)
+
+
+@pytest.fixture(scope="module")
+def results(fixture_data):
+    segs, panel = fixture_data
+    return {n: run_scenario(n, segments=segs, baseline_panel=panel, seed=7)
+            for n in ("status_quo", "seattle", "full_pbd")}
+
+
+def _with_zone(r, segs) -> pd.DataFrame:
+    occ = r.occupancy.drop(columns=[c for c in ("zone_id", "capacity") if c in r.occupancy.columns])
+    return occ.merge(segs[["segment_id", "zone_id", "capacity"]], on="segment_id")
+
+
+def _row_price(df: pd.DataFrame, prices: pd.DataFrame) -> np.ndarray:
+    zp = prices.drop_duplicates([c for c in ("zone_id", "band_start", "band_end") if c in prices.columns])
+    out = np.full(len(df), np.nan)
+    hod = df["hour_of_week"].to_numpy() % 24
+    for _, r in zp.iterrows():
+        m = df["zone_id"].to_numpy() == r["zone_id"]
+        if "band_start" in zp.columns:
+            m &= (hod >= r["band_start"]) & (hod < r["band_end"])
+        out[m] = r["price_usd_per_hr"]
+    return out
+
+
+@pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+def test_revenue_is_52_weeks_of_priced_rows(results, fixture_data, name):
+    segs, _ = fixture_data
+    r = results[name]
+    df = _with_zone(r, segs)
+    priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+    p = df.loc[priced]
+    expected = 52 * float((p["occupancy"] * p["capacity"] * _row_price(p, r.prices)).sum())
+    assert float(r.revenue["annual_revenue_usd"].sum()) == pytest.approx(expected, rel=1e-9)
+
+
+@pytest.mark.parametrize("name", ["seattle", "full_pbd"])
+def test_no_response_in_unpriced_hours(results, fixture_data, name):
+    segs, base = fixture_data
+    df = _with_zone(results[name], segs).merge(
+        base[["segment_id", "hour_of_week", "occupancy"]].rename(columns={"occupancy": "base_occ"}),
+        on=["segment_id", "hour_of_week"],
+    )
+    unpriced = ~_yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+    assert unpriced.sum() > 0
+    assert np.allclose(df.loc[unpriced, "occupancy"], df.loc[unpriced, "base_occ"])
+    assert not np.allclose(df.loc[~unpriced, "occupancy"], df.loc[~unpriced, "base_occ"])
+
+
+def _busiest_priced_zone_hour(r, segs) -> pd.Series:
+    df = _with_zone(r, segs)
+    df = df.loc[_yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())]
+    df = df.assign(oc=df["occupancy"] * df["capacity"])
+    zh = df.groupby(["zone_id", "hour_of_week"])[["oc", "capacity"]].sum()
+    return (zh["oc"] / zh["capacity"]).groupby("zone_id").max()
+
+
+def _expected_dwl(r, segs, target_vacancy: float) -> float:
+    df = _with_zone(r, segs)
+    priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+    excess = np.maximum(df["occupancy"] * df["capacity"] - (1 - target_vacancy) * df["capacity"], 0.0)
+    return float((excess[priced] * (5.0 / 60.0) * 20.0).sum() * 52)
+
+
+def test_arnott_prices_busiest_priced_zone_hour_to_target(results, fixture_data):
+    segs, _ = fixture_data
+    r = results["full_pbd"]
+    target = 1.0 - _raw("scenarios")["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+    zones = {z["id"]: z for z in _raw("zones")["zones"]}
+    prices = r.prices.drop_duplicates("zone_id").set_index("zone_id")["price_usd_per_hr"].dropna()
+    peak = _busiest_priced_zone_hour(r, segs)
+    checked = 0
+    for zid, p in prices.items():
+        if np.isclose(p, zones[zid]["floor"]) or np.isclose(p, zones[zid]["ceiling"]):
+            continue
+        assert peak[zid] == pytest.approx(target, abs=2e-3), zid
+        checked += 1
+    assert checked >= 3
+    assert r.diagnostics["converged"]
+
+
+def test_seattle_reports_fixed_point_or_both_phases(results):
+    d = results["seattle"].diagnostics
+    if d["converged"]:
+        assert "phases" not in d
+    else:
+        assert d["cycle_period"] == 2 and len(d["phases"]) == 2
+        a, b = (pd.DataFrame(ph["prices"]).set_index(["zone_id", "band"])["price_usd_per_hr"] for ph in d["phases"])
+        assert not np.allclose(a, b.loc[a.index])
+
+
+@pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+    segs, _ = fixture_data
+    r = results[name]
+    default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+    tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+    assert r.diagnostics["dwl_target_vacancy"] == tv
+    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, tv), rel=1e-9)
+
+
+def test_pricer_and_scorer_follow_scenario_target_vacancy(fixture_data, tmp_path, monkeypatch):
+    """Retune full_pbd's target_vacancy in a copied config: both the price and the DWL line move."""
+    cfg = tmp_path / "config"
+    shutil.copytree(project_root() / "config", cfg)
+    sc = yaml.safe_load((cfg / "scenarios.yaml").read_text(encoding="utf-8"))
+    sc["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"] = 0.25
+    (cfg / "scenarios.yaml").write_text(yaml.safe_dump(sc), encoding="utf-8")
+    monkeypatch.setenv("PHILLYPARKING_CONFIG_DIR", str(cfg))
+    load_config.cache_clear()
+    try:
+        segs, panel = fixture_data
+        r = run_scenario("full_pbd", segments=segs, baseline_panel=panel, seed=7)
+    finally:
+        monkeypatch.delenv("PHILLYPARKING_CONFIG_DIR")
+        load_config.cache_clear()
+    assert r.diagnostics["dwl_target_vacancy"] == 0.25
+    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, 0.25), rel=1e-9)
+    peak = _busiest_priced_zone_hour(r, segs)
+    assert peak["ccc"] == pytest.approx(0.75, abs=2e-3)
+
+
+def _one_zone(zone: str, occ_priced: float, occ_unpriced: float):
+    segs = pd.DataFrame({"segment_id": ["s0"], "zone_id": [zone], "capacity": [10]})
+    how = np.arange(168)
+    priced = _yaml_priced(np.full(168, zone, dtype=object), how)
+    panel = pd.DataFrame({"segment_id": "s0", "hour_of_week": how,
+                          "occupancy": np.where(priced, occ_priced, occ_unpriced),
+                          "occupancy_sd": 0.0})
+    return segs, panel
+
+
+def test_arnott_ignores_busier_unpriced_hours():
+    # Overnight (unpriced) occupancy 0.95 must not set the rate; the priced peak 0.70 does.
+    segs, panel = _one_zone("ccc", 0.70, 0.95)
+    r = run_scenario("full_pbd", segments=segs, baseline_panel=panel)
+    z = _raw("zones")["zones"][0]
+    assert z["id"] == "ccc"
+    eps = _raw("elasticity_priors")["scenarios"]["central"]
+    target = 1.0 - _raw("scenarios")["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+    expected = z["current_rate_usd_per_hr"] * (target / 0.70) ** (1.0 / eps)
+    expected = min(max(expected, z["floor"]), z["ceiling"])
+    assert float(r.prices["price_usd_per_hr"].iloc[0]) == pytest.approx(expected, rel=1e-6)
+
+
+def test_seattle_two_cycle_is_detected_and_both_phases_reported():
+    # Fishtown: $1.50 -> one cut to $1.00 leaves occupancy under the band, the next cut to
+    # its $0.50 floor lifts it over the band (2^0.4 > 0.85/0.70), so it alternates.
+    from phillyparking.scenarios.compare import comparison_table
+    eps = _raw("elasticity_priors")["scenarios"]["central"]
+    occ_at_1 = 0.65
+    segs, panel = _one_zone("fishtown", occ_at_1 * (1.5 / 1.0) ** eps, 0.2)
+    r = run_scenario("seattle", segments=segs, baseline_panel=panel)
+    d = r.diagnostics
+    assert not d["converged"] and d["cycle_period"] == 2
+    phase_prices = [{p["price_usd_per_hr"] for p in ph["prices"]} for ph in d["phases"]]
+    assert sorted(phase_prices, key=min) == [{0.5}, {1.0}]
+    assert {"seattle_phase_a", "seattle_phase_b"} <= set(comparison_table({"seattle": r}).columns)
+
+
+def test_seattle_holding_band_converges_at_once():
+    segs, panel = _one_zone("fishtown", 0.75, 0.2)
+    d = run_scenario("seattle", segments=segs, baseline_panel=panel).diagnostics
+    assert d["converged"] and d["converged_year"] == 1 and "phases" not in d

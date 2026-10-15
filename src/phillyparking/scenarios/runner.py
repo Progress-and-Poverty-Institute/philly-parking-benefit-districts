@@ -97,41 +97,113 @@ def _baseline(segments=None, baseline_panel=None, seed: int = 42):
     return segments, baseline_panel
 
 
-def _seattle_step(occupancy: pd.DataFrame, current_prices: pd.DataFrame, segments: pd.DataFrame) -> pd.DataFrame:
+def _seattle_step(occupancy: pd.DataFrame, current_prices: pd.DataFrame, segments: pd.DataFrame,
+                  bands: list) -> pd.DataFrame:
     from phillyparking.pricing.seattle_rule import adjust_zone_prices
-    occ = occupancy.drop(columns=[c for c in ("zone_id",) if c in occupancy.columns])
-    occ_with_zone = occ.merge(segments[["segment_id", "zone_id"]], on="segment_id", how="left")
-    if "capacity" not in occ_with_zone.columns:
-        occ_with_zone = occ_with_zone.merge(segments[["segment_id", "capacity"]], on="segment_id", how="left")
-    return adjust_zone_prices(occ_with_zone, current_prices)
+    occ = occupancy.drop(columns=[c for c in ("zone_id", "capacity") if c in occupancy.columns])
+    occ = occ.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
+    return adjust_zone_prices(occ, current_prices, bands)
 
 
 def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elasticity):
     from phillyparking.pricing.arnott_inci import optimal_price_arnott_inci
+    from phillyparking.pricing.priced_hours import frame_priced_mask
     rows = []
     z_meta = _zone_meta().set_index("zone_id")
     panel_drop = panel.drop(columns=[c for c in ("zone_id", "capacity") if c in panel.columns])
     panel_z = panel_drop.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
-    for zid, zg in panel_z.groupby("zone_id"):
+    panel_z = panel_z.loc[frame_priced_mask(panel_z)]
+    panel_z = panel_z.assign(_oc=panel_z["occupancy"] * panel_z["capacity"])
+    zone_hour = panel_z.groupby(["zone_id", "hour_of_week"], as_index=False).agg(
+        _oc=("_oc", "sum"), _cap=("capacity", "sum"),
+    )
+    zone_hour["occupancy"] = zone_hour["_oc"] / zone_hour["_cap"]
+    for zid, zh in zone_hour.groupby("zone_id"):
         cur_row = current_prices.loc[current_prices["zone_id"] == zid]
         if cur_row.empty:
             continue
-        # Use 90th-percentile peak occupancy: Arnott-Inci prices to eliminate
-        # cruising at the busiest hour, not the all-hours mean.
-        peak_occ = float(zg["occupancy"].quantile(0.90))
-        capacity = float(zg["capacity"].mean())
+        # Peak statistic: the zone's busiest priced hour of capacity-weighted occupancy.
+        # Arnott-Inci treat a downtown area as one pool of spaces that a cruiser searches
+        # block by block, so the occupancy that governs search is the zone aggregate, not
+        # any one block. The zone has one rate across its priced hours, so the only rate
+        # that holds that aggregate at or below 1 - target_vacancy in every priced hour is
+        # the one that brings the busiest priced hour to the target. Unpriced hours are
+        # left out because the rate cannot act on them. The panel is a typical-week
+        # profile (each hour already averages over weeks), so its maximum is not a single
+        # noisy draw; on real week-by-week data a high quantile would be the stabler choice.
+        peak_occ = float(zh["occupancy"].max())
         base_price = float(cur_row["price_usd_per_hr"].iloc[0])
+        # Occupancy shares: capacity cancels from the Arnott-Inci price.
         p = optimal_price_arnott_inci(
-            base_demand=peak_occ * capacity,
+            base_demand=peak_occ,
             base_price=base_price,
-            capacity=capacity,
+            capacity=1.0,
             elasticity=elasticity,
             target_vacancy=target_vacancy,
         )
         floor = z_meta.loc[zid, "floor"] if zid in z_meta.index else 0.5
         ceiling = z_meta.loc[zid, "ceiling"] if zid in z_meta.index else 10.0
-        rows.append({"zone_id": zid, "price_usd_per_hr": float(np.clip(p, floor, ceiling))})
+        rows.append({"zone_id": zid, "price_usd_per_hr": float(np.clip(p, floor, ceiling)),
+                     "peak_occ": peak_occ})
     return pd.DataFrame(rows)
+
+
+# Two reviews' rates count as the same if no zone (or zone-band) rate differs by more than
+# a tenth of a cent per hour. The Arnott-Inci step approaches its fixed point geometrically
+# once the 1.0 occupancy clip binds, so an exact-equality test would never fire.
+PRICE_TOL_USD = 0.001
+
+
+def _price_vector(prices: pd.DataFrame) -> pd.Series:
+    keys = ["zone_id", "band"] if "band" in prices.columns else ["zone_id"]
+    return prices.set_index(keys)["price_usd_per_hr"].sort_index()
+
+
+def _same_prices(a: pd.Series, b: pd.Series) -> bool:
+    if not a.index.equals(b.index):
+        return False
+    return bool((a - b).abs().max() <= PRICE_TOL_USD)
+
+
+def _allocation(total_revenue: float, pbd_share: float) -> dict:
+    try:
+        from phillyparking.revenue.allocation import allocate
+        alloc_obj = allocate(total_revenue, pbd_share)
+        return alloc_obj.to_dict() if hasattr(alloc_obj, "to_dict") else dict(alloc_obj)
+    except (ImportError, ModuleNotFoundError):
+        return {
+            "total_revenue_usd": total_revenue,
+            "pbd_share": pbd_share,
+            "pbd_revenue_usd": total_revenue * pbd_share,
+            "general_fund_usd": total_revenue * (1.0 - pbd_share),
+        }
+
+
+def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_target_vacancy,
+                   pbd_share, seed) -> dict:
+    """Revenue, cruising DWL, allocation and CS change of one (panel, prices) state.
+
+    Revenue and DWL both count only priced hours (`pricing.priced_hours`).
+    """
+    from phillyparking.pricing.priced_hours import hourly_prices, zone_mean_price
+    from phillyparking.revenue.forecast import annual_revenue
+    from phillyparking.welfare.cruising_dwl import annual_cruising_dwl
+    revenue_df = annual_revenue(segments, panel, hourly_prices(prices))
+    dwl = annual_cruising_dwl(panel, segments, target_vacancy=dwl_target_vacancy)
+    total_revenue = float(revenue_df["annual_revenue_usd"].sum())
+    zone_prices = zone_mean_price(prices).rename("price_usd_per_hr")
+    cs_total = _synthetic_cs_change(
+        segments, baseline_panel, panel, current_prices, zone_prices.reset_index(), seed=seed,
+    )
+    return {
+        "revenue": revenue_df,
+        "cruising_dwl": dwl,
+        "allocation": _allocation(total_revenue, pbd_share),
+        "cs_change_total": cs_total,
+        "mean_price_by_zone": zone_prices.to_dict(),
+        "total_revenue": total_revenue,
+        "cruising_dwl_total": float(dwl["annual_dwl_usd"].sum()),
+    }
 
 
 def _synthetic_cs_change(
@@ -189,7 +261,6 @@ def run_scenario(
     seed: int = 42,
 ) -> ScenarioResults:
     from phillyparking.elasticity.scenarios import get_scenario, apply_elasticity
-    from phillyparking.welfare.cruising_dwl import annual_cruising_dwl
 
     cfg = load_config("scenarios")["scenarios"]
     if name not in cfg:
@@ -206,72 +277,90 @@ def run_scenario(
         segments[["segment_id", "zone_id"]], on="segment_id", how="left"
     ).merge(current_prices, on="zone_id", how="left")
 
-    policy_kind = scfg["pricing_policy"]["kind"]
+    policy = scfg["pricing_policy"]
+    policy_kind = policy["kind"]
+    # The scorer's cruising threshold is the scenario's own target vacancy when it sets
+    # one, else the shared default, so pricer and scorer use the same line.
+    dwl_target_vac = float(policy.get(
+        "target_vacancy", load_config("pricing_rules")["arnott_inci"]["target_vacancy"]
+    ))
+    pbd_share = float(scfg.get("rpp_policy", {}).get("revenue_share_to_pbd", 0.0))
     panel = baseline_with_price.copy()
     prices = current_prices.copy()
-    diagnostics: dict = {"policy": policy_kind, "years": rolls_forward_years}
+    diagnostics: dict = {"policy": policy_kind, "max_years": rolls_forward_years,
+                         "dwl_target_vacancy": dwl_target_vac}
 
     if policy_kind == "fixed":
-        pass
-    elif policy_kind == "seattle_rule":
-        for _ in range(max(rolls_forward_years, 1)):
-            prices = _seattle_step(panel, prices, segments)
-            panel = apply_elasticity(panel, prices, elasticity)
-    elif policy_kind == "arnott_inci":
-        target_vac = float(scfg["pricing_policy"].get("target_vacancy", 0.15))
-        for _ in range(max(rolls_forward_years, 1)):
-            prices = _arnott_zone_prices(panel, segments, prices, target_vac, elasticity)
-            panel = apply_elasticity(panel, prices, elasticity)
+        diagnostics.update(years_run=0, converged=True, converged_year=0)
+    elif policy_kind in ("seattle_rule", "arnott_inci"):
+        from phillyparking.pricing.priced_hours import hourly_prices
+        if policy_kind == "seattle_rule":
+            bands = policy["time_of_day_bands"]
+            step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands)  # noqa: E731
+        else:
+            target_vac = float(policy.get("target_vacancy", 0.15))
+            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, target_vac, elasticity)  # noqa: E731
+        # Review annually until the prices stop changing (a fixed point) or repeat with
+        # period 2, up to rolls_forward_years reviews. Nothing else in the map moves from
+        # year to year, so the state at a fixed point is the rule's long-run outcome and
+        # the year it is reached carries no forecast meaning.
+        history = [(0, panel, prices, _price_vector(prices))]
+        converged_year = None
+        cycle = None
+        for year in range(1, max(rolls_forward_years, 1) + 1):
+            new_prices = step(panel, prices)
+            vec = _price_vector(new_prices)
+            if _same_prices(vec, history[-1][3]):
+                converged_year = year - 1
+                break
+            prices = new_prices
+            panel = apply_elasticity(panel, hourly_prices(prices), elasticity)
+            history.append((year, panel, prices, vec))
+            if len(history) >= 3 and _same_prices(vec, history[-3][3]):
+                cycle = history[-2:]
+                break
+        diagnostics["years_run"] = history[-1][0]
+        diagnostics["converged"] = converged_year is not None
+        diagnostics["converged_year"] = converged_year
+        if cycle is not None:
+            # A two-cycle has no single outcome: report both phases. The returned state
+            # is the later phase; `phases` carries both for the comparison table.
+            phases = []
+            for y, pnl, pr, _ in cycle:
+                m = _state_metrics(pnl, pr, segments, baseline_panel, current_prices,
+                                   dwl_target_vac, pbd_share, seed)
+                phases.append({
+                    "year": y,
+                    "prices": pr[[c for c in ("zone_id", "band", "price_usd_per_hr") if c in pr.columns]]
+                    .to_dict("records"),
+                    **{k: m[k] for k in ("mean_price_by_zone", "total_revenue", "cruising_dwl_total",
+                                         "cs_change_total", "allocation")},
+                })
+            diagnostics["cycle_period"] = 2
+            diagnostics["phases"] = phases
+            logger.warning("%s: prices cycle with period 2 from year %d; reporting both phases",
+                           name, cycle[0][0])
+        elif converged_year is None:
+            logger.warning("%s: prices still moving after %d reviews", name, history[-1][0])
+        diagnostics["final_prices"] = prices.to_dict("records")
     else:
         raise ValueError(f"Unsupported pricing_policy.kind: {policy_kind}")
 
-    seg_prices = _segment_prices(segments, prices)
-
-    try:
-        from phillyparking.revenue.forecast import annual_revenue
-        revenue_df = annual_revenue(segments, panel, seg_prices)
-    except (ImportError, ModuleNotFoundError):
-        merged = panel.merge(segments[["segment_id", "capacity"]], on="segment_id", how="left")
-        merged = merged.merge(seg_prices, on=["segment_id", "zone_id"], how="left")
-        merged["hourly_revenue"] = merged["occupancy"] * merged["capacity"] * merged["price_usd_per_hr"]
-        per_seg = merged.groupby(["segment_id", "zone_id"], as_index=False)["hourly_revenue"].sum()
-        per_seg["annual_revenue_usd"] = per_seg["hourly_revenue"] * 52.0
-        revenue_df = per_seg[["segment_id", "zone_id", "annual_revenue_usd"]]
-
-    total_revenue = float(revenue_df["annual_revenue_usd"].sum())
-
-    rpp_policy = scfg.get("rpp_policy", {})
-    pbd_share = float(rpp_policy.get("revenue_share_to_pbd", 0.0))
-    try:
-        from phillyparking.revenue.allocation import allocate
-        alloc_obj = allocate(total_revenue, pbd_share)
-        allocation = alloc_obj.to_dict() if hasattr(alloc_obj, "to_dict") else dict(alloc_obj)
-    except (ImportError, ModuleNotFoundError):
-        allocation = {
-            "total_revenue_usd": total_revenue,
-            "pbd_share": pbd_share,
-            "pbd_revenue_usd": total_revenue * pbd_share,
-            "general_fund_usd": total_revenue * (1.0 - pbd_share),
-        }
-
-    dwl = annual_cruising_dwl(panel, segments)
-
-    baseline_prices_df = current_prices
-    cs_total = _synthetic_cs_change(
-        segments, baseline_panel, panel,
-        baseline_prices_df, prices,
-        seed=seed,
-    )
+    seg_prices = _segment_prices(segments, prices.drop(
+        columns=[c for c in ("previous_price", "band_occ", "n_hours", "direction", "peak_occ") if c in prices.columns]
+    ))
+    m = _state_metrics(panel, prices, segments, baseline_panel, current_prices,
+                       dwl_target_vac, pbd_share, seed)
 
     return ScenarioResults(
         name=name,
         elasticity_scenario=elasticity_scenario,
         prices=seg_prices,
         occupancy=panel,
-        revenue=revenue_df,
-        cruising_dwl=dwl,
-        cs_change_total=cs_total,
-        allocation=allocation,
+        revenue=m["revenue"],
+        cruising_dwl=m["cruising_dwl"],
+        cs_change_total=m["cs_change_total"],
+        allocation=m["allocation"],
         diagnostics=diagnostics,
     )
 

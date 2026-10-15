@@ -1,16 +1,14 @@
 # Pricing-rule parameters. See phillyparking.pricing.* for consumers.
 
 seattle_rule:
-  # Adjust price up/down by `step` based on observed occupancy.
+  # One price per zone x time-of-day band (bands: scenarios.yaml time_of_day_bands).
+  # Statistic: the band's average capacity-weighted zone occupancy over the zone's
+  # priced hours, as in SDOT's 2024 Paid Parking report. [occ_low, occ_high] is the
+  # dead band in which the rate holds.
   step_usd: 0.50
-  # Peak window over which peak occupancy is computed (24h clock, weekday).
-  peak_window: [11, 14]   # weekday lunch peak; configurable per zone
-  # Quantile of hourly occupancy to use as the peak-occ statistic.
-  peak_quantile: 0.90
-  # Thresholds.
-  occ_high: 0.85          # if peak_occ >= occ_high → +step
-  occ_low: 0.70           # if avg_occ < occ_low → −step
-  # Optional second tier: if peak_occ >= occ_very_high, raise by 2*step.
+  occ_high: 0.85          # if band_occ > occ_high → +step
+  occ_low: 0.70           # if band_occ < occ_low → −step
+  # Optional second tier: if band_occ >= occ_very_high, raise by 2*step.
   occ_very_high: 0.95
   # Max number of step increments per adjustment cycle.
   max_step_per_cycle: 2

@@ -22,7 +22,8 @@ def test_e2e_pipeline(tmp_path, monkeypatch):
 
     table = comparison_table(results)
     for name in expected:
-        assert name in table.columns, f"{name} missing from comparison_table"
+        # A scenario whose prices cycle appears as <name>_phase_a / <name>_phase_b.
+        assert any(c == name or c.startswith(f"{name}_phase_") for c in table.columns),             f"{name} missing from comparison_table"
 
     save_dir = tmp_path / "scenarios"
     save_dir.mkdir()

@@ -28,11 +28,14 @@ log = logging.getLogger(__name__)
 ALL_SCENARIOS = ("status_quo", "seattle", "full_pbd")
 
 
-def _revenue_by_scenario_chart(results: dict, save_to: Path) -> None:
+def _revenue_by_scenario_chart(table: pd.DataFrame, save_to: Path) -> None:
+    """One bar per comparison-table column, so a cycling scenario shows both phases."""
     fig, ax = plt.subplots(figsize=(8, 5))
-    names = list(results.keys())
-    totals = [float(r.revenue["annual_revenue_usd"].sum()) for r in results.values()]
-    ax.bar(names, totals, color=["#888888", "#3a86ff", "#ff006e"])
+    names = list(table.columns)
+    totals = [float(v) for v in table.loc["total_revenue"]]
+    palette = {"status_quo": "#888888", "seattle": "#3a86ff", "full_pbd": "#ff006e"}
+    colors = [next((c for k, c in palette.items() if n.startswith(k)), "#444444") for n in names]
+    ax.bar([n.replace("_phase_", "\nphase ") for n in names], totals, color=colors)
     ax.set_ylabel("Annual revenue (USD)")
     ax.set_title("Annual curb-meter revenue by scenario")
     for i, t in enumerate(totals):
@@ -82,8 +85,9 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     if not results:
         raise click.ClickException(f"No scenario results found under {base}")
 
+    table = comparison_table(results)
     rev_path = figs / "revenue_by_scenario.png"
-    _revenue_by_scenario_chart(results, rev_path)
+    _revenue_by_scenario_chart(table, rev_path)
     log.info("Wrote %s", rev_path)
 
     inc_path = figs / "incidence_by_decile.png"
@@ -130,7 +134,6 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     else:
         log.warning("No ccc segments found; skipping Laffer curve")
 
-    table = comparison_table(results)
     table_path = tables / "comparison_table.csv"
     table.to_csv(table_path)
     log.info("Wrote %s", table_path)

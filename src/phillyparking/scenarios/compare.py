@@ -7,35 +7,61 @@ import numpy as np
 import pandas as pd
 
 from phillyparking._config import load_config
+from phillyparking.pricing.priced_hours import zone_mean_price
 
 logger = logging.getLogger(__name__)
 
 
+def _table_column(prices_by_zone: dict, total_revenue: float, dwl_total: float, cs_total: float,
+                  allocation: dict, review_year, converged: bool) -> dict:
+    zones_cfg = {z["id"]: z for z in load_config("zones")["zones"]}
+    n_at_ceiling = sum(
+        1 for zid, p in prices_by_zone.items()
+        if zid in zones_cfg and p >= zones_cfg[zid].get("ceiling", 1e9) - 1e-9
+    )
+    return {
+        "total_revenue": float(total_revenue),
+        "mean_price_ccc": float(prices_by_zone.get("ccc", np.nan)),
+        "mean_price_cca": float(prices_by_zone.get("cca", np.nan)),
+        "n_zones_at_ceiling": n_at_ceiling,
+        "cruising_dwl_total": float(dwl_total),
+        "cs_change_total": float(cs_total),
+        "gf_to_general_fund": float(allocation.get("general_fund_usd", 0.0)),
+        "sdp_revenue": float(allocation.get("sdp_revenue_usd", 0.0)),
+        "pbd_revenue": float(allocation.get("pbd_revenue_usd", 0.0)),
+        "review_year": review_year,
+        "converged": int(bool(converged)),
+    }
+
+
 def comparison_table(results: dict) -> pd.DataFrame:
-    rows = []
+    """Scenarios as columns. Mean prices are priced-hour-weighted across a zone's bands.
+
+    A scenario whose prices cycle with period 2 gets one column per phase
+    (`<name>_phase_a`, `<name>_phase_b`) instead of a single column, because neither
+    phase is its outcome. `review_year` is the review whose state is reported.
+    """
+    cols = {}
     for name, r in results.items():
-        prices_by_zone = r.prices.groupby("zone_id")["price_usd_per_hr"].mean()
-        ccc = float(prices_by_zone.get("ccc", np.nan))
-        cca = float(prices_by_zone.get("cca", np.nan))
-        n_at_ceiling = 0
-        zones_cfg = {z["id"]: z for z in load_config("zones")["zones"]}
-        for zid, p in prices_by_zone.items():
-            if zid in zones_cfg and p >= zones_cfg[zid].get("ceiling", 1e9) - 1e-9:
-                n_at_ceiling += 1
-        rows.append({
-            "scenario": name,
-            "total_revenue": float(r.revenue["annual_revenue_usd"].sum()),
-            "mean_price_ccc": ccc,
-            "mean_price_cca": cca,
-            "n_zones_at_ceiling": n_at_ceiling,
-            "cruising_dwl_total": float(r.cruising_dwl["annual_dwl_usd"].sum()),
-            "cs_change_total": float(r.cs_change_total),
-            "gf_to_general_fund": float(r.allocation.get("general_fund_usd", 0.0)),
-            "sdp_revenue": float(r.allocation.get("sdp_revenue_usd", 0.0)),
-            "pbd_revenue": float(r.allocation.get("pbd_revenue_usd", 0.0)),
-        })
-    df = pd.DataFrame(rows).set_index("scenario").T
-    return df
+        d = r.diagnostics or {}
+        if d.get("phases"):
+            for tag, ph in zip("ab", d["phases"]):
+                cols[f"{name}_phase_{tag}"] = _table_column(
+                    ph["mean_price_by_zone"], ph["total_revenue"], ph["cruising_dwl_total"],
+                    ph["cs_change_total"], ph["allocation"], ph["year"], False,
+                )
+            continue
+        prices_by_zone = zone_mean_price(r.prices.dropna(subset=["price_usd_per_hr"])).to_dict()
+        cols[name] = _table_column(
+            prices_by_zone,
+            r.revenue["annual_revenue_usd"].sum(),
+            r.cruising_dwl["annual_dwl_usd"].sum(),
+            r.cs_change_total,
+            r.allocation,
+            d.get("converged_year", d.get("years_run")),
+            d.get("converged", False),
+        )
+    return pd.DataFrame(cols)
 
 
 def chatman_manville_sweep(
@@ -91,9 +117,12 @@ def chatman_manville_sweep(
                             "price_usd_per_hr": panel.groupby("zone_id")["price_usd_per_hr"].first().values + adj.values,
                         })
                         new_price_df["price_usd_per_hr"] = new_price_df["price_usd_per_hr"].clip(0.5, 10.0)
-                        panel = apply_elasticity(panel, new_price_df, eps)
+                        # The sweep prices every hour by design (a uniform $2 start, no
+                        # meter-off hours), so it opts out of the zones.yaml priced-hours
+                        # mask the scenario runner uses.
+                        panel = apply_elasticity(panel, new_price_df, eps, priced_hours_only=False)
 
-                        dwl_df = annual_cruising_dwl(panel, segments)
+                        dwl_df = annual_cruising_dwl(panel, segments, priced_hours_only=False)
                         revenue_total = float((panel["occupancy"] * panel["capacity"] * panel["price_usd_per_hr"]).sum() * 52.0 / 168.0 * 168.0)
                         peak_share = float((panel.groupby("zone_id")["occupancy"].quantile(0.95) > 0.85).mean())
 
