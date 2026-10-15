@@ -37,12 +37,19 @@ def apply_elasticity(
     baseline_demand: pd.DataFrame,
     new_price: pd.DataFrame,
     elasticity: float | pd.Series,
+    priced_hours_only: bool = True,
 ) -> pd.DataFrame:
     """Apply constant-elasticity demand: occ_new = occ_old * (p_new/p_old)^ε.
 
-    `baseline_demand` cols: segment_id, hour_of_week, occupancy, price.
-    `new_price` cols: either (segment_id, hour_of_week, price) or (zone_id, price)
-    or (segment_id, price). Merged on shared keys; missing rows keep baseline price.
+    `baseline_demand` cols: segment_id, hour_of_week, occupancy, price, and zone_id
+    when `priced_hours_only` (the default).
+    `new_price` cols: either (segment_id, hour_of_week, price), (zone_id, hour_of_week,
+    price), (zone_id, price) or (segment_id, price). Merged on shared keys; missing rows
+    keep baseline price.
+
+    With `priced_hours_only`, occupancy responds only in the zone's priced hours
+    (`pricing.priced_hours`): when the meter is off, a change in the posted rate does not
+    reach the driver. Pass False only for a design that prices every hour.
     """
     df = baseline_demand.copy()
     price_col = "price_usd_per_hr" if "price_usd_per_hr" in df.columns else "price"
@@ -73,6 +80,9 @@ def apply_elasticity(
     ratio = p_new / safe_old
     occ_new = df["occupancy"].to_numpy(dtype=float) * np.power(ratio, eps)
     occ_new = np.where(np.isnan(occ_new), df["occupancy"].to_numpy(dtype=float), occ_new)
+    if priced_hours_only:
+        from phillyparking.pricing.priced_hours import frame_priced_mask
+        occ_new = np.where(frame_priced_mask(df), occ_new, df["occupancy"].to_numpy(dtype=float))
     df["occupancy"] = np.clip(occ_new, 0.0, 1.0)
     df[price_col] = p_new
     return df.drop(columns=["_price_new"])

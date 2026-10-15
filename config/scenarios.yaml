@@ -23,7 +23,9 @@ scenarios:
       kind: flat
       annual_fee_usd: 75.00
     elasticity_scenario: central
-    rolls_forward_years: 5
+    # Maximum annual reviews. The runner stops at a fixed point, or reports both phases
+    # if prices cycle with period 2.
+    rolls_forward_years: 20
     notes: "Operational benchmark; auditable, transparent, low political risk."
 
   full_pbd:
@@ -36,7 +38,7 @@ scenarios:
       kind: market_clearing
       revenue_share_to_pbd: 0.30   # Mexico City EcoParq precedent
     elasticity_scenario: central
-    rolls_forward_years: 10
+    rolls_forward_years: 10   # maximum reviews; the runner stops at a fixed point
     notes: "Full Shoupian PBD with Georgist land-rent capture framing."
 
 # Sensitivity sweep for the academic Chatman-Manville paper.

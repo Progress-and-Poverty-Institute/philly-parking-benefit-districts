@@ -39,4 +39,4 @@ def test_compare_scenarios_wide_table():
     results = run_all_scenarios()
     table = comparison_table(results)
     for s in ("status_quo", "seattle", "full_pbd"):
-        assert s in table.columns
+        assert any(c == s or c.startswith(f"{s}_phase_") for c in table.columns)

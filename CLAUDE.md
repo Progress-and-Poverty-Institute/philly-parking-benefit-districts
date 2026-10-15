@@ -72,15 +72,58 @@ if cur_row.empty:
     continue
 ```
 
-**Use 90th-percentile peak occupancy as base_demand, not the all-hours mean.** The 168-hour
-panel averages overnight occupancy (~0.20) into the mean, which can push the computed optimal
-price to the floor ($1/hr floor) after a few iterations. The Arnott-Inci price targets
-cruising elimination at the *busiest hour*, not the average hour:
+**Peak statistic: the zone's busiest priced hour of capacity-weighted occupancy.** For each
+zone, average occupancy across its segments weighted by capacity, hour by hour, over the
+zone's priced hours only; take the maximum; price so that hour sits at
+`1 - target_vacancy`. Why this statistic and not another:
 
-```python
-peak_occ = float(zg["occupancy"].quantile(0.90))
-p = optimal_price_arnott_inci(base_demand=peak_occ * capacity, ...)
-```
+- Arnott-Inci treat a downtown area as one pool that a cruiser searches block by block, so
+  search depends on the zone aggregate, not on any one segment. Hence capacity-weighted
+  zone-hours, not segment-hours.
+- A zone has one rate across all its priced hours, so the only rate that holds the aggregate
+  at or below the target in *every* priced hour is the one that brings the busiest one there.
+  Hence the maximum, which is also what "eliminates cruising at the busiest hour" says.
+- Unpriced hours are excluded because the rate cannot act on them. Pooling them in (the old
+  all-hours q90) let overnight residential occupancy set a downtown rate.
+- The panel is a typical-week profile, each hour already an average over weeks, so its
+  maximum is not one noisy draw. On real week-by-week data, revisit: a high quantile of
+  zone-hours would be more stable.
+
+The choice moves the full-PBD row's sign (audit 2026-10-14, finding 3), so do not swap it
+without rerunning scripts 05/06 and updating the prose. Segment-level cruising remains after
+the step because blocks busier than the zone average stay over the line; that is a property
+of one rate per zone, not a bug. Capacity cancels in the formula, so the code passes
+occupancy shares (`capacity=1.0`).
+
+## Priced hours: one mask from `config/zones.yaml`
+
+`phillyparking.pricing.priced_hours` is the only place that decides when a meter is on (per
+zone, weekday / Saturday / Sunday windows; a zone absent from `zones.yaml`, such as the
+fixture's `other`, is never priced). `apply_elasticity` (response), `annual_revenue` and
+`revenue_curve` (revenue), `hourly_cruising_dwl` (DWL scorer), the Arnott-Inci peak and the
+Seattle band statistics all read it. `apply_elasticity` and the DWL functions default to
+`priced_hours_only=True` and need `zone_id` on the panel; only the Chatman-Manville sweep
+passes `False`, because its design prices every hour.
+
+Revenue per zone = zone capacity x the zone's own annual priced hours x capacity-weighted
+priced-hour occupancy (x price); for a full weekly panel that equals 52 x the sum over
+priced rows of occupancy x capacity x price. Full compliance is assumed.
+
+The DWL scorer's threshold is the scenario's `pricing_policy.target_vacancy`, falling back to
+`pricing_rules.yaml` `arnott_inci.target_vacancy`, so pricer and scorer use the same line.
+
+## Seattle rule and convergence
+
+`pricing/seattle_rule.py` follows SDOT's 2024 rule: one statistic, the band's average
+capacity-weighted zone occupancy over the zone's priced hours, per `time_of_day_bands`
+(`scenarios.yaml`); above `occ_high` +$0.50, below `occ_low` -$0.50, inside the band hold.
+Prices are per zone x band; `priced_hours.hourly_prices` expands them to hours.
+
+The runner reviews annually until no rate moves by more than $0.001 (a fixed point) or prices
+repeat with period 2; `rolls_forward_years` is a cap, not a horizon. A two-cycle is reported
+as both phases (`diagnostics["phases"]`, and `<name>_phase_a` / `_phase_b` columns in the
+comparison table), never as one year's state. With the dead band, a cycle can still occur at
+low rates where one $0.50 step changes the price by a larger ratio than 0.85/0.70.
 
 ## Script 06 synthetic fallback
 
