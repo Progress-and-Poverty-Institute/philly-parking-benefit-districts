@@ -145,11 +145,14 @@ def _seattle_step(occupancy: pd.DataFrame, current_prices: pd.DataFrame, segment
     return adjust_zone_prices(occ, current_prices, bands)
 
 
-def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elasticity):
+def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elasticity, reference_prices):
+    """Next zone rates under the Arnott-Inci step; `reference_prices` are the posted rates the
+    elasticity applies at (`demand.response`), `current_prices` the rates in force."""
     from phillyparking.pricing.arnott_inci import optimal_price_arnott_inci
     from phillyparking.pricing.priced_hours import frame_priced_mask
     rows = []
     z_meta = _zone_meta().set_index("zone_id")
+    ref = reference_prices.set_index("zone_id")["price_usd_per_hr"]
     panel_drop = panel.drop(columns=[c for c in ("zone_id", "capacity") if c in panel.columns])
     panel_z = panel_drop.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
     panel_z = panel_z.loc[frame_priced_mask(panel_z)]
@@ -183,6 +186,7 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
             capacity=1.0,
             elasticity=elasticity,
             target_vacancy=target_vacancy,
+            reference_price=float(ref[zid]) if zid in ref.index else base_price,
         )
         floor = z_meta.loc[zid, "floor"] if zid in z_meta.index else 0.5
         ceiling = z_meta.loc[zid, "ceiling"] if zid in z_meta.index else 10.0
@@ -214,7 +218,7 @@ def _allocation(total_revenue: float, pbd_share: float) -> dict:
 
 
 def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_target_vacancy,
-                   pbd_share, seed) -> dict:
+                   pbd_share, elasticity) -> dict:
     """Revenue, cruising DWL, allocation and CS change of one (panel, prices) state.
 
     Revenue and DWL both count only priced hours (`pricing.priced_hours`).
@@ -226,9 +230,7 @@ def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_
     dwl = annual_cruising_dwl(panel, segments, target_vacancy=dwl_target_vacancy)
     total_revenue = float(revenue_df["annual_revenue_usd"].sum())
     zone_prices = zone_mean_price(prices).rename("price_usd_per_hr")
-    cs_total = _annual_cs_change(
-        segments, baseline_panel, current_prices, zone_prices.reset_index(), seed=seed,
-    )
+    cs_total = _annual_cs_change(segments, baseline_panel, current_prices, hourly_prices(prices), elasticity)
     return {
         "revenue": revenue_df,
         "cruising_dwl": dwl,
@@ -240,84 +242,49 @@ def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_
     }
 
 
-def _zone_trip_cs_change(p_base: float, p_scen: float, n_trips: int, seed: int) -> float:
-    """Mean nested-logit consumer-surplus change, in USD per trip, of moving a zone's curb
-    price from `p_base` to `p_scen`.
-
-    Each trip has a random garage price and random walk times, drawn from `seed` and shared
-    by the baseline and scenario utilities, so the change reflects the curb price alone and
-    every scenario run with the same seed sees the same trips. The trips are illustrative
-    inputs (no trip-origin data exists), not observations.
-    """
-    from phillyparking.welfare.consumer_surplus import NestedLogitSpec, consumer_surplus_change_batch
-
-    # alpha_price and beta_walk are assumptions, not estimates: -0.40 per $ and -0.10 per
-    # minute of walking imply a value of walking time of $15/hour. alpha_price is not the
-    # demand elasticity, though it shares its value.
-    spec = NestedLogitSpec(
-        nests={"auto": ["curb", "garage"], "non_auto": ["transit", "forgo"]},
-        nest_lambda={"auto": 0.7, "non_auto": 0.9},
-        alpha_price=-0.40,
-        beta_walk=-0.10,
-        asc={"curb": 0.0, "garage": -0.5, "transit": -1.0, "forgo": -2.0},
-    )
-    alts = ["curb", "garage", "transit", "forgo"]
-    asc = np.array([spec.asc[a] for a in alts])
-    rng = np.random.default_rng(seed)
-    garage = 5.0 + rng.uniform(-1, 1, n_trips)
-    walks = np.column_stack([
-        rng.uniform(1, 5, n_trips), rng.uniform(3, 8, n_trips), rng.uniform(5, 12, n_trips),
-        np.zeros(n_trips),
-    ])
-
-    def utilities(curb_price: float) -> np.ndarray:
-        prices = np.column_stack([np.full(n_trips, curb_price), garage,
-                                  np.full(n_trips, 2.5), np.zeros(n_trips)])
-        return spec.alpha_price * prices + spec.beta_walk * walks + asc
-
-    return float(consumer_surplus_change_batch(spec, alts, utilities(p_base), utilities(p_scen)).mean())
-
-
 def _annual_cs_change(
     segments: pd.DataFrame,
     baseline_panel: pd.DataFrame,
     baseline_prices: pd.DataFrame,
     scenario_prices: pd.DataFrame,
-    n_trips_per_zone: int = 200,
-    seed: int = 42,
+    elasticity: float,
 ) -> float:
-    """First-order annual consumer-surplus change in USD, commensurable with annual revenue.
+    """Annual consumer-surplus change in USD: the integral of the demand law over every
+    priced block-hour, commensurable with annual revenue.
 
-    Per zone: the mean per-trip logsum change (`_zone_trip_cs_change`, USD) times the zone's
-    status-quo paid space-hours per year. Both prices in the logsum are dollars per hour, so
-    one paid space-hour is the unit of choice, and the scale factor is
-    `annual_revenue(...)["paid_hours"]` on the baseline panel at the baseline prices: the
-    zone's capacity x its own priced hours per year x capacity-weighted priced-hour
-    occupancy (`revenue.forecast._zone_revenue`). Holding the status-quo hours fixed makes
-    this a first-order (lower-bound for a price cut) figure that ignores the extra hours the
-    new price attracts and any change in search time, which is the effect the cruising
-    proxy is meant to capture; it cannot register that, so it is not a welfare total.
+    For each priced block-hour the baseline panel's demand at the baseline (reference) price
+    is q_ref = occupancy x capacity; the scenario price p gives
+    `demand.response.cs_change(q_ref, p_ref, p, elasticity)`, the exact
+    -int_{p_ref}^{p} q(x) dx of the same law the runner moves occupancy with; summed and
+    taken over 52 weeks. Negative when prices rise. It values parkers' surplus only: search
+    time is the cruising proxy's job, so this is not a welfare total.
 
-    A zone with paid hours must have a price in both tables; none is invented.
+    `baseline_prices` is zone-level; `scenario_prices` is zone-level or (zone_id,
+    hour_of_week) from `hourly_prices`. A zone with priced block-hours must have a price in
+    both; none is invented.
     """
-    from phillyparking.pricing.priced_hours import hourly_prices
-    from phillyparking.revenue.forecast import annual_revenue
+    from phillyparking.demand.response import cs_change
+    from phillyparking.pricing.priced_hours import frame_priced_mask
 
-    paid = annual_revenue(segments, baseline_panel, hourly_prices(baseline_prices))
-    paid_hours = paid.set_index("zone_id")["paid_hours"]
-    bp = baseline_prices.set_index("zone_id")["price_usd_per_hr"]
-    sp = scenario_prices.set_index("zone_id")["price_usd_per_hr"]
-
-    total = 0.0
-    for zi, (zid, hours) in enumerate(paid_hours.items()):
-        if hours <= 0:
-            continue
-        if zid not in bp.index or zid not in sp.index:
-            raise KeyError(f"zone {zid!r} has paid hours but no baseline or scenario price")
-        total += float(hours) * _zone_trip_cs_change(
-            float(bp[zid]), float(sp[zid]), n_trips_per_zone, seed + zi,
-        )
-    return float(total)
+    panel = baseline_panel.drop(columns=[c for c in ("zone_id", "capacity") if c in baseline_panel.columns])
+    panel = panel.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="inner")
+    panel = panel.loc[frame_priced_mask(panel)]
+    if panel.empty:
+        return 0.0
+    bp = baseline_prices.rename(columns={"price": "price_usd_per_hr"})
+    sp = scenario_prices.rename(columns={"price": "price_usd_per_hr"})
+    keys = [c for c in ("zone_id", "hour_of_week") if c in sp.columns]
+    panel = panel.merge(bp[["zone_id", "price_usd_per_hr"]].rename(columns={"price_usd_per_hr": "_p_ref"}),
+                        on="zone_id", how="left")
+    panel = panel.merge(sp[keys + ["price_usd_per_hr"]].drop_duplicates(keys).rename(columns={"price_usd_per_hr": "_p"}),
+                        on=keys, how="left")
+    missing = panel["_p_ref"].isna() | panel["_p"].isna()
+    if missing.any():
+        zones = sorted(panel.loc[missing, "zone_id"].unique())
+        raise KeyError(f"zones {zones} have priced block-hours but no baseline or scenario price")
+    q_ref = panel["occupancy"].to_numpy(dtype=float) * panel["capacity"].to_numpy(dtype=float)
+    per_hour = cs_change(q_ref, panel["_p_ref"].to_numpy(), panel["_p"].to_numpy(), elasticity)
+    return float(per_hour.sum() * 52)
 
 
 def run_scenario(
@@ -380,7 +347,7 @@ def run_scenario(
             bands = policy["time_of_day_bands"]
             step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands)  # noqa: E731
         else:
-            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, dwl_target_vac, elasticity)  # noqa: E731
+            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, dwl_target_vac, elasticity, current_prices)  # noqa: E731
         # Review annually until the prices stop changing (a fixed point) or repeat with
         # period 2, up to rolls_forward_years reviews. Nothing else in the map moves from
         # year to year, so the state at a fixed point is the rule's long-run outcome and
@@ -395,7 +362,7 @@ def run_scenario(
                 converged_year = year - 1
                 break
             prices = new_prices
-            panel = apply_elasticity(panel, hourly_prices(prices), elasticity)
+            panel = apply_elasticity(panel, hourly_prices(prices), elasticity, reference_price=current_prices)
             history.append((year, panel, prices, vec))
             if len(history) >= 3 and _same_prices(vec, history[-3][3]):
                 cycle = history[-2:]
@@ -409,7 +376,7 @@ def run_scenario(
             phases = []
             for y, pnl, pr, _ in cycle:
                 m = _state_metrics(pnl, pr, segments, baseline_panel, current_prices,
-                                   dwl_target_vac, pbd_share, seed)
+                                   dwl_target_vac, pbd_share, elasticity)
                 phases.append({
                     "year": y,
                     "prices": pr[[c for c in ("zone_id", "band", "price_usd_per_hr") if c in pr.columns]]
@@ -431,7 +398,7 @@ def run_scenario(
         columns=[c for c in ("previous_price", "band_occ", "n_hours", "direction", "peak_occ") if c in prices.columns]
     ))
     m = _state_metrics(panel, prices, segments, baseline_panel, current_prices,
-                       dwl_target_vac, pbd_share, seed)
+                       dwl_target_vac, pbd_share, elasticity)
 
     check_panel(panel, "scenario panel")
     if not np.isfinite(m["total_revenue"]):

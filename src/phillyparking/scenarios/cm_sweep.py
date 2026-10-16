@@ -11,10 +11,11 @@ Design:
 
 * **Segments and demand.** The fixture (`fixture` in `config/scenarios.yaml`; segments in
   zone "other" are never priced and are dropped) and its baseline weekly profile give each
-  block-hour a demand share d. Latent demand responds to price with constant elasticity,
-  d(p) = d0 (p / p0)^e, the law `apply_elasticity` applies year by year, written in closed
-  form because it is path independent; it is not clipped, so a block more than full stays
-  so until the price is high enough. Occupancy is min(d, 1).
+  block-hour a demand share d. Latent demand responds to price under the configured demand
+  law (`demand.response`, anchored at the start price, where the elasticity applies), the
+  same law `apply_elasticity` applies year by year, written in closed form because it is
+  path independent; it is not clipped, so a block more than full stays so until the price
+  is high enough. Occupancy is min(d, 1).
 * **Block dispersion tau.** Each block's demand is scaled by exp(tau u - tau^2 / 2) with
   u ~ N(0, 1) fixed per block and replication: at tau = 0 blocks differ only as the baseline
   makes them; at tau = 0.6 one block in six is more than 1.8x the zone's typical demand.
@@ -55,6 +56,7 @@ import numpy as np
 import pandas as pd
 
 from phillyparking._config import load_config
+from phillyparking.demand.response import demand_level, load_demand_form
 from phillyparking.pricing.priced_hours import frame_priced_mask
 from phillyparking.pricing.targeting_rules import (
     PEAK_RULE, load_targeting_config, review,
@@ -224,7 +226,7 @@ def chatman_manville_sweep(
                             panel["price_usd_per_hr"] = price
                             new = _apply_prices(review(rule, panel, tcfg), panel, price)
                             price = np.where(priced, new, price)
-                            d = np.where(priced, d0 * np.power(price / p0, eps), d0)
+                            d = np.where(priced, d0 * demand_level(price, eps, p0), d0)
                             rows.append({"elasticity": eps, "start_occupancy": level,
                                          "block_dispersion": tau, "observation_noise": sigma,
                                          "rule": rule, "replication": rep, "year": year,
@@ -243,6 +245,7 @@ def chatman_manville_sweep(
         "n_replications": n_replications,
         "rolls_forward_years": rolls_forward_years,
         "start_price_usd": start_price,
+        "demand_form": load_demand_form(),
         "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
         "search_cost": scfg.__dict__,
         "config_sha256": config_hashes(),

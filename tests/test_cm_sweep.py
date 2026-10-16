@@ -191,7 +191,8 @@ def test_sweep_uses_the_shared_rule_implementation(monkeypatch):
 
 
 def test_closed_form_demand_is_apply_elasticity_applied_step_by_step():
-    """d = d0 (p / p0)^e is what `apply_elasticity` gives after any sequence of steps (path independent)."""
+    """d = d0 x demand_level(p) is what `apply_elasticity` gives after any sequence of steps."""
+    from phillyparking.demand.response import demand_level
     from phillyparking.elasticity.scenarios import apply_elasticity
     panel = _panel(lambda h: 0.6, n_seg=3)
     priced = frame_priced_mask(panel)
@@ -199,8 +200,8 @@ def test_closed_form_demand_is_apply_elasticity_applied_step_by_step():
     for _ in range(3):
         step = stepped[["zone_id", "price_usd_per_hr"]].drop_duplicates("zone_id")
         step["price_usd_per_hr"] += 0.5
-        stepped = apply_elasticity(stepped, step, -0.4)
-    closed = 0.6 * ((2.0 + 1.5) / 2.0) ** -0.4
+        stepped = apply_elasticity(stepped, step, -0.4, reference_price=2.0)
+    closed = 0.6 * float(demand_level(2.0 + 1.5, -0.4, 2.0))
     assert np.allclose(stepped.loc[priced, "occupancy"], closed, atol=1e-12)
     assert np.allclose(stepped.loc[~priced, "occupancy"], 0.6)  # meter-off hours do not respond
 

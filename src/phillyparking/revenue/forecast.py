@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from phillyparking._config import load_config
+from phillyparking.demand.response import demand_factor
 from phillyparking.pricing.priced_hours import (
     annual_priced_hours, frame_priced_mask, zone_priced_hours,
 )
@@ -22,8 +23,13 @@ def revenue_per_segment_hour(
     return price_usd_per_hr * segment_capacity * occupancy
 
 
-def _project_occupancy(occ: np.ndarray, p_old: np.ndarray, p_new: np.ndarray, elasticity: float) -> np.ndarray:
-    factor = np.where(p_old > 0, (p_new / p_old) ** elasticity, 1.0)
+def _project_occupancy(occ: np.ndarray, p_old: np.ndarray, p_new: np.ndarray, elasticity: float,
+                       p_ref: np.ndarray | None = None) -> np.ndarray:
+    """Occupancy at p_new under the configured demand law; the reference price defaults to p_old."""
+    ref = p_old if p_ref is None else p_ref
+    ok = p_old > 0
+    factor = np.ones_like(occ, dtype=float)
+    factor[ok] = demand_factor(p_new[ok], p_old[ok], elasticity, ref[ok])
     return np.clip(occ * factor, 0.0, 1.0)
 
 
@@ -152,7 +158,11 @@ def revenue_curve(
     price_multiplier_grid: np.ndarray | None = None,
     hours=None,
 ) -> pd.DataFrame:
-    """Zone revenue against a uniform price multiplier, over each zone's priced hours."""
+    """Zone revenue against a uniform price multiplier, over each zone's priced hours.
+
+    `baseline_prices` are the reference prices the elasticity applies at, so under the
+    exponential form the curve peaks at p_ref / |elasticity| (`demand.response`).
+    """
     if price_multiplier_grid is None:
         price_multiplier_grid = np.linspace(0.5, 3.0, 26)
 

@@ -16,11 +16,10 @@ outcome, so the sweep scores every priced block-hour on three terms, all in doll
   has no target in it. Arrivals are the served cars divided by the mean stay. Cost =
   arrivals x search time x value of time. Parameters are stated assumptions (`search_cost:`
   in `config/pricing_rules.yaml`).
-- **consumer surplus change** against the start of the run, under the same constant
-  elasticity demand the rules act on: demand q(p) = q0 (p/p0)^e, so
-  dCS = -q0 p0 ((p/p0)^(1+e) - 1) / (1+e) (e != -1), or -q0 p0 ln(p/p0) at e = -1. Negative
-  when the price rises. Computed on demand, not on the capacity-clipped occupancy: parkers
-  who want a space at p and cannot find one pay the search cost instead.
+- **consumer surplus change** against the start of the run, the exact integral of the
+  demand law the rules act on (`demand.response.cs_change`, anchored at the start price).
+  Negative when the price rises. Computed on demand, not on the capacity-clipped
+  occupancy: parkers who want a space at p and cannot find one pay the search cost instead.
 - **revenue**: served cars x price, a transfer that counts in welfare at face value (the
   marginal cost of a curb space is zero).
 
@@ -35,6 +34,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from phillyparking._config import load_config
+from phillyparking.demand.response import cs_change
 
 
 @dataclass(frozen=True)
@@ -97,13 +97,9 @@ def cs_change_usd(demand0: np.ndarray, price0: np.ndarray, price: np.ndarray,
                   elasticity: float, capacity: np.ndarray) -> np.ndarray:
     """Consumer surplus change in dollars for one hour of one block, from price0 to price.
 
-    `demand0` is the demand share at `price0` (may exceed 1 when more cars want the block
-    than it holds); q0 = demand0 x capacity cars. Zero where the price is unchanged.
+    `demand0` is the demand share at `price0`, the reference price the elasticity applies
+    at (it may exceed 1 when more cars want the block than it holds); q0 = demand0 x
+    capacity cars. Zero where the price is unchanged.
     """
     q0 = np.asarray(demand0, dtype=float) * np.asarray(capacity, dtype=float)
-    p0 = np.asarray(price0, dtype=float)
-    ratio = np.asarray(price, dtype=float) / p0
-    e1 = 1.0 + float(elasticity)
-    if abs(e1) < 1e-12:
-        return -q0 * p0 * np.log(ratio)
-    return -q0 * p0 * (np.power(ratio, e1) - 1.0) / e1
+    return cs_change(q0, price0, price, elasticity)

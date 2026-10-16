@@ -109,6 +109,22 @@ the step because blocks busier than the zone average stay over the line; that is
 of one rate per zone, not a bug. Capacity cancels in the formula, so the code passes
 occupancy shares (`capacity=1.0`).
 
+## Demand form: one law for every price response
+
+`demand/response.py` is the only place demand moves with price. The elasticity priors
+(`elasticity_priors.yaml` `scenarios`) are the elasticity *at the zone's posted rate*; the
+form (`demand_form`, default `exponential`: q = q_ref exp(e (p - p_ref) / p_ref), elasticity
+e p / p_ref) says what happens away from it, so revenue peaks at p_ref / |e| and the Laffer
+figure has an interior maximum (audit finding 14). `constant_elasticity` and `linear` are
+selectable for sensitivity. Every caller passes the reference price: `apply_elasticity(...,
+reference_price=<posted rates>)` raises without one; `revenue_curve` and
+`_project_occupancy` use the baseline price; `optimal_price_arnott_inci` takes
+`reference_price` (the runner passes the status-quo rate, not the rate in force);
+the Chatman-Manville sweep anchors at its start price; `cs_change` is the exact integral of
+the same law. The hierarchical model still fits log occupancy on log price: that estimate is
+the elasticity at the observed prices, which is what the prior slot means. Do not reintroduce
+`(p_new / p_old) ** e` anywhere.
+
 ## Priced hours: one mask from `config/zones.yaml`
 
 `phillyparking.pricing.priced_hours` is the only place that decides when a meter is on (per
@@ -136,8 +152,10 @@ Prices are per zone x band; `priced_hours.hourly_prices` expands them to hours.
 The runner reviews annually until no rate moves by more than $0.001 (a fixed point) or prices
 repeat with period 2; `rolls_forward_years` is a cap, not a horizon. A two-cycle is reported
 as both phases (`diagnostics["phases"]`, and `<name>_phase_a` / `_phase_b` columns in the
-comparison table), never as one year's state. With the dead band, a cycle can still occur at
-low rates where one $0.50 step changes the price by a larger ratio than 0.85/0.70.
+comparison table), never as one year's state. With the dead band, a cycle can still occur where
+one $0.50 step moves demand across the whole band: under the exponential demand form a step
+multiplies demand by exp(|e| 0.5 / p_ref), which exceeds 0.85/0.70 only when |e| / p_ref is
+above about 0.39 (Fishtown at the pessimistic elasticity; no zone at the central one).
 
 ## Chatman-Manville sweep: one rule module, paired runs, scored on welfare
 
@@ -312,15 +330,18 @@ rows are $0 and the PBD's claim shows as unfunded: read the allocation as an ord
 not a forecast. The model uses gross meter revenue and no escalator, the statute net revenue
 citywide and an escalated minimum.
 
-`cs_change_total` is annual dollars: per zone, the mean nested-logit logsum change per trip
-(`runner._zone_trip_cs_change`, vectorised in `welfare/consumer_surplus.py`) times that zone's
-status-quo paid space-hours (`annual_revenue(...)["paid_hours"]`), first order, no search-time
-term. A zone with paid hours and no price raises; no default price is invented.
+`cs_change_total` is annual dollars: over every priced block-hour, the integral of the demand
+law from the posted rate to the scenario's hourly price (`runner._annual_cs_change`, using
+`demand.response.cs_change` with the baseline panel's demand as q_ref), times 52; no
+search-time term. A zone with priced block-hours and no price raises; no default price is
+invented. `welfare/consumer_surplus.py` (nested-logit logsums) is no longer used by the
+pipeline.
 
 Script 05 also writes `scenario_ranges.csv` and `scenario_runs.csv` (copied to `outputs/tables/`
 by 06): the other two named elasticities at the headline seed, and the central elasticity at
 fixture seeds 0..n-1 (`--n-seeds`, default 20). On segments that are not the synthetic fixture
-the occupancy panel does not depend on the seed, so the seed range moves only the CS trips.
+nothing depends on the seed (the panel is deterministic in the covariates and the surplus term
+is an integral), so the seed loop is skipped and only the elasticity range is written.
 `pessimistic` (-0.7) gives the highest revenue because both reforms are net price cuts. A Seattle
 two-cycle pools both phases in each range cell. `incidence_by_decile.png` is a constant
 placeholder, stamped as such in the figure; `Report.tex` still includes it.

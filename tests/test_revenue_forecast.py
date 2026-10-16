@@ -92,11 +92,13 @@ def test_hourly_prices_apply_hour_by_hour():
     assert rev == pytest.approx(0.5 * 10 * 52 * 5 * (4 * 1.0 + 8 * 3.0))
 
 
-def test_scenario_projection_constant_elasticity():
-    # baseline: occ=0.6, p=2 → new p=3, eps=-0.5 → new occ = 0.6*1.5^-0.5
+def test_scenario_projection_follows_the_demand_law():
+    # baseline: occ=0.6, p=2 -> new p=3, eps=-0.5 at p_ref = p_old under the exponential form
+    from phillyparking.demand.response import demand_factor
     occ_old = np.array([0.6] * 100)
     p_old = np.array([2.0] * 100)
     p_new = np.array([3.0] * 100)
     occ_new = _project_occupancy(occ_old, p_old, p_new, -0.5)
-    expected_occ = 0.6 * (1.5) ** -0.5
+    expected_occ = 0.6 * float(demand_factor(3.0, 2.0, -0.5, 2.0))
+    assert math.isclose(expected_occ, 0.6 * math.exp(-0.25), rel_tol=1e-12)
     assert math.isclose(float(occ_new.mean()), expected_occ, rel_tol=1e-6)

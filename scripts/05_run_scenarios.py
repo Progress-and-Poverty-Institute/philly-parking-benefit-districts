@@ -150,19 +150,18 @@ def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None,
 
     if len(results) == len(ALL_SCENARIOS) and n_seeds > 0:
         def inputs_for_seed(s: int):
-            """Segments and panel a run at seed `s` would use; only the fixture's change with it."""
-            if seg_source.get("kind") == "synthetic_fixture":
-                sg = make_synthetic_segments(n=120, seed=s)
-                return sg, baseline_occupancy(sg, seed=s), {**segment_source(sg)}
-            if seg_source.get("panel", {}).get("kind") == "file":
-                return segs, panel, seg_source
-            # The panel is a deterministic function of segment covariates, so on segments
-            # that are not redrawn the seed varies only the consumer-surplus trips.
-            return segs, baseline_occupancy(segs, seed=s), seg_source
+            """Segments and panel a run at seed `s` would use: the fixture redrawn at `s`."""
+            sg = make_synthetic_segments(n=120, seed=s)
+            return sg, baseline_occupancy(sg, seed=s), {**segment_source(sg)}
 
         if seg_source.get("kind") != "synthetic_fixture":
-            log.warning("Segments are not the synthetic fixture, so the seed range reflects "
-                        "only the consumer-surplus trips, not segment or panel draws.")
+            # The baseline panel is a deterministic function of segment covariates and the
+            # consumer-surplus term is the integral of the demand law, so on segments that
+            # are loaded rather than drawn nothing depends on the seed: the seed range would
+            # be one point. Only the elasticity range is run.
+            log.warning("Segments are not the synthetic fixture; nothing in the run depends on "
+                        "the seed, so no seed range is computed (n_seeds ignored).")
+            n_seeds = 0
         runs = [run_values(results, HEADLINE_ELASTICITY, seed)]
         quiet = logging.getLogger("phillyparking.scenarios.runner")
         prev_level = quiet.level
