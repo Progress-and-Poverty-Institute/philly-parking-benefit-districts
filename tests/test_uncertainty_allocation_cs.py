@@ -209,7 +209,7 @@ def _no_named_zones(path):
 def test_script_05_writes_ranges_with_every_elasticity_and_seed(script05, monkeypatch):
     mod, root = script05
     models = root / "outputs" / "models"
-    monkeypatch.setattr(mod, "load_segments", _no_named_zones)
+    monkeypatch.setattr(mod, "load_priced_segments", _no_named_zones)
     out = CliRunner().invoke(mod.main, ["--seed", "5", "--n-seeds", "3"])
     assert out.exit_code == 0, out.output
     ranges = pd.read_csv(models / "scenario_ranges.csv")
@@ -239,7 +239,7 @@ def test_script_05_outputs_change_with_the_seed_on_loaded_segments(script05, mon
     that are loaded rather than drawn the seed reaches only the consumer-surplus trips. It must
     reach those."""
     mod, root = script05
-    monkeypatch.setattr(mod, "load_segments", lambda path: make_synthetic_segments(n=30, seed=5))
+    monkeypatch.setattr(mod, "load_priced_segments", lambda path: make_synthetic_segments(n=30, seed=5))
     a1 = _run_05(mod, root, 1)
     a1_again = _run_05(mod, root, 1)
     a2 = _run_05(mod, root, 2)
@@ -250,7 +250,7 @@ def test_script_05_outputs_change_with_the_seed_on_loaded_segments(script05, mon
 def test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixture(script05, monkeypatch):
     mod, root = script05
 
-    monkeypatch.setattr(mod, "load_segments", _no_named_zones)
+    monkeypatch.setattr(mod, "load_priced_segments", _no_named_zones)
     a1 = _run_05(mod, root, 1)
     a2 = _run_05(mod, root, 2)
     for row in ("total_revenue", "cruising_dwl_total", "cs_change_total"):

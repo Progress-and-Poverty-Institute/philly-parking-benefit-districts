@@ -72,7 +72,8 @@ def test_a_segment_baseline_does_not_depend_on_its_companions():
     other = make_synthetic_segments(n=63, seed=9)
     alone = _peaks(baseline_occupancy(big.iloc[[5]]))
     inside = _peaks(baseline_occupancy(big))
-    mixed = _peaks(baseline_occupancy(pd.concat([big.iloc[[5]], other], ignore_index=True)))
+    mixed = _peaks(baseline_occupancy(pd.concat([big.iloc[[5]], other], ignore_index=True),
+                                      anchor_set="synthetic_fixture"))
     sid = big["segment_id"].iloc[5]
     assert alone[sid] == pytest.approx(inside[sid], abs=1e-12)
     assert mixed[sid] == pytest.approx(inside[sid], abs=1e-12)
@@ -84,7 +85,8 @@ def test_an_extreme_segment_does_not_move_the_others():
     extreme = segs.iloc[[0]].copy()
     extreme["segment_id"] = "EXTREME"
     extreme["jobs_within_200m"] = 1e7
-    after = _peaks(baseline_occupancy(pd.concat([segs, extreme], ignore_index=True)))
+    after = _peaks(baseline_occupancy(pd.concat([segs, extreme], ignore_index=True),
+                                      anchor_set="synthetic_fixture"))
     assert np.allclose(after.drop("EXTREME").sort_index(), before.sort_index(), atol=1e-12)
 
 
@@ -94,7 +96,7 @@ def test_covariates_off_the_anchors_scale_are_flagged(caplog):
     with caplog.at_level(logging.WARNING):
         panel = baseline_occupancy(segs)
     assert panel.attrs["calibration"]["share_at_cap"] > 0.2
-    assert "do not suit these covariates" in caplog.text
+    assert "does not suit these covariates" in caplog.text
 
 
 def test_nan_covariate_raises():

@@ -9,8 +9,9 @@ import click
 import pandas as pd
 
 from phillyparking._config import data_dir
-from phillyparking.spatial.segments import load_segments
-from phillyparking.demand.synthetic_baseline import baseline_occupancy, panel_cache_key
+from phillyparking.spatial.segments import load_priced_segments
+from phillyparking.demand.synthetic_baseline import (anchor_set_for_source, baseline_occupancy,
+                                                     panel_cache_key)
 from phillyparking.scenarios.provenance import describe_file_source, segment_source
 from phillyparking.scenarios.runner import default_results_dir, run_scenario
 from phillyparking.scenarios.compare import comparison_table
@@ -45,9 +46,15 @@ def _ppa_inputs(ppa_dir: Path, period: str | None):
 def _public_inputs(seg_path: Path, panel_path: Path, seed: int):
     NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
     if seg_path.exists():
-        segs = load_segments(seg_path)
-        seg_source = describe_file_source(seg_path)
-        log.info("Loaded segments (n=%d)", len(segs))
+        segs = load_priced_segments(seg_path)
+        loaded = segs.attrs.get("segment_source", {})
+        seg_source = {**describe_file_source(seg_path),
+                      **{k: loaded[k] for k in ("filter", "n_in_file", "n_kept") if k in loaded}}
+        meta_path = seg_path.with_name("segments.meta.json")
+        if meta_path.exists():
+            seg_source["priced_curb_rule"] = json.loads(
+                meta_path.read_text(encoding="utf-8")).get("priced_curb_rule")
+        log.info("Loaded priced segments (n=%d of %s)", len(segs), loaded.get("n_in_file"))
         n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
         reason = f"{n_named} segments in named zones"
     else:
@@ -61,6 +68,7 @@ def _public_inputs(seg_path: Path, panel_path: Path, seed: int):
         segs = make_synthetic_segments(n=120, seed=seed)
         seg_source = {**segment_source(segs), "fallback_reason": reason}
 
+    seg_source["anchor_set"] = anchor_set_for_source(segs)
     # The saved panel is reused only if it was built for these segments, covariates,
     # anchors and seed (key written beside it by this script and by script 03).
     key_path = panel_path.with_name("demand_panel.key")

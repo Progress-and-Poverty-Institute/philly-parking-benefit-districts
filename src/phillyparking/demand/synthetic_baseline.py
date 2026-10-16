@@ -8,6 +8,8 @@ off-peak floor and peak.
 Every anchor is absolute (`config/demand_baseline.yaml`): covariates are standardised
 against fixed centers and scales, and intensity maps to peak occupancy through fixed
 bounds, so a segment's baseline does not depend on which other segments are loaded. The
+centers, scales and bounds come in named anchor sets, one per kind of segment (the demo
+fixture, real Philadelphia segments); the set follows the segments' recorded source. The
 anchors are stated assumptions, not measurements; see the config.
 """
 from __future__ import annotations
@@ -110,8 +112,42 @@ def _kernels() -> np.ndarray:
     return np.vstack([_office_kernel(), _retail_kernel(), _residential_kernel()])
 
 
-def baseline_anchors() -> dict:
-    return load_config("demand_baseline")
+def anchor_set_for_source(segments: pd.DataFrame) -> str:
+    """The anchor set for these segments, from `attrs["segment_source"]["kind"]`.
+
+    Raises when the segments carry no recorded source (pandas drops `attrs` in some
+    operations): pass `anchor_set=` explicitly then rather than guess.
+    """
+    src = getattr(segments, "attrs", {}).get("segment_source") or {}
+    kind = src.get("kind")
+    sets = load_config("demand_baseline")["source_anchor_sets"]
+    if kind not in sets:
+        raise ValueError(
+            f"baseline anchors: segments have source kind {kind!r}, which has no anchor set in "
+            f"config/demand_baseline.yaml source_anchor_sets ({sorted(sets)}); pass anchor_set="
+        )
+    return sets[kind]
+
+
+def baseline_anchors(anchor_set: str) -> dict:
+    """The config with the named set's centers, scales and intensity bounds filled in."""
+    cfg = load_config("demand_baseline")
+    if anchor_set not in cfg["anchor_sets"]:
+        raise KeyError(f"No anchor set {anchor_set!r} in config/demand_baseline.yaml "
+                       f"(have {sorted(cfg['anchor_sets'])})")
+    a = cfg["anchor_sets"][anchor_set]
+    covariates = {c: {**w, "center": a["centers"][c], "scale": a["scales"][c]}
+                  for c, w in cfg["covariates"].items()}
+    return {**{k: v for k, v in cfg.items() if k not in ("anchor_sets", "source_anchor_sets")},
+            "covariates": covariates, "intensity_low": a["intensity_low"],
+            "intensity_high": a["intensity_high"], "anchor_set": anchor_set}
+
+
+def _resolve_anchors(segments: pd.DataFrame, anchors: dict | None,
+                     anchor_set: str | None) -> dict:
+    if anchors is not None:
+        return anchors
+    return baseline_anchors(anchor_set or anchor_set_for_source(segments))
 
 
 def _z(seg_features: pd.DataFrame, col: str, anchors: dict) -> np.ndarray:
@@ -122,14 +158,12 @@ def _z(seg_features: pd.DataFrame, col: str, anchors: dict) -> np.ndarray:
     return (np.log1p(x) - float(a["center"])) / float(a["scale"])
 
 
-def _mix_weights(seg_features: pd.DataFrame, temperature: float = 1.0,
-                 anchors: dict | None = None) -> np.ndarray:
+def _mix_weights(seg_features: pd.DataFrame, temperature: float, anchors: dict) -> np.ndarray:
     """Per-segment soft mix over (office, retail, residential). Shape (n, 3).
 
     Each column is mix_weight x (log1p(covariate) - center), so the mix of a segment does not
     depend on the others. `temperature` > 1 sharpens the softmax.
     """
-    anchors = anchors or baseline_anchors()
     cov = anchors["covariates"]
     raw = np.column_stack([
         float(cov[c]["mix_weight"]) * (np.log1p(seg_features[c].to_numpy(dtype=float))
@@ -140,9 +174,8 @@ def _mix_weights(seg_features: pd.DataFrame, temperature: float = 1.0,
     return e / e.sum(axis=1, keepdims=True)
 
 
-def _latent_intensity(seg_features: pd.DataFrame, anchors: dict | None = None) -> np.ndarray:
+def _latent_intensity(seg_features: pd.DataFrame, anchors: dict) -> np.ndarray:
     """Per-segment scalar intensity: sum of intensity_weight x anchored z-score."""
-    anchors = anchors or baseline_anchors()
     return sum(float(a["intensity_weight"]) * _z(seg_features, c, anchors)
                for c, a in anchors["covariates"].items())
 
@@ -154,15 +187,18 @@ def baseline_occupancy(
     offpeak_floor: float | None = None,
     low_demand_peak: float | None = None,
     anchors: dict | None = None,
+    anchor_set: str | None = None,
 ) -> pd.DataFrame:
     """Tidy panel: [segment_id, hour_of_week, occupancy, occupancy_sd] of length n_seg * 168.
 
     Each segment's peak (and off-peak) occupancy is interpolated by its demand intensity
     between `low_demand_peak` (at `intensity_low`) and `peak_target` (at `intensity_high`).
-    Levels default to `config/demand_baseline.yaml`. The panel's `attrs["calibration"]`
-    records the shares of segments at the cap and the floor.
+    Levels default to `config/demand_baseline.yaml`; the anchor set is `anchor_set`, else the
+    one for the segments' recorded source (`anchor_set_for_source`). The panel's
+    `attrs["calibration"]` records the anchor set and the shares of segments at the cap and
+    the floor.
     """
-    anchors = anchors or baseline_anchors()
+    anchors = _resolve_anchors(segments, anchors, anchor_set)
     peak_target = float(anchors["peak_target"] if peak_target is None else peak_target)
     offpeak_floor = float(anchors["offpeak_floor"] if offpeak_floor is None else offpeak_floor)
     low_demand_peak = float(anchors["low_demand_peak"] if low_demand_peak is None
@@ -181,8 +217,9 @@ def baseline_occupancy(
     at_cap, at_floor = float((lam >= lam_hi).mean()), float((lam <= lam_lo).mean())
     if max(at_cap, at_floor) > float(anchors.get("max_clipped_share", 1.0)):
         logger.warning("baseline_occupancy: %.0f%% of segments at the peak cap and %.0f%% at the "
-                       "floor; the anchors in config/demand_baseline.yaml do not suit these "
-                       "covariates", 100 * at_cap, 100 * at_floor)
+                       "floor; anchor set %r in config/demand_baseline.yaml does not suit "
+                       "these covariates", 100 * at_cap, 100 * at_floor,
+                       anchors.get("anchor_set"))
 
     seg_peak = low_demand_peak + (peak_target - low_demand_peak) * lam_norm
     seg_off = offpeak_floor + float(anchors["offpeak_span"]) * lam_norm
@@ -204,19 +241,21 @@ def baseline_occupancy(
         "occupancy": occ.reshape(-1),
         "occupancy_sd": sd.reshape(-1),
     })
-    rows.attrs["calibration"] = {"share_at_cap": at_cap, "share_at_floor": at_floor}
+    rows.attrs["calibration"] = {"anchor_set": anchors.get("anchor_set"),
+                                 "share_at_cap": at_cap, "share_at_floor": at_floor}
     return rows
 
 
-def panel_cache_key(segments: pd.DataFrame, seed: int) -> str:
+def panel_cache_key(segments: pd.DataFrame, seed: int, anchor_set: str | None = None) -> str:
     """Key for a cached baseline panel: segment ids and covariates, anchors, seed."""
     import hashlib
     import json
 
-    cols = ["segment_id", *baseline_anchors()["covariates"]]
+    anchors = _resolve_anchors(segments, None, anchor_set)
+    cols = ["segment_id", *anchors["covariates"]]
     body = pd.DataFrame(segments)[[c for c in cols if c in segments.columns]]
     h = hashlib.sha256(pd.util.hash_pandas_object(body, index=False).values.tobytes())
-    h.update(json.dumps(baseline_anchors(), sort_keys=True).encode())
+    h.update(json.dumps(anchors, sort_keys=True).encode())
     h.update(str(int(seed)).encode())
     return h.hexdigest()
 
