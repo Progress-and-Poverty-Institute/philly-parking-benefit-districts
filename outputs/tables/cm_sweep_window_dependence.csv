@@ -1,5 +1,5 @@
-rule,year,n_cells,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,dwl_ratio_priced_median_cells_median,dwl_ratio_priced_median_cells_min,dwl_ratio_priced_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,revenue_ratio_priced_median_cells_median,revenue_ratio_priced_median_cells_min,revenue_ratio_priced_median_cells_max,cells_dwl_better,cells_dwl_better_priced,cells_revenue_better
-avg_occupancy,5,24,54.6547,10.5773,253.169,51.7458,9.0544,184.531,0.513751,0.305409,0.7757,0.512202,0.307251,0.732707,0,0,0
-avg_priced_bands,5,24,8.68098,3.16869,44.4451,12.0832,3.24029,38.9405,0.82879,0.512706,0.951194,0.813298,0.483783,0.937147,0,0,0
-avg_priced_hours,5,24,21.6875,7.82994,94.6902,31.9789,7.99472,90.2922,0.720815,0.365628,0.906368,0.684195,0.315124,0.882329,0,0,0
-seattle_rule,5,24,12.1057,4.52133,61.9225,22.4018,5.13691,75.6361,0.861122,0.557856,0.949081,0.722331,0.395609,0.87153,0,0,0
+rule,reference,year,n_cells,welfare_diff_median_cells_median,welfare_diff_median_cells_min,welfare_diff_median_cells_max,breakeven_minutes_median_cells_median,breakeven_minutes_median_cells_min,breakeven_minutes_median_cells_max,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,cells_welfare_better,cells_dwl_better,cells_revenue_better
+mean_band,peak_band,8,54,-4.54726e+06,-8.96891e+06,1.97791e+06,1.82699,0.946225,13.8899,3.93184,1.0338,17995.2,0.624791,0.198314,0.870833,6,0,0
+mean_zone,peak_zone,8,54,-3.98872e+06,-1.12043e+07,2.56183e+06,1.90491,0.744399,18.5107,3.52055,1.00471,44138,0.593681,0.198314,0.970606,8,0,0
+peak_band,peak_zone,8,54,0,-38184,112553,15.2923,-18.8353,280.833,1,0.185504,7.19673,1,0.961391,1.00368,24,7,4
+seattle_rule,peak_band,8,54,-4.4301e+06,-7.91473e+06,1.83233e+06,1.87037,0.961108,13.3989,3.84914,1.03265,15931.7,0.637126,0.200124,0.871536,6,0,0
