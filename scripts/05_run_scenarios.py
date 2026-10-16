@@ -1,6 +1,7 @@
 """Run policy scenarios and persist ScenarioResults to outputs/models/."""
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -8,9 +9,8 @@ import click
 import pandas as pd
 
 from phillyparking._config import data_dir
-from phillyparking.spatial.segments import load_segments, build_segments, save_segments
-from phillyparking.spatial.zones import assign_zones
-from phillyparking.demand.synthetic_baseline import baseline_occupancy
+from phillyparking.spatial.segments import load_segments
+from phillyparking.demand.synthetic_baseline import baseline_occupancy, panel_cache_key
 from phillyparking.scenarios.provenance import describe_file_source, segment_source
 from phillyparking.scenarios.runner import default_results_dir, run_scenario
 from phillyparking.scenarios.compare import comparison_table
@@ -24,6 +24,60 @@ ALL_SCENARIOS = ("status_quo", "seattle", "full_pbd")
 HEADLINE_ELASTICITY = "central"
 
 
+def _ppa_inputs(ppa_dir: Path, period: str | None):
+    """Segments and one period's typical-week panel from scripts/03b_ingest_ppa.py output."""
+    from phillyparking.ingest.ppa import IngestResult, runner_inputs
+
+    meta = json.loads((ppa_dir / "meta.json").read_text(encoding="utf-8"))
+    full = pd.read_parquet(ppa_dir / "panel.parquet")
+    periods = pd.DataFrame({"period": sorted(full["period"].unique())})
+    result = IngestResult(panel=full, segments=pd.read_parquet(ppa_dir / "segments.parquet"),
+                          periods=periods, report=meta.get("report", {}))
+    segs, panel = runner_inputs(result, period)
+    src = {**segs.attrs["segment_source"], "ppa_dir": str(ppa_dir.resolve()),
+           "ppa_source": meta.get("source"), "n_segments": int(len(segs)),
+           "panel": {"kind": "file", "path": str((ppa_dir / "panel.parquet").resolve()),
+                     "period": segs.attrs["segment_source"]["period"]}}
+    log.info("PPA inputs: %d segments, period %s (%s)", len(segs), src["period"], src["ppa_source"])
+    return segs, panel, src
+
+
+def _public_inputs(seg_path: Path, panel_path: Path, seed: int):
+    NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
+    if seg_path.exists():
+        segs = load_segments(seg_path)
+        seg_source = describe_file_source(seg_path)
+        log.info("Loaded segments (n=%d)", len(segs))
+        n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
+        reason = f"{n_named} segments in named zones"
+    else:
+        n_named, reason = 0, f"no saved segments at {seg_path} (scripts 01-02 build them)"
+    if n_named < 5:
+        log.warning(
+            "Loaded segments have only %d in named zones; falling back to "
+            "in-package synthetic distribution across all named zones for a "
+            "meaningful demo.", n_named,
+        )
+        segs = make_synthetic_segments(n=120, seed=seed)
+        seg_source = {**segment_source(segs), "fallback_reason": reason}
+
+    # The saved panel is reused only if it was built for these segments, covariates,
+    # anchors and seed (key written beside it by this script and by script 03).
+    key_path = panel_path.with_name("demand_panel.key")
+    key = panel_cache_key(segs, seed)
+    if panel_path.exists() and key_path.exists() and key_path.read_text(encoding="utf-8") == key:
+        panel = pd.read_parquet(panel_path)
+        seg_source["panel"] = {**describe_file_source(panel_path), "cache_key": key}
+    else:
+        log.info("No saved panel for these segments and anchors; computing baseline_occupancy")
+        panel = baseline_occupancy(segs, seed=seed)
+        panel.to_parquet(panel_path)
+        key_path.write_text(key, encoding="utf-8")
+        seg_source["panel"] = {"kind": "baseline_occupancy", "seed": seed, "cache_key": key}
+
+    return segs, panel, seg_source
+
+
 @click.command()
 @click.option("--scenario", default=None,
               help=f"Single scenario name; default runs all of {ALL_SCENARIOS}.")
@@ -33,8 +87,15 @@ HEADLINE_ELASTICITY = "central"
                    "ranges; they are also skipped when a single --scenario is run).")
 @click.option("--out", "out_dir", default=None, type=click.Path(),
               help="Output base directory (default: outputs/models).")
+@click.option("--ppa", "ppa_dir", default=None, type=click.Path(),
+              help="Run on the Parking Authority panel written by scripts/03b_ingest_ppa.py "
+                   "(a directory with panel.parquet, segments.parquet, meta.json). No fixture "
+                   "fallback: the segments are the inventory's.")
+@click.option("--period", default=None,
+              help="With --ppa: the calendar period to run (default: the latest).")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose (DEBUG) logging.")
-def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None, verbose: bool) -> None:
+def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None,
+         ppa_dir: str | None, period: str | None, verbose: bool) -> None:
     """Run scenarios and write ScenarioResults under <out>/<name>/.
 
     The scenario results and comparison table are the headline run: the central elasticity
@@ -48,40 +109,14 @@ def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None, ver
     )
 
     proc = data_dir() / "processed"
+    proc.mkdir(parents=True, exist_ok=True)
     seg_path = proc / "segments.parquet"
     panel_path = proc / "demand_panel.parquet"
 
-    NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
-    try:
-        segs = load_segments(seg_path)
-        seg_source = describe_file_source(seg_path)
-        log.info("Loaded segments (n=%d)", len(segs))
-    except Exception as exc:  # noqa: BLE001
-        log.warning("No saved segments (%s); building from the public layers", exc)
-        segs = build_segments()
-        segs = assign_zones(segs)
-        save_segments(segs, seg_path)
-        seg_source = {**describe_file_source(seg_path), "built_this_run": True}
-
-    n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum())
-    if n_named < 5:
-        log.warning(
-            "Loaded segments have only %d in named zones; falling back to "
-            "in-package synthetic distribution across all named zones for a "
-            "meaningful demo.", n_named,
-        )
-        segs = make_synthetic_segments(n=120, seed=seed)
-        seg_source = {**segment_source(segs), "fallback_reason": f"{n_named} segments in named zones"}
-        panel_path.unlink(missing_ok=True)
-
-    if panel_path.exists():
-        panel = pd.read_parquet(panel_path)
-        seg_source["panel"] = describe_file_source(panel_path)
+    if ppa_dir:
+        segs, panel, seg_source = _ppa_inputs(Path(ppa_dir), period)
     else:
-        log.info("No saved panel; computing baseline_occupancy")
-        panel = baseline_occupancy(segs, seed=seed)
-        panel.to_parquet(panel_path)
-        seg_source["panel"] = {"kind": "baseline_occupancy", "seed": seed}
+        segs, panel, seg_source = _public_inputs(seg_path, panel_path, seed)
 
     base = Path(out_dir) if out_dir else default_results_dir()
     base.mkdir(parents=True, exist_ok=True)

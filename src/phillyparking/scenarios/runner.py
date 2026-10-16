@@ -172,6 +172,9 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
         # profile (each hour already averages over weeks), so its maximum is not a single
         # noisy draw; on real week-by-week data a high quantile would be the stabler choice.
         peak_occ = float(zh["occupancy"].max())
+        if not peak_occ > 0:
+            raise ValueError(f"zone '{zid}' has zero occupancy at every priced hour, so its "
+                             f"Arnott-Inci price is undefined (no demand observed, or a data gap)")
         base_price = float(cur_row["price_usd_per_hr"].iloc[0])
         # Occupancy shares: capacity cancels from the Arnott-Inci price.
         p = optimal_price_arnott_inci(

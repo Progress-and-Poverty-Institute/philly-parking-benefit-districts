@@ -1,4 +1,17 @@
-"""Canonical street-segment GeoDataFrame builder."""
+"""Canonical street-segment GeoDataFrame builder.
+
+Streets are split into pieces of about `target_length_m` (in EPSG:32618). Every input line
+is accounted for in `segments.attrs["build_report"]`; nothing is dropped without a count:
+
+- MultiLineStrings are split into their parts, each part keyed by its index.
+- Empty geometries and non-line geometries are dropped and counted.
+- In an OSM drive graph a two-way street is two directed edges with the same osmid and
+  reversed geometry; one of each such pair is dropped (counted as `two_way_twins_dropped`).
+
+Segment ids hash a parent key that identifies the input line: `seg_id` (City Street
+Centerline), else `osmid|u|v|key` (an OSM graph edge; osmid alone repeats across edges),
+else `osmid|row`, else the row number. Ids are checked unique; a collision raises.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -6,17 +19,20 @@ import logging
 from pathlib import Path
 
 import geopandas as gpd
-import numpy as np
-from shapely.geometry import LineString
+import pandas as pd
+from shapely.geometry import LineString, MultiLineString
 from shapely.ops import substring
 
 from phillyparking._config import data_dir, load_config
+from phillyparking.spatial.zones import zone_for_point
 
 log = logging.getLogger(__name__)
 
 SEGMENT_LENGTH_TARGET_M = 80.0
 METERS_PER_CAR = 7.0
 DRIVEWAY_HYDRANT_SLACK = 0.85
+RPP_POINT_MAX_DISTANCE_M = 30.0
+UTM = 32618
 
 
 def _seg_id(parent_key: str, idx: int) -> str:
@@ -24,27 +40,47 @@ def _seg_id(parent_key: str, idx: int) -> str:
     return f"S{h}"
 
 
-def _split_line(line: LineString, target_m: float, length_m: float) -> list[tuple[int, LineString]]:
+def _split_line(line: LineString, target_m: float) -> list[LineString]:
+    """Split a projected line into about-equal pieces near `target_m` long."""
+    length_m = line.length
     if length_m <= target_m * 1.25:
-        return [(0, line)]
+        return [line]
     n = max(1, int(round(length_m / target_m)))
-    pieces = []
-    for i in range(n):
-        a = i / n
-        b = (i + 1) / n
-        sub = substring(line, a, b, normalized=True)
-        if sub.is_empty or sub.length == 0:
+    pieces = [substring(line, i / n, (i + 1) / n, normalized=True) for i in range(n)]
+    return [p for p in pieces if not p.is_empty and p.length > 0]
+
+
+def _parent_keys(streets: gpd.GeoDataFrame) -> list[str]:
+    cols = set(streets.columns)
+    if "seg_id" in cols:
+        return [str(v) for v in streets["seg_id"]]
+    if {"osmid", "u", "v", "key"} <= cols:
+        return [f"{o}|{u}|{v}|{k}" for o, u, v, k in
+                zip(streets["osmid"], streets["u"], streets["v"], streets["key"])]
+    if "osmid" in cols:
+        return [f"{o}|row{i}" for i, o in enumerate(streets["osmid"])]
+    return [f"row{i}" for i in range(len(streets))]
+
+
+def _two_way_twins(streets: gpd.GeoDataFrame, lines_m) -> set[int]:
+    """Row positions of the second edge of each (u->v, v->u) pair with the same osmid."""
+    if not {"osmid", "u", "v"} <= set(streets.columns):
+        return set()
+    seen: dict[tuple, int] = {}
+    drop: set[int] = set()
+    keys = streets["key"] if "key" in streets.columns else pd.Series(0, index=streets.index)
+    for pos, (o, u, v, k) in enumerate(zip(streets["osmid"], streets["u"], streets["v"], keys)):
+        twin = (str(o), v, u, k)
+        if twin in seen and lines_m[seen[twin]] is not None and lines_m[pos] is not None \
+                and abs(lines_m[seen[twin]].length - lines_m[pos].length) < 0.5:
+            drop.add(pos)
             continue
-        pieces.append((i, sub))
-    return pieces
+        seen[(str(o), u, v, k)] = pos
+    return drop
 
 
-def _zone_from_bbox(lon: float, lat: float, zones_cfg: dict) -> str:
-    for z in zones_cfg.get("zones", []):
-        b = z["bbox"]
-        if b["west"] <= lon <= b["east"] and b["south"] <= lat <= b["north"]:
-            return z["id"]
-    return "other"
+def _street_name_col(streets: gpd.GeoDataFrame) -> str | None:
+    return next((c for c in ("street_name", "stname", "name") if c in streets.columns), None)
 
 
 def build_segments(
@@ -55,97 +91,98 @@ def build_segments(
     target_length_m: float = SEGMENT_LENGTH_TARGET_M,
 ) -> gpd.GeoDataFrame:
     if streets is None:
-        from phillyparking.io.opendataphilly import (
-            fetch_meters,
-            fetch_neighborhoods,
-            fetch_rpp_zones,
-            fetch_streets,
-        )
+        from phillyparking.io.opendataphilly import fetch_neighborhoods, fetch_rpp_zones, fetch_streets
 
         streets = fetch_streets()
-        meters = meters if meters is not None else fetch_meters()
         rpp_zones = rpp_zones if rpp_zones is not None else fetch_rpp_zones()
         neighborhoods = neighborhoods if neighborhoods is not None else fetch_neighborhoods()
 
-    streets = streets.to_crs(4326)
-    streets_m = streets.to_crs(32618)
-    zones_cfg = load_config("zones")
+    streets = streets.to_crs(4326).reset_index(drop=True)
+    lines_m = list(streets.to_crs(UTM).geometry)
+    zones = load_config("zones").get("zones", [])
+    name_col = _street_name_col(streets)
+    parents = _parent_keys(streets)
+    twins = _two_way_twins(streets, lines_m)
 
-    name_col = "street_name" if "street_name" in streets.columns else ("name" if "name" in streets.columns else None)
-    osmid_col = "osmid" if "osmid" in streets.columns else None
-
+    report = {"input_rows": len(streets), "empty_dropped": 0, "non_line_dropped": 0,
+              "multipart_rows": 0, "two_way_twins_dropped": len(twins)}
     rows = []
-    for idx in range(len(streets)):
-        geom_ll = streets.geometry.iloc[idx]
-        geom_m = streets_m.geometry.iloc[idx]
-        if geom_ll is None or geom_ll.is_empty or not isinstance(geom_ll, LineString):
+    for idx, geom in enumerate(lines_m):
+        if idx in twins:
             continue
-        parent_key = str(streets[osmid_col].iloc[idx]) if osmid_col else f"row{idx}"
-        length_m_total = float(geom_m.length)
-        for sub_idx, sub_ll in _split_line(geom_ll, target_length_m, length_m_total):
-            sub_m = substring(geom_m, sub_idx / max(1, round(length_m_total / target_length_m)),
-                              (sub_idx + 1) / max(1, round(length_m_total / target_length_m)),
-                              normalized=True) if length_m_total > target_length_m * 1.25 else geom_m
-            length_m = float(sub_m.length) if sub_m and not sub_m.is_empty else length_m_total
-            cx, cy = sub_ll.centroid.x, sub_ll.centroid.y
-            zone_id = _zone_from_bbox(cx, cy, zones_cfg)
-            sname = streets[name_col].iloc[idx] if name_col else None
-            capacity = max(0, int((length_m / METERS_PER_CAR) * DRIVEWAY_HYDRANT_SLACK))
-            rows.append(
-                {
-                    "segment_id": _seg_id(parent_key, sub_idx),
-                    "geometry": sub_ll,
-                    "length_m": length_m,
+        if geom is None or geom.is_empty:
+            report["empty_dropped"] += 1
+            continue
+        if isinstance(geom, MultiLineString):
+            report["multipart_rows"] += 1
+            parts = [(f"{parents[idx]}|part{j}", g) for j, g in enumerate(geom.geoms)]
+        elif isinstance(geom, LineString):
+            parts = [(parents[idx], geom)]
+        else:
+            report["non_line_dropped"] += 1
+            continue
+        sname = streets[name_col].iloc[idx] if name_col else None
+        for key, part in parts:
+            for sub_idx, piece in enumerate(_split_line(part, target_length_m)):
+                rows.append({
+                    "segment_id": _seg_id(key, sub_idx),
+                    "geometry": piece,
+                    "length_m": float(piece.length),
                     "street_name": sname,
-                    "zone_id": zone_id,
-                    "neighborhood": None,
-                    "rpp_zone": None,
-                    "capacity": capacity,
+                    "capacity": max(0, int((piece.length / METERS_PER_CAR) * DRIVEWAY_HYDRANT_SLACK)),
                     "has_meter": False,
                     "n_meters": 0,
-                }
-            )
+                })
 
-    seg = gpd.GeoDataFrame(rows, crs=4326)
+    seg = gpd.GeoDataFrame(rows, geometry="geometry", crs=UTM).to_crs(4326)
+    report["segments"] = len(seg)
+    dup = seg["segment_id"].duplicated()
+    if dup.any():
+        raise ValueError(f"build_segments: {int(dup.sum())} segment ids collide, e.g. "
+                         f"{seg.loc[dup, 'segment_id'].head(3).tolist()}")
+    cents = seg.to_crs(UTM).geometry.centroid.to_crs(4326)
+    seg["zone_id"] = [zone_for_point(p.x, p.y, zones) for p in cents]
 
+    seg["neighborhood"] = None
     if neighborhoods is not None and len(neighborhoods):
         n_col = "neighborhood" if "neighborhood" in neighborhoods.columns else neighborhoods.columns[0]
-        seg = gpd.sjoin(
-            seg, neighborhoods[[n_col, "geometry"]], how="left", predicate="intersects"
-        ).drop(columns=["index_right"], errors="ignore")
-        if n_col in seg.columns and n_col != "neighborhood":
-            seg["neighborhood"] = seg[n_col]
-            seg = seg.drop(columns=[n_col])
-        seg = seg.drop_duplicates("segment_id", keep="first").reset_index(drop=True)
+        pts = gpd.GeoDataFrame(seg[["segment_id"]], geometry=cents, crs=4326)
+        j = gpd.sjoin(pts, neighborhoods[[n_col, "geometry"]].to_crs(4326),
+                      how="left", predicate="within")
+        report["neighborhood_overlaps"] = int(j["segment_id"].duplicated().sum())
+        j = j.drop_duplicates("segment_id", keep="first").set_index("segment_id")[n_col]
+        seg["neighborhood"] = seg["segment_id"].map(j)
+        report["neighborhood_unmatched"] = int(seg["neighborhood"].isna().sum())
 
+    seg["rpp_zone"] = None
     if rpp_zones is not None and len(rpp_zones):
         r_col = "rpp_zone" if "rpp_zone" in rpp_zones.columns else rpp_zones.columns[0]
-        seg = gpd.sjoin(
-            seg.drop(columns=["rpp_zone"]),
-            rpp_zones[[r_col, "geometry"]],
-            how="left",
-            predicate="intersects",
-        ).drop(columns=["index_right"], errors="ignore")
-        if r_col != "rpp_zone":
-            seg["rpp_zone"] = seg[r_col]
-            seg = seg.drop(columns=[r_col])
-        seg = seg.drop_duplicates("segment_id", keep="first").reset_index(drop=True)
+        rz = rpp_zones[[r_col, "geometry"]].to_crs(UTM)
+        if (rz.geom_type == "Point").all():
+            # Permit blocks are published as points: the segment takes the nearest one
+            # within RPP_POINT_MAX_DISTANCE_M.
+            j = gpd.sjoin_nearest(seg[["segment_id", "geometry"]].to_crs(UTM), rz, how="left",
+                                  max_distance=RPP_POINT_MAX_DISTANCE_M)
+        else:
+            pts = gpd.GeoDataFrame(seg[["segment_id"]], geometry=cents, crs=4326).to_crs(UTM)
+            j = gpd.sjoin(pts, rz, how="left", predicate="within")
+        j = j.drop_duplicates("segment_id", keep="first").set_index("segment_id")[r_col]
+        seg["rpp_zone"] = seg["segment_id"].map(j)
 
     if meters is not None and len(meters):
-        seg_m = seg.to_crs(32618)
-        meters_m = meters.to_crs(32618)
-        buf = seg_m.copy()
+        buf = seg[["segment_id", "geometry"]].to_crs(UTM)
         buf["geometry"] = buf.geometry.buffer(15.0)
-        joined = gpd.sjoin(meters_m, buf[["segment_id", "geometry"]], how="left", predicate="within")
-        counts = joined.groupby("segment_id").size().rename("n_meters")
-        seg = seg.merge(counts, on="segment_id", how="left", suffixes=("", "_new"))
-        if "n_meters_new" in seg.columns:
-            seg["n_meters"] = seg["n_meters_new"].fillna(0).astype(int)
-            seg = seg.drop(columns=["n_meters_new"])
-        else:
-            seg["n_meters"] = seg["n_meters"].fillna(0).astype(int)
+        joined = gpd.sjoin(meters.to_crs(UTM), buf, how="inner", predicate="within")
+        counts = joined.groupby("segment_id").size()
+        seg["n_meters"] = seg["segment_id"].map(counts).fillna(0).astype(int)
         seg["has_meter"] = seg["n_meters"] > 0
 
+    lost = report["empty_dropped"] + report["non_line_dropped"]
+    log.info("build_segments: %s", report)
+    if lost:
+        log.warning("build_segments: dropped %d of %d input rows (empty or not a line)",
+                    lost, report["input_rows"])
+    seg.attrs["build_report"] = report
     return seg
 
 

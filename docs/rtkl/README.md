@@ -83,5 +83,13 @@ the Authority asks before charging.
   paying. Converting sessions to occupancy needs the number of spaces each meter serves
   (Request B, item 1) and some measure of unpaid use (occupancy studies, B item 3, or citation
   rates, A item 3).
+- **Elasticity also needs a control.** The model has a calendar-period term, so Center City
+  Core and Center City Area alone, both raised on 1 July 2025, do not identify a price
+  response: some zone or rate class whose rate did not change must be in the data
+  (`elasticity/identification.py` checks this before any fit).
+- **Loading a release.** Map the export's column names, time format and rate-area labels in
+  `config/ppa_ingest.yaml`, then run `scripts/03b_ingest_ppa.py` (panel by block face, period and
+  hour), `scripts/04_fit_elasticity.py` and `scripts/05_run_scenarios.py --ppa data/processed/ppa`.
+  The ingest stops on anything it would otherwise have to guess.
 - **Redacted fields are acceptable.** The requests ask for nothing that identifies a person or
   vehicle, so a release under Section 708(b) with those fields removed still serves the model.

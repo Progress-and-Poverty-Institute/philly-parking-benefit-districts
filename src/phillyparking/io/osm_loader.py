@@ -1,4 +1,5 @@
-"""OSM loaders via osmnx for the Philadelphia bbox."""
+"""OSM loaders via osmnx for the Philadelphia bbox, cached with provenance markers
+(`phillyparking.io.raw_cache`)."""
 from __future__ import annotations
 
 import logging
@@ -11,6 +12,7 @@ from shapely.geometry import LineString, Point
 
 from phillyparking._config import data_dir
 from phillyparking.io._bbox import philly_bbox
+from phillyparking.io.raw_cache import Layer, load_layer
 
 log = logging.getLogger(__name__)
 
@@ -53,59 +55,61 @@ def _synth_graph() -> nx.MultiDiGraph:
     return G
 
 
-def load_drive_graph(refresh: bool = False) -> nx.MultiDiGraph:
-    cache = _osm_dir() / "drive.graphml"
-    if cache.exists() and not refresh:
-        try:
-            import osmnx as ox
+def _fetch_graph() -> nx.MultiDiGraph:
+    import osmnx as ox
 
-            return ox.load_graphml(cache)
-        except (OSError, Exception) as e:
-            log.warning("osmnx graph load failed (%s); using synthetic", e)
-            return _synth_graph()
-    try:
-        import osmnx as ox
-
-        w, s, e, n = philly_bbox()
-        G = ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive")
-        ox.save_graphml(G, cache)
-        return G
-    except (OSError, Exception) as e:
-        log.warning("osmnx graph fetch failed (%s); using synthetic", e)
-        return _synth_graph()
+    w, s, e, n = philly_bbox()
+    return ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive")
 
 
-def load_pois(tags: dict | None = None, refresh: bool = False) -> gpd.GeoDataFrame:
-    cache = _osm_dir() / "pois.parquet"
-    if cache.exists() and not refresh:
-        return gpd.read_parquet(cache)
+def _save_graph(G: nx.MultiDiGraph, path) -> None:
+    import osmnx as ox
+
+    ox.save_graphml(G, path)
+
+
+def _read_graph(path) -> nx.MultiDiGraph:
+    import osmnx as ox
+
+    return ox.load_graphml(path)
+
+
+def load_drive_graph(refresh: bool = False, allow_synthetic: bool | None = None) -> nx.MultiDiGraph:
+    layer = Layer(name="osm.drive_graph", path=_osm_dir() / "drive.graphml",
+                  source="OpenStreetMap drive network (osmnx, Overpass) for the Philadelphia bbox",
+                  url="https://overpass-api.de/api/interpreter", fetch=_fetch_graph,
+                  write=_save_graph, read=_read_graph, synth=_synth_graph)
+    return load_layer(layer, refresh, allow_synthetic)
+
+
+def _fetch_pois(tags: dict) -> gpd.GeoDataFrame:
+    import osmnx as ox
+
+    w, s, e, n = philly_bbox()
+    gdf = ox.features_from_bbox(bbox=(w, s, e, n), tags=tags).reset_index()
+    if len(gdf) == 0:
+        raise ValueError("Overpass returned 0 POIs")
+    return gdf
+
+
+def _synth_pois() -> gpd.GeoDataFrame:
+    rng = np.random.default_rng(11)
+    w, s, e, n = philly_bbox()
+    rows = []
+    for i in range(300):
+        rows.append({"poi_id": f"P{i:05d}", "category": rng.choice(["restaurant", "shop", "office"]),
+                     "geometry": Point(rng.uniform(w, e), rng.uniform(s, n))})
+    return gpd.GeoDataFrame(rows, crs=4326)
+
+
+def load_pois(tags: dict | None = None, refresh: bool = False,
+              allow_synthetic: bool | None = None) -> gpd.GeoDataFrame:
     tags = tags or DEFAULT_POI_TAGS
-    try:
-        import osmnx as ox
-
-        w, s, e, n = philly_bbox()
-        gdf = ox.features_from_bbox(bbox=(w, s, e, n), tags=tags)
-        gdf = gdf.reset_index()
-        gdf.to_parquet(cache)
-        return gdf
-    except (OSError, Exception) as exc:
-        log.warning("osmnx POI fetch failed (%s); using synthetic", exc)
-        rng = np.random.default_rng(11)
-        w, s, e, n = philly_bbox()
-        N = 300
-        rows = []
-        cats = ["restaurant", "shop", "office"]
-        for i in range(N):
-            rows.append(
-                {
-                    "poi_id": f"P{i:05d}",
-                    "category": rng.choice(cats),
-                    "geometry": Point(rng.uniform(w, e), rng.uniform(s, n)),
-                }
-            )
-        gdf = gpd.GeoDataFrame(rows, crs=4326)
-        gdf.to_parquet(cache)
-        return gdf
+    layer = Layer(name="osm.pois", path=_osm_dir() / "pois.parquet",
+                  source=f"OpenStreetMap features (osmnx, Overpass), tags {tags}",
+                  url="https://overpass-api.de/api/interpreter", fetch=lambda: _fetch_pois(tags),
+                  write=lambda g, p: g.to_parquet(p), read=gpd.read_parquet, synth=_synth_pois)
+    return load_layer(layer, refresh, allow_synthetic)
 
 
 def graph_to_segments(G: nx.MultiDiGraph) -> gpd.GeoDataFrame:

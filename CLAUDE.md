@@ -34,25 +34,29 @@ panel = occupancy_panel.drop(
 
 ## Synthetic baseline calibration
 
-The synthetic baseline in `demand/synthetic_baseline.py` uses **per-segment slope/intercept
-calibration** so every segment spans from its own off-peak floor to its own peak target. Key
-parameters:
+`demand/synthetic_baseline.py` scales each segment's weekly profile between its own off-peak
+floor and peak, interpolated by a latent demand intensity. Every anchor is absolute and lives
+in `config/demand_baseline.yaml`: covariates are standardised as (log1p(x) - center) / scale
+with fixed centers and scales, intensity maps to peak occupancy between fixed
+`intensity_low` / `intensity_high`, and the land-use mix is centred on the same fixed centers.
+A segment's baseline therefore never depends on which other segments are loaded (audit
+finding 24); never reintroduce quantiles, z-scores or means taken over the loaded set.
 
-- `peak_target=0.92` (highest-λ segment)
-- `low_demand_peak=0.62` (lowest-λ segment peak)
-- `offpeak_floor=0.20`
-- `temperature=2.5` (sharpened softmax for land-use mix)
-
-Calibrated result: CCC weekday lunch peak ~0.83, other named zones ~0.62–0.67, overnight ~0.30.
-**Do not re-z-score λ** — the original design z-scored lambda so half the segments had negative
-lambda and all stuck near the off-peak floor. The fix was to normalize lambda to [0, 1] instead.
+The anchors are stated, not measured: the fixture's (n=120, seed 42) moments, rounded, so the
+demo is unchanged up to rounding. On real joined covariates they do not fit (real transit
+departures within 400 m are about 13x the fixture's), and `baseline_occupancy` warns when more
+than `max_clipped_share` of segments sit at the cap or floor; `panel.attrs["calibration"]` has
+the shares. Restate or fit the anchors before using the baseline on real segments; segments the
+Parking Authority panel covers should use observed occupancy instead.
 
 ## Synthetic segment fallback in script 05
 
-`scripts/05_run_scenarios.py` checks whether loaded segments have ≥5 entries in any named zone.
-Real OSM data covers all of Philadelphia so only ~2 of 473 segments land in the narrow named-zone
-bboxes. If the check fails, script 05 falls back to `make_synthetic_segments(n=120, seed=seed)`
-and clears the demand panel cache. This is expected behavior for the demo run; it is not a bug.
+`scripts/05_run_scenarios.py` uses `make_synthetic_segments(n=120, seed=seed)` when there is no
+saved `data/processed/segments.parquet` or it has fewer than 5 segments in named zones, and
+records why in `segment_source.fallback_reason`. It never builds segments from the network. The
+cached baseline panel (`demand_panel.parquet`) is reused only if `demand_panel.key` matches
+`panel_cache_key(segments, seed)` (segment ids and covariates, anchors, seed); script 03 writes
+the same key. `--ppa <dir>` runs on the Parking Authority panel instead, with no fallback.
 
 ## Import path for synthetic data helpers
 
@@ -146,10 +150,9 @@ would need a DGP with within-zone dispersion and an off-peak price response. Pro
 
 ## Script 06 synthetic fallback
 
-`scripts/06_export_paper_figures.py` must apply the same named-zone check as script 05:
-if fewer than 5 segments in named zones, fall back to `make_synthetic_segments(n=120)`.
-Without this, the Laffer curve figure is silently skipped because real OSM segments
-have only ~2/473 landing in named-zone bboxes.
+`scripts/06_export_paper_figures.py` applies the same named-zone check as script 05 and
+computes the baseline panel itself (it is cheap) rather than reading a cache that could belong
+to other segments. Without the fallback the Laffer figure would be skipped.
 
 ## `hourly_cruising_dwl` drop-before-merge
 
@@ -180,11 +183,57 @@ Without the prepended zero, equal-income groups return 0.0625 instead of 0.0.
 - Distance computations and buffering: **EPSG:32618** (UTM 18N)
 - Always reproject before `.buffer()` or `.centroid` to avoid a GeoPandas CRS warning.
 
-## Data acquisition
+## Data acquisition: public layers
 
-The RTKL packet for PPA transaction data is at `docs/rtkl/`. It is ready to submit. See
-`docs/rtkl/README.md` for the submission procedure. PPA's RTKL email:
-`OpenRecordsOfficer@philapark.org`.
+Every loader goes through `io/raw_cache.load_layer`. A real fetch is cached under the layer's
+own filename with a sidecar `<file>.provenance.json` (layer, kind real/synthetic, source, URL,
+UTC fetch time); failures are retried, then raise `LayerFetchError`. A synthetic stand-in is
+written only with `allow_synthetic=True` / `PHILLYPARKING_ALLOW_SYNTHETIC=1` (scripts:
+`--allow-synthetic`), and only as `<stem>.synthetic<suffix>`. A file with no marker is refused
+(`UnknownProvenanceError`): the pre-marker loaders saved synthetic layers under real names, so
+the old `data/raw/` cache must be refetched with `scripts/01_download_public_data.py --refresh`.
+Script 01 exits 1 if any layer is not real; script 02 records every layer's marker in
+`data/processed/segments.meta.json` and never skips a join.
+
+Sources (checked live 2026-10-15): Street Centerline (ArcGIS FeatureServer, paged), RPP blocks
+(Carto `residential_parking_permit_blocks`, POINTS with `district_number`), neighborhoods
+(odp-data-storage GeoJSON), zoning (Carto `zoning_basedistricts`), ACS 5-year block groups
+(Census Data API, needs `CENSUS_API_KEY`; geometry and `ALAND` from `cb_<year>_42_bg_500k`;
+cenpy cannot request these vintages), LODES8 WAC/RAC plus `pa_xwalk.csv.gz` block internal
+points, OSM via osmnx, SEPTA GTFS (one archive holding `google_bus.zip` and `google_rail.zip`,
+read as two feeds). There is no public meter inventory: `fetch_meters` raises; meters come from
+the Parking Authority release. Census API errors are re-raised without the request URL, which
+carries the key.
+
+Join columns are defined in the `spatial/join.py` docstring. `jobs_within_200m` counts LODES
+jobs of the blocks whose internal point lies in the buffer; ACS attributes are buffer-share
+weighted and renormalised over the covered part. Zone boxes overlap; `zones.zone_for_point`
+gives a point to the smallest box containing it. The segment builder keys ids on `seg_id`, or
+`osmid|u|v|key`, splits MultiLineStrings, drops reverse twins of two-way OSM edges, and counts
+everything in `segments.attrs["build_report"]`.
+
+## Parking Authority data: ingestion and identification
+
+The RTKL packet is at `docs/rtkl/` (`docs/rtkl/README.md`; PPA's RTKL email
+`OpenRecordsOfficer@philapark.org`). `ingest/ppa.py` (script `03b_ingest_ppa.py`) reads
+sessions, the meter inventory and the rate schedule through `config/ppa_ingest.yaml`, a
+column mapping: when the real export arrives, edit the mapping, not the code. It writes a
+panel by segment x calendar period x hour of week with `price_usd_per_hr` = the posted rate
+in that period; periods are cut at the schedule's effective dates. Occupancy = paid minutes /
+(spaces x 60 x calendar dates of that weekday in the period) / (1 - `unpaid_share[zone]`);
+`unpaid_use.unpaid_share` must be stated in the config (0.0 = paid occupancy, a lower bound).
+Every ambiguity raises `PPAIngestError` (see the module docstring). `runner_inputs` picks one
+period for the runner and refuses a period whose posted rates differ from `zones.yaml`.
+`--stub` ingests `ppa_stub.make_known_answer_export` into `data/processed/ppa_stub/`, never into
+`data/processed/ppa/`.
+
+`elasticity/identification.check_identification` rank-tests the design (zone intercepts,
+zone x log price, hour-of-week and period effects) and raises `IdentificationError` when no
+zone's elasticity is identified; `fit_elasticity_model` calls it before importing PyMC and
+adds `delta[period]` when the panel has a `period` column. Script 04 fits only priced hours of
+an ingested panel and exits 1 when nothing is identified (`--allow-prior-only` writes the prior
+labelled `prior_only`). One period (one price per zone) identifies nothing; two zones whose
+rates both changed, with no unchanged zone, are not identified once the period term is in.
 
 ## Saved results, provenance and report assets
 

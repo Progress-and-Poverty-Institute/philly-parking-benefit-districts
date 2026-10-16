@@ -1,8 +1,16 @@
 """Hierarchical Bayesian elasticity model with neighborhood partial pooling.
 
 Three-level hierarchy: zone < neighborhood < city. The city-level mean is
-anchored to the Lehner-Peer prior; with constant within-zone prices the model
-gracefully shrinks zone elasticities fully to the prior.
+anchored to the Lehner-Peer prior.
+
+    log occupancy = alpha[zone] + eps[zone] * log price + gamma[hour_of_week]
+                    (+ delta[period] when the panel has a `period` column)
+
+The period term absorbs citywide shifts between calendar periods, so a zone whose rate
+changed is compared against zones whose rate did not. Before sampling,
+`identification.check_identification` raises if the data identify no zone's elasticity (one
+price per zone, as when a single `zones.yaml` rate is attached to every row): such a fit
+would only return the prior.
 """
 from __future__ import annotations
 
@@ -36,6 +44,7 @@ def _index_map(values) -> dict[str, int]:
 def fit_elasticity_model(
     panel: pd.DataFrame,
     feature_cols: list[str] | None = None,
+    period_col: str | None = "period",
     draws: int = 1000,
     tune: int = 1000,
     chains: int = 2,
@@ -45,9 +54,11 @@ def fit_elasticity_model(
     """Fit the hierarchical elasticity model.
 
     Required panel columns: segment_id, zone_id, neighborhood, hour_of_week,
-    occupancy, price_usd_per_hr (+ any feature columns named in `feature_cols`).
+    occupancy, price_usd_per_hr (+ any feature columns named in `feature_cols`), and
+    `period_col` if it is not None and present. Raises `IdentificationError` before sampling
+    when no zone's elasticity is identified, and `ValueError` when no row is usable.
     """
-    import pymc as pm
+    from phillyparking.elasticity.identification import check_identification
 
     cfg = load_config("elasticity_priors")["hierarchy"]
     city_mu_cfg = cfg["city_mu_prior"]
@@ -56,6 +67,13 @@ def fit_elasticity_model(
 
     df = panel.copy()
     df = df[(df["occupancy"] > 0) & (df["price_usd_per_hr"] > 0)]
+    if df.empty:
+        raise ValueError("no panel rows with positive occupancy and price to fit")
+    if period_col and period_col not in df.columns:
+        period_col = None
+    check_identification(df, period_col=period_col)
+    import pymc as pm
+
     df["zone_id"] = df["zone_id"].astype(str)
     df["neighborhood"] = df["neighborhood"].astype(str)
 
@@ -74,6 +92,12 @@ def fit_elasticity_model(
     t_remap = {t: i for i, t in enumerate(t_unique)}
     t_idx_remap = np.array([t_remap[t] for t in t_idx], dtype=int)
 
+    if period_col:
+        periods = sorted(df[period_col].astype(str).unique())
+        p_idx = df[period_col].astype(str).map({p: i for i, p in enumerate(periods)}).to_numpy(int)
+    else:
+        periods, p_idx = [], None
+
     log_occ = np.log(df["occupancy"].to_numpy(dtype=float))
     log_price = np.log(df["price_usd_per_hr"].to_numpy(dtype=float))
 
@@ -90,6 +114,7 @@ def fit_elasticity_model(
         "neighborhood": list(nbhd_index.keys()),
         "time": [int(t) for t in t_unique],
         "feature": feature_cols,
+        "period_free": periods[1:],
         "obs": np.arange(len(df)),
     }
 
@@ -106,6 +131,11 @@ def fit_elasticity_model(
         sigma_obs = pm.HalfNormal("sigma_obs", sigma=0.5)
 
         mu = alpha[z_idx] + eps_zone[z_idx] * log_price + gamma[t_idx_remap]
+        if len(periods) > 1:
+            # First period is the reference; alpha absorbs its level.
+            delta = pm.Normal("delta", mu=0.0, sigma=0.5, dims="period_free")
+            delta_full = pm.math.concatenate([np.zeros(1), delta])
+            mu = mu + delta_full[p_idx]
         if n_feat > 0:
             beta = pm.Normal("beta", mu=0.0, sigma=1.0, dims="feature")
             mu = mu + pm.math.dot(X, beta)

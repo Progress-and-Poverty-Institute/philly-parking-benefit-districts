@@ -1,0 +1,35 @@
+# Absolute anchors for the synthetic baseline occupancy (demand/synthetic_baseline.py).
+#
+# A segment's baseline depends only on its own covariates and these numbers, never on which
+# other segments are loaded. Each covariate enters as z = (log1p(x) - center) / scale; the
+# latent intensity is lambda = sum(weight * z); a segment at lambda <= intensity_low peaks at
+# low_demand_peak, one at lambda >= intensity_high peaks at peak_target, linear in between.
+#
+# STATED, NOT MEASURED. The centers and scales are the mean and standard deviation of
+# log1p(covariate) over the demo fixture (make_synthetic_segments(n=120, seed=42)), rounded,
+# and intensity_low / intensity_high are that set's 5th and 95th percentiles of lambda, so
+# the demo's baseline is unchanged up to rounding. They are not Philadelphia measurements.
+# On real covariates check the share of segments at the cap and the floor (logged by
+# baseline_occupancy); once the Parking Authority panel exists, observed occupancy replaces
+# this baseline for the segments it covers, and these anchors should be fitted to it.
+
+covariates:
+  # center is on the log1p scale; the comment gives the covariate value at the center.
+  jobs_within_200m:     { center: 7.62, scale: 1.07, intensity_weight: 0.55, mix_weight: 1.0 }  # ~2,040 jobs
+  pois_count:           { center: 3.17, scale: 0.97, intensity_weight: 0.35, mix_weight: 1.2 }  # ~23 POIs
+  pop_density:          { center: 9.74, scale: 0.72, intensity_weight: 0.25, mix_weight: 0.9 }  # ~17,000 per km2
+  transit_trips_per_hr: { center: 2.70, scale: 0.91, intensity_weight: -0.15 }                  # ~14 departures/h
+
+intensity_low: -1.22
+intensity_high: 1.25
+
+# Occupancy levels (unsourced calibration assumptions; audit findings 1 and 25).
+peak_target: 0.92        # weekly peak of a segment at or above intensity_high
+low_demand_peak: 0.62    # weekly peak of a segment at or below intensity_low
+offpeak_floor: 0.20      # weekly minimum at intensity_low (rises by offpeak_span at the top)
+offpeak_span: 0.10
+mix_temperature: 2.5     # sharpens the office / retail / residential land-use softmax
+
+# baseline_occupancy warns when more than this share of segments sits at the cap or the floor:
+# the anchors then do not suit the covariates loaded.
+max_clipped_share: 0.20

@@ -1,5 +1,5 @@
 rule,year,n_cells,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,dwl_ratio_priced_median_cells_median,dwl_ratio_priced_median_cells_min,dwl_ratio_priced_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,revenue_ratio_priced_median_cells_median,revenue_ratio_priced_median_cells_min,revenue_ratio_priced_median_cells_max,cells_dwl_better,cells_dwl_better_priced,cells_revenue_better
-avg_occupancy,5,24,42.2828,10.7571,179.834,37.5288,10.5721,112.442,0.523934,0.318182,0.705809,0.521032,0.31594,0.672771,0,0,0
-avg_priced_bands,5,24,12.2497,5.28221,45.006,13.4876,5.29162,37.1251,0.792307,0.502891,0.938627,0.775354,0.46845,0.917818,0,0,0
-avg_priced_hours,5,24,22.2144,8.40974,75.2848,24.2362,8.91865,80.0202,0.705367,0.379738,0.897356,0.647595,0.323671,0.865249,0,0,0
-seattle_rule,5,24,12.9622,5.94684,45.0315,20.3677,7.03322,51.3399,0.86466,0.575443,0.960257,0.702927,0.391354,0.864458,0,0,0
+avg_occupancy,5,24,54.6547,10.5773,253.169,51.7458,9.0544,184.531,0.513751,0.305409,0.7757,0.512202,0.307251,0.732707,0,0,0
+avg_priced_bands,5,24,8.68098,3.16869,44.4451,12.0832,3.24029,38.9405,0.82879,0.512706,0.951194,0.813298,0.483783,0.937147,0,0,0
+avg_priced_hours,5,24,21.6875,7.82994,94.6902,31.9789,7.99472,90.2922,0.720815,0.365628,0.906368,0.684195,0.315124,0.882329,0,0,0
+seattle_rule,5,24,12.1057,4.52133,61.9225,22.4018,5.13691,75.6361,0.861122,0.557856,0.949081,0.722331,0.395609,0.87153,0,0,0

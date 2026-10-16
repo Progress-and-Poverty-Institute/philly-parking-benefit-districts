@@ -8,12 +8,24 @@ import pandas as pd
 from phillyparking._config import load_config
 
 
-def _bbox_match(lon: float, lat: float, zones: list[dict]) -> str:
-    for z in zones:
-        b = z["bbox"]
-        if b["west"] <= lon <= b["east"] and b["south"] <= lat <= b["north"]:
-            return z["id"]
-    return "other"
+def _bbox_area(z: dict) -> float:
+    b = z["bbox"]
+    return (b["east"] - b["west"]) * (b["north"] - b["south"])
+
+
+def zone_for_point(lon: float, lat: float, zones: list[dict]) -> str:
+    """The zone whose bbox contains the point; where boxes overlap, the smallest box wins.
+
+    The boxes nest (Center City Area's contains Core's, and overlaps University City's and
+    Fishtown's), so list order must not decide: the most specific box does. A point in no
+    box is "other".
+    """
+    hits = [z for z in zones
+            if z["bbox"]["west"] <= lon <= z["bbox"]["east"]
+            and z["bbox"]["south"] <= lat <= z["bbox"]["north"]]
+    if not hits:
+        return "other"
+    return min(hits, key=lambda z: (_bbox_area(z), z["id"]))["id"]
 
 
 def assign_zones(segments: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -25,7 +37,7 @@ def assign_zones(segments: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         cents = seg.to_crs("EPSG:32618").geometry.centroid.to_crs(crs)
     else:
         cents = seg.geometry.centroid
-    seg["zone_id"] = [_bbox_match(p.x, p.y, zones) for p in cents]
+    seg["zone_id"] = [zone_for_point(p.x, p.y, zones) for p in cents]
     return seg
 
 
