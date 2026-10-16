@@ -127,7 +127,7 @@ def main() -> None:
         # Year-by-year compounding: each year apply elasticity once, slight
         # demand drift via noise. Track annual revenue across all zones.
         for year in range(1, horizon + 1):
-            cur_panel = apply_elasticity(cur_panel, target_prices, eps_mean)
+            cur_panel = apply_elasticity(cur_panel, target_prices, eps_mean, reference_price=baseline_prices)
             yearly_rev = float(
                 (
                     cur_panel["occupancy"]

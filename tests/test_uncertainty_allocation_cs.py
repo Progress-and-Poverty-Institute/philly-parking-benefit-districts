@@ -94,45 +94,52 @@ def _paid_hours(segs, panel):
     return annual_revenue(segs, panel, hourly_prices(cur)).set_index("zone_id")["paid_hours"]
 
 
+EPS = -0.4
+
+
 def test_cs_change_is_zero_when_prices_do_not_move(fixture_data):
     segs, panel = fixture_data
     cur = _zone_current_prices()
-    assert _annual_cs_change(segs, panel, cur, cur) == pytest.approx(0.0, abs=1e-6)
+    assert _annual_cs_change(segs, panel, cur, cur, EPS) == pytest.approx(0.0, abs=1e-6)
 
 
-def test_cs_change_is_annual_dollars_between_zero_and_the_price_change_times_paid_hours(fixture_data):
-    """Roy's identity: d(CS)/d(price) = -P(curb) per paid hour, and P(curb) is a probability.
-
-    So a price cut gains between 0 and |dp| per paid space-hour, summed over the status-quo
-    paid hours of each zone. A sum over a few hundred trips, not scaled to hours, falls
-    several orders of magnitude below the lower bound.
-    """
+def test_cs_change_is_annual_dollars_bounded_by_the_demand_law(fixture_data):
+    """-int q dp over a cut: at least the status-quo paid hours times the cut (demand at the
+    old price), at most the demand at the new price times the cut, summed per zone."""
+    from phillyparking.demand.response import demand_level
     segs, panel = fixture_data
     cur = _zone_current_prices()
     cut = _scenario_prices(0.6)
     paid = _paid_hours(segs, panel)
-    upper = float(sum(paid.get(z, 0.0) * (p0 - p1) for z, p0, p1 in
+    lower = float(sum(paid.get(z, 0.0) * (p0 - p1) for z, p0, p1 in
                       zip(cur["zone_id"], cur["price_usd_per_hr"], cut["price_usd_per_hr"])))
-    cs = _annual_cs_change(segs, panel, cur, cut)
-    assert 0.05 * upper < cs < upper
-    # A price rise loses surplus.
-    assert _annual_cs_change(segs, panel, cut, cur) < 0.0
+    upper = float(sum(paid.get(z, 0.0) * (p0 - p1) * float(demand_level(p1, EPS, p0)) for z, p0, p1 in
+                      zip(cur["zone_id"], cur["price_usd_per_hr"], cut["price_usd_per_hr"])))
+    cs = _annual_cs_change(segs, panel, cur, cut, EPS)
+    assert lower < cs < upper
+    # A price rise loses surplus, and a less elastic demand loses more of it.
+    assert _annual_cs_change(segs, panel, cut, cur, EPS) < 0.0
+    assert _annual_cs_change(segs, panel, cur, cur.assign(price_usd_per_hr=cur["price_usd_per_hr"] * 1.5), -0.2) < \
+        _annual_cs_change(segs, panel, cur, cur.assign(price_usd_per_hr=cur["price_usd_per_hr"] * 1.5), -0.7)
 
 
-def test_cs_change_scales_with_paid_hours(fixture_data):
-    """Doubling every segment's capacity doubles the zone's paid hours and the annual figure."""
+def test_cs_change_scales_with_paid_hours_and_takes_hourly_prices(fixture_data):
+    """Doubling every segment's capacity doubles the annual figure; an hourly price table
+    (the Seattle rule's shape) gives the same answer as the zone table it expands."""
+    from phillyparking.pricing.priced_hours import hourly_prices
     segs, panel = fixture_data
     cur, cut = _zone_current_prices(), _scenario_prices(0.6)
-    base = _annual_cs_change(segs, panel, cur, cut)
+    base = _annual_cs_change(segs, panel, cur, cut, EPS)
     doubled = segs.assign(capacity=segs["capacity"] * 2)
-    assert _annual_cs_change(doubled, panel, cur, cut) == pytest.approx(2 * base, rel=1e-9)
+    assert _annual_cs_change(doubled, panel, cur, cut, EPS) == pytest.approx(2 * base, rel=1e-9)
+    assert _annual_cs_change(segs, panel, cur, hourly_prices(cut), EPS) == pytest.approx(base, rel=1e-9)
 
 
 def test_cs_change_does_not_invent_a_price_for_a_priced_zone(fixture_data):
     segs, panel = fixture_data
     cur = _zone_current_prices()
     with pytest.raises(KeyError):
-        _annual_cs_change(segs, panel, cur, cur[cur["zone_id"] != "ccc"])
+        _annual_cs_change(segs, panel, cur, cur[cur["zone_id"] != "ccc"], EPS)
 
 
 # --- finding 6: elasticity scenarios and seed ranges ----------------------------------------
@@ -234,17 +241,21 @@ def _run_05(mod, root, seed: int) -> pd.DataFrame:
     return pd.read_csv(root / "outputs" / "models" / "comparison_table.csv", index_col=0)
 
 
-def test_script_05_outputs_change_with_the_seed_on_loaded_segments(script05, monkeypatch):
-    """The occupancy panel is a deterministic function of segment covariates, so on segments
-    that are loaded rather than drawn the seed reaches only the consumer-surplus trips. It must
-    reach those."""
+def test_script_05_outputs_do_not_depend_on_the_seed_on_loaded_segments(script05, monkeypatch):
+    """The occupancy panel is a deterministic function of segment covariates and the surplus
+    term is the integral of the demand law, so on segments that are loaded rather than drawn
+    the seed reaches nothing, and the script computes no seed range."""
+    from phillyparking.spatial.segments import save_segments
     mod, root = script05
-    monkeypatch.setattr(mod, "load_priced_segments", lambda path: make_synthetic_segments(n=30, seed=5))
+    save_segments(make_synthetic_segments(n=30, seed=5), root / "data" / "processed" / "segments.parquet")
     a1 = _run_05(mod, root, 1)
-    a1_again = _run_05(mod, root, 1)
     a2 = _run_05(mod, root, 2)
-    pd.testing.assert_frame_equal(a1, a1_again)               # same seed, same numbers
-    assert a1.loc["cs_change_total", "full_pbd"] != a2.loc["cs_change_total", "full_pbd"]
+    pd.testing.assert_frame_equal(a1, a2)
+    out = CliRunner().invoke(mod.main, ["--seed", "1", "--n-seeds", "3"])
+    assert out.exit_code == 0, out.output
+    runs = pd.read_csv(root / "outputs" / "models" / "scenario_runs.csv")
+    assert set(runs["seed"]) == {1}                            # the elasticity range only
+    assert set(runs["elasticity_scenario"]) == set(load_config("elasticity_priors")["scenarios"])
 
 
 def test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixture(script05, monkeypatch):

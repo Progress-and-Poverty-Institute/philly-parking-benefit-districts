@@ -109,13 +109,18 @@ def laffer_curve(
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.plot(revenue_curve["price"], revenue_curve["revenue"], marker="o")
-    peak = revenue_curve.loc[revenue_curve["revenue"].idxmax()]
-    ax.axvline(peak["price"], color="red", linestyle="--", alpha=0.5,
-               label=f"Peak @ ${peak['price']:.2f}")
+    rc = revenue_curve.sort_values("price").reset_index(drop=True)
+    ax.plot(rc["price"], rc["revenue"], marker="o")
+    k = int(rc["revenue"].idxmax())
+    if 0 < k < len(rc) - 1:
+        ax.axvline(rc.loc[k, "price"], color="red", linestyle="--", alpha=0.5,
+                   label=f"Peak @ ${rc.loc[k, 'price']:.2f}")
+    else:
+        # The maximum sits on the edge of the grid: the curve has no peak in this range.
+        ax.plot([], [], " ", label="no peak within the price range shown")
     ax.set_xlabel("Price (USD/hr)")
     ax.set_ylabel("Revenue (USD)")
-    ax.set_title("Laffer curve")
+    ax.set_title("Revenue against price")
     ax.legend()
     if save_to is not None:
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)

@@ -44,10 +44,11 @@ def test_search_cost_is_arrivals_times_time_times_value_of_time():
 
 @pytest.mark.parametrize("elasticity", [-0.2, -0.7, -1.0, -1.5])
 def test_cs_change_matches_the_integral_of_demand(elasticity):
+    from phillyparking.demand.response import demand_level
     d0, p0, cap = 0.8, 2.0, 10.0
     for p1 in (1.0, 2.5, 4.0):
         grid = np.linspace(p0, p1, 20001)
-        q = d0 * cap * (grid / p0) ** elasticity
+        q = d0 * cap * demand_level(grid, elasticity, p0)
         integral = -np.trapezoid(q, grid)
         got = cs_change_usd(np.array([d0]), np.array([p0]), np.array([p1]), elasticity, np.array([cap]))[0]
         assert got == pytest.approx(integral, rel=1e-6)

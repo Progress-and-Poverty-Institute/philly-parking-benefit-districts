@@ -8,20 +8,21 @@
   "config_sha256": {
     "allocation": "9973d2abac6c8cc9fbe51b1c38a8d07da10f4bdf3d685bbf6406d8e435803f19",
     "demand_baseline": "96601806b8063d5e4320d4587c179f9c3ca812b336aae5b2a83bad926a77f01c",
-    "elasticity_priors": "56be8e207cfa99df54d786030f65b4422be0956fff6a6df554c389f66797ad1a",
+    "elasticity_priors": "4a37868d4199b067d64d921169a009933f9a3cd6bd42aee9803dd0a5d92a0604",
     "ppa_ingest": "55a451be56f214667c9a7cceb8f23126070923669c569deb70c468cb03c65a06",
     "pricing_rules": "6c95ce2d0d7a3a676dd02aa9390d5605fc26faac104d7792129c074f0890f3d2",
     "scenarios": "6f09acd1b9bbad430eba3635b8c69ebd3ad0ac596ef687a92fa94dda103851f2",
     "zones": "804af6bc50fa583729643e85972bad75702e3dca910258c27283d49cbfcf7d83"
   },
-  "created_utc": "2026-10-16T15:49:51+00:00",
+  "created_utc": "2026-10-16T18:19:09+00:00",
+  "demand_form": "exponential",
   "elasticity_values": [
     -0.2,
     -0.4,
     -0.7
   ],
   "git": {
-    "commit": "6c1ff571e1b4ba596459619123d9ee48d3c18fd7",
+    "commit": "7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc",
     "dirty": true
   },
   "n_replications": 100,
