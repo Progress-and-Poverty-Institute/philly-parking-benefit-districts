@@ -6,6 +6,8 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import sys
+import types
 import zipfile
 
 import pandas as pd
@@ -243,3 +245,29 @@ def test_real_transactions_requested_but_missing_raises(monkeypatch, tmp_path):
     monkeypatch.setenv("PPA_DATA_PATH", str(tmp_path))
     with pytest.raises(FileNotFoundError):
         ppa_stub.load_transactions()
+
+
+def test_osm_fetches_run_with_the_osmnx_cache_off(monkeypatch):
+    """A fetch must reach Overpass: osmnx's own response cache would answer an old query and the
+    marker would date it as this fetch. The setting is restored afterwards, even on error."""
+    from phillyparking.io import osm_loader
+
+    seen = []
+    fake = types.SimpleNamespace(settings=types.SimpleNamespace(use_cache=True))
+
+    def graph_from_bbox(**kw):
+        seen.append(fake.settings.use_cache)
+        return "graph"
+
+    def features_from_bbox(**kw):
+        seen.append(fake.settings.use_cache)
+        raise RuntimeError("boom")
+
+    fake.graph_from_bbox, fake.features_from_bbox = graph_from_bbox, features_from_bbox
+    monkeypatch.setitem(sys.modules, "osmnx", fake)
+
+    assert osm_loader._fetch_graph() == "graph"
+    assert fake.settings.use_cache is True
+    with pytest.raises(RuntimeError):
+        osm_loader._fetch_pois({"shop": True})
+    assert seen == [False, False] and fake.settings.use_cache is True

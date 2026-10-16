@@ -2,6 +2,7 @@
 (`phillyparking.io.raw_cache`)."""
 from __future__ import annotations
 
+import contextlib
 import logging
 from pathlib import Path
 
@@ -23,6 +24,23 @@ def _osm_dir() -> Path:
     p = data_dir() / "raw" / "osm"
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+@contextlib.contextmanager
+def _live_osmnx():
+    """Yield osmnx with its HTTP response cache off.
+
+    osmnx answers a repeated query from its own cache (`cache/*.json`) with no request, so the
+    provenance marker's `fetched_utc` would date the original query, not this fetch.
+    """
+    import osmnx as ox
+
+    saved = ox.settings.use_cache
+    ox.settings.use_cache = False
+    try:
+        yield ox
+    finally:
+        ox.settings.use_cache = saved
 
 
 def _synth_graph() -> nx.MultiDiGraph:
@@ -56,10 +74,9 @@ def _synth_graph() -> nx.MultiDiGraph:
 
 
 def _fetch_graph() -> nx.MultiDiGraph:
-    import osmnx as ox
-
     w, s, e, n = philly_bbox()
-    return ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive")
+    with _live_osmnx() as ox:
+        return ox.graph_from_bbox(bbox=(w, s, e, n), network_type="drive")
 
 
 def _save_graph(G: nx.MultiDiGraph, path) -> None:
@@ -83,10 +100,9 @@ def load_drive_graph(refresh: bool = False, allow_synthetic: bool | None = None)
 
 
 def _fetch_pois(tags: dict) -> gpd.GeoDataFrame:
-    import osmnx as ox
-
     w, s, e, n = philly_bbox()
-    gdf = ox.features_from_bbox(bbox=(w, s, e, n), tags=tags).reset_index()
+    with _live_osmnx() as ox:
+        gdf = ox.features_from_bbox(bbox=(w, s, e, n), tags=tags).reset_index()
     if len(gdf) == 0:
         raise ValueError("Overpass returned 0 POIs")
     return gdf
