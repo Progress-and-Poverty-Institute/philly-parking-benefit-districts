@@ -103,7 +103,7 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
                 inc_path)
 
     log.info("Running chatman_manville_sweep")
-    sweep = chatman_manville_sweep(n_replications=20, rolls_forward_years=3, seed=seed)
+    sweep = chatman_manville_sweep(n_replications=5, rolls_forward_years=4, seed=seed)
     cm_path = figs / "chatman_manville_sweep.png"
     fig = chatman_manville_results_chart(sweep, save_to=cm_path)
     plt.close(fig)

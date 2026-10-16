@@ -12,11 +12,18 @@ import numpy as np
 import pandas as pd
 
 CM_METRIC_LABELS = {
-    "cruising_dwl_total": "Annual cruising DWL (USD)",
-    "cruising_dwl_priced_hours": "Annual cruising DWL, priced hours (USD)",
-    "revenue_total": "Annual Revenue (USD)",
-    "revenue_priced_hours": "Annual revenue, priced hours (USD)",
-    "peak_occupancy_share_above_85": "Share of zones with peak occupancy above 85%",
+    "welfare_change": "Welfare change since the start (USD a year)",
+    "cs_change": "Consumer surplus change since the start (USD a year)",
+    "revenue": "Annual revenue, priced hours (USD)",
+    "search_cost": "Annual search cost (USD)",
+    "cruising_dwl": "Annual cruising DWL proxy (USD)",
+    "share_block_hours_above_high": "Share of priced block-hours above the band",
+    "share_block_hours_below_low": "Share of priced block-hours below the band",
+    "mean_price": "Mean price, priced hours (USD/hr)",
+}
+CM_AXIS_LABELS = {
+    "elasticity": "elasticity", "start_occupancy": "start mean occupancy m",
+    "block_dispersion": "block dispersion tau", "observation_noise": "observation noise sigma",
 }
 
 _SCENARIO_STYLE = {
@@ -32,37 +39,87 @@ def _save(fig, save_to) -> None:
         fig.savefig(save_to, dpi=150, bbox_inches="tight")
 
 
-def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, save_to: Path | None = None):
-    """Chatman-Manville sweep: `metric` by year for each rule, one panel per noise level.
+def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, facet: str = "start_occupancy",
+                        save_to: Path | None = None):
+    """Chatman-Manville sweep: `metric` by year for each rule, one panel per value of `facet`.
 
-    Each point is built from per-cell medians (median over replications within an
-    elasticity x noise x rule x year cell). The line is the median of those cell medians
-    across elasticity values and the band is their minimum to maximum, so the band is the
-    spread between cells, not a standard deviation of pooled rows. A DWL metric is drawn on a
-    log axis when every value is positive, because rules differ by an order of magnitude.
+    Each point is built from per-cell medians (median over replications within one cell of
+    the sweep's axes x rule x year). The line is the median of those cell medians across the
+    other axes and the band is their minimum to maximum, so the band is the spread between
+    cells, not a standard deviation of pooled rows.
     """
     import matplotlib.pyplot as plt
+    from phillyparking.scenarios.cm_sweep import AXES
 
-    cells = sweep.groupby(["elasticity", "noise_sigma", "rule", "year"])[metric].median().reset_index()
-    sigmas = sorted(cells["noise_sigma"].unique())
+    axes_cols = [a for a in AXES if a in sweep.columns]
+    cells = sweep.groupby(axes_cols + ["rule", "year"])[metric].median().reset_index()
+    levels = sorted(cells[facet].unique())
+    others = [a for a in axes_cols if a != facet]
     n_rep = int(sweep["replication"].nunique())
-    n_eps = int(cells["elasticity"].nunique())
-    fig, axes = plt.subplots(1, len(sigmas), figsize=(4.6 * len(sigmas), 4), squeeze=False, sharey=True)
-    for ax, sigma in zip(axes[0], sigmas):
-        sub = cells[cells["noise_sigma"] == sigma]
+    n_other = int(cells.groupby(others).ngroups) if others else 1
+    fig, axes = plt.subplots(1, len(levels), figsize=(4.6 * len(levels), 4), squeeze=False, sharey=True)
+    for ax, level in zip(axes[0], levels):
+        sub = cells[cells[facet] == level]
         for rule, g in sub.groupby("rule", sort=False):
             agg = g.groupby("year")[metric].agg(["median", "min", "max"]).sort_index()
             ax.plot(agg.index, agg["median"], marker="o", label=rule)
             ax.fill_between(agg.index, agg["min"], agg["max"], alpha=0.15)
-        ax.set_title(f"Demand noise sigma={sigma}")
+        ax.set_title(f"{CM_AXIS_LABELS.get(facet, facet)} = {level}")
         ax.set_xlabel("Year")
         ax.set_xticks(sorted(sweep["year"].unique()))
-        if metric.startswith("cruising_dwl") and (cells[metric] > 0).all():
-            ax.set_yscale("log")
+        ax.axhline(0, color="black", lw=0.5)
     axes[0][0].legend(fontsize=8)
     axes[0][0].set_ylabel(CM_METRIC_LABELS.get(metric, metric))
     fig.suptitle(f"Chatman-Manville sweep (n={n_rep} replications): {metric}; "
-                 f"line = median, band = range over {n_eps} elasticity cells")
+                 f"line = median, band = range over {n_other} cells of the other axes")
+    fig.tight_layout()
+    _save(fig, save_to)
+    return fig
+
+
+def cm_breakeven_chart(paired: pd.DataFrame, comparison: tuple[str, str], year: int | None = None,
+                       save_to: Path | None = None, cap_minutes: float = 60.0):
+    """Breakeven cruising minutes for one comparison, by start occupancy and block dispersion.
+
+    Each bar is the median over replications of the breakeven within one cell (one elasticity
+    and noise level); bars within a group are the cells of elasticity x noise. Above the bar
+    the higher-priced rule gives more welfare; below it the lower-priced rule does. The
+    dashed line is the config's cruising cost level, at which `welfare_change` is scored.
+    Blue bars: the comparator searches more (prices lower); red: it searches less. The axis
+    is capped at `cap_minutes`.
+    """
+    import matplotlib.pyplot as plt
+    from phillyparking.welfare.targeting_welfare import load_search_cost_config
+
+    comparator, reference = comparison
+    year = int(paired["year"].max()) if year is None else int(year)
+    p = paired[(paired["rule"] == comparator) & (paired["reference"] == reference) & (paired["year"] == year)]
+    if p.empty:
+        raise ValueError(f"no rows for {comparison} at year {year}")
+    levels = sorted(p["start_occupancy"].unique())
+    taus = sorted(p["block_dispersion"].unique())
+    fig, axes = plt.subplots(1, len(levels), figsize=(4.6 * len(levels), 4), squeeze=False, sharey=True)
+    cfg_minutes = load_search_cost_config().minutes_at_reference
+    for ax, level in zip(axes[0], levels):
+        sub = p[p["start_occupancy"] == level]
+        for k, tau in enumerate(taus):
+            g = sub[sub["block_dispersion"] == tau].sort_values(["elasticity", "observation_noise"])
+            n = len(g)
+            x = k + (np.arange(n) - (n - 1) / 2) * (0.8 / max(n, 1))
+            ax.bar(x, g["breakeven_minutes_median"], width=0.8 / max(n, 1),
+                   color=["#1f6fd1" if m else "#d62728" for m in g["share_comparator_searches_more"] > 0.5])
+        ax.axhline(cfg_minutes, color="black", ls="--", lw=0.8, label=f"config level ({cfg_minutes:g} min)")
+        ax.set_xticks(range(len(taus)))
+        ax.set_xticklabels([f"tau={t}" for t in taus])
+        ax.set_title(f"start mean occupancy m = {level}")
+    axes[0][0].set_ylabel("Breakeven minutes (95%, 10 spaces)")
+    axes[0][0].legend(fontsize=8)
+    # Where the two rules price nearly alike the breakeven is a ratio of two small numbers;
+    # the axis is capped so the informative bars stay readable (bars beyond it are clipped).
+    lo = min(0.0, float(p["breakeven_minutes_median"].min()))
+    axes[0][0].set_ylim(max(lo, -cap_minutes), min(float(p["breakeven_minutes_median"].max()) * 1.05 + 1e-9, cap_minutes))
+    fig.suptitle(f"{comparator} vs {reference}, year {year}: cruising cost level at which the two rules "
+                 f"give equal welfare (bars: cells of elasticity x noise)")
     fig.tight_layout()
     _save(fig, save_to)
     return fig

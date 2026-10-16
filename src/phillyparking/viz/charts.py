@@ -68,32 +68,33 @@ def incidence_bar_chart(
 
 def chatman_manville_results_chart(
     sweep: pd.DataFrame,
-    metric: str = "cruising_dwl_total",
+    metric: str = "welfare_change",
     save_to: Path | None = None,
 ):
-    """`metric` against elasticity for each rule in the sweep's last year, one panel per noise level.
+    """`metric` against block dispersion for each rule in the sweep's last year, one panel per start level.
 
-    Each point is the median over replications of one elasticity x noise x rule cell in the
-    final year; nothing is pooled across years or cells. A DWL metric is drawn on a log axis
-    when every value is positive, because the rules differ by an order of magnitude.
+    Each point is the median over replications and over the other axes' cell medians of one
+    start level x dispersion x rule cell in the final year; nothing is pooled across years.
     """
     import matplotlib.pyplot as plt
+    from phillyparking.scenarios.cm_sweep import AXES
 
     last = sweep[sweep["year"] == sweep["year"].max()]
-    cells = last.groupby(["noise_sigma", "rule", "elasticity"])[metric].median().reset_index()
-    sigmas = sorted(cells["noise_sigma"].unique())
-    fig, axes = plt.subplots(1, len(sigmas), figsize=(4.6 * len(sigmas), 4), squeeze=False, sharey=True)
-    for ax, sigma in zip(axes[0], sigmas):
-        for rule, g in cells[cells["noise_sigma"] == sigma].groupby("rule", sort=False):
-            g = g.sort_values("elasticity")
-            ax.plot(g["elasticity"], g[metric], marker="o", label=rule)
-        ax.set_title(f"sigma={sigma}")
-        ax.set_xlabel("Elasticity")
-        if metric.startswith("cruising_dwl") and (cells[metric] > 0).all():
-            ax.set_yscale("log")
+    axes_cols = [a for a in AXES if a in last.columns]
+    cells = last.groupby(axes_cols + ["rule"])[metric].median().reset_index()
+    cells = cells.groupby(["start_occupancy", "block_dispersion", "rule"])[metric].median().reset_index()
+    levels = sorted(cells["start_occupancy"].unique())
+    fig, axes = plt.subplots(1, len(levels), figsize=(4.6 * len(levels), 4), squeeze=False, sharey=True)
+    for ax, level in zip(axes[0], levels):
+        for rule, g in cells[cells["start_occupancy"] == level].groupby("rule", sort=False):
+            g = g.sort_values("block_dispersion")
+            ax.plot(g["block_dispersion"], g[metric], marker="o", label=rule)
+        ax.set_title(f"start mean occupancy m={level}")
+        ax.set_xlabel("Block dispersion tau")
+        ax.axhline(0, color="black", lw=0.5)
     axes[0][0].legend(fontsize=8)
     axes[0][0].set_ylabel(metric)
-    fig.suptitle(f"Chatman-Manville sweep, year {int(last['year'].max())}: {metric} (median over replications)")
+    fig.suptitle(f"Chatman-Manville sweep, year {int(last['year'].max())}: {metric} (median over cells)")
     fig.tight_layout()
     if save_to is not None:
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)

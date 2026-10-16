@@ -116,8 +116,8 @@ zone, weekday / Saturday / Sunday windows; a zone absent from `zones.yaml`, such
 fixture's `other`, is never priced). `apply_elasticity` (response), `annual_revenue` and
 `revenue_curve` (revenue), `hourly_cruising_dwl` (DWL scorer), the Arnott-Inci peak and the
 Seattle band statistics all read it. `apply_elasticity` and the DWL functions default to
-`priced_hours_only=True` and need `zone_id` on the panel; only the Chatman-Manville sweep
-passes `False`, because its design prices every hour.
+`priced_hours_only=True` and need `zone_id` on the panel. The Chatman-Manville sweep prices
+only priced hours too, through its own closed-form demand update.
 
 Revenue per zone = zone capacity x the zone's own annual priced hours x capacity-weighted
 priced-hour occupancy (x price); for a full weekly panel that equals 52 x the sum over
@@ -139,24 +139,47 @@ as both phases (`diagnostics["phases"]`, and `<name>_phase_a` / `_phase_b` colum
 comparison table), never as one year's state. With the dead band, a cycle can still occur at
 low rates where one $0.50 step changes the price by a larger ratio than 0.85/0.70.
 
-## Chatman-Manville sweep: one rule module, paired runs
+## Chatman-Manville sweep: one rule module, paired runs, scored on welfare
 
-`pricing/targeting_rules.py` is the only implementation of the sweep's rules
-(`min_vacancy_peak`, `avg_occupancy`, `avg_priced_hours`, `avg_priced_bands`, `seattle_rule`);
-`scenarios/cm_sweep.py` runs them and builds the summaries. All rules step +-$0.50 against the same
-0.70 / 0.85 band (`chatman_manville:` in `pricing_rules.yaml`, kept equal to Seattle's by a test)
-and differ only in the statistic and window. The four zone-level rules honour `zones.yaml` floors
-and ceilings; priced-hours rules hold an unpriced zone. Noise is `sigma * z` with `z` fixed per
-replication, so every rule, elasticity and sigma sees the same draw (paired). The sweep prices
-all 168 hours, so every DWL and revenue metric has a `_total` and a `_priced_hours` form.
+`pricing/targeting_rules.py` is the only implementation of the sweep's rules: the statistic
+(peak = q95 of block-hours, or their mean) x the instrument (one rate per zone, or per zone and
+time-of-day band) gives `peak_zone`, `mean_zone`, `peak_band`, `mean_band`; `seattle_rule` is the
+project's own rule; `min_vacancy_peak` / `avg_occupancy` are the original 168-hour rules, kept for
+`ordering_violations`. All step +-$0.50 against the same 0.70 / 0.85 band (`chatman_manville:` in
+`pricing_rules.yaml`, kept equal to Seattle's by a test), honour `zones.yaml` floors and ceilings,
+read only priced hours, and take the rate in force from priced rows (meter-off rows may carry a
+stale price). `scenarios/cm_sweep.py` runs them and builds the summaries.
 
-Report per cell, never pooled: `cell_table` (median and range), `paired_table` (each rule over the
-peak rule, per replication), `window_dependence` (across cells). `ordering_violations` is the
-identity that the 168-hour mean rule never beats the peak rule (mean <= q95); it holds by
-construction on a diurnal panel. The sweep is a mechanism illustration on a fixture: a real test
-would need a DGP with within-zone dispersion and an off-peak price response. Provenance is in
-`outputs/tables/cm_sweep_n200.meta.json`. Regenerate with
-`scripts/07_export_report_assets.py --rebuild-cm-sweep` (about half an hour).
+**Why welfare.** The cruising proxy and revenue are both monotone in price, so on them the
+higher statistic wins by construction (audit finding 4): mean <= q95 over the same window, and
+`ordering_violations` documents that identity. The sweep therefore scores each priced
+block-hour on `welfare/targeting_welfare.py`: consumer surplus change (closed form under the
+same constant-elasticity law, on demand, not clipped occupancy) + revenue - search cost (a
+block of K spaces at occupancy o is full with probability o^K; a driver passes p/(1-p) full
+blocks; level set by `search_cost.minutes_at_reference` in `pricing_rules.yaml`, the minutes
+at 95% on a 10-space block). The search cost's shape and level are stated assumptions; because
+welfare is linear in the level, every row carries `search_cost_per_minute` and `paired_table`
+reports each comparison's `breakeven_minutes`, the level at which the two rules tie. That
+breakeven is the result: below it the lower-priced rule gives more welfare, above it the
+higher-priced one.
+
+**Axes** (`chatman_manville_sweep:` in `scenarios.yaml`): elasticity; `start_occupancy` m
+(each zone's priced-hour mean at the start price, set by scaling its latent demand; the band
+edges are avoided); `block_dispersion` tau (a lognormal block multiplier, u fixed per block and
+replication); `observation_noise` sigma (what the rule reviews is true occupancy + sigma z,
+redrawn yearly; welfare is scored on the truth, so noise biases a peak statistic upward).
+Demand is latent and unclipped: d = d0 (p / p0)^e in closed form (path independent, the same
+law as `apply_elasticity`); occupancy is min(d, 1). u and z are shared by every rule and cell
+in a replication (paired). The fixture is `fixture` (n=120, seed 42) with the never-priced
+"other" segments dropped; the baseline uses the `synthetic_fixture` anchor set.
+
+Report per cell, never pooled: `cell_table` (median and range), `paired_table` (each configured
+`comparisons` pair per replication: welfare, surplus, revenue and search-cost differences,
+breakeven minutes, DWL and revenue ratios), `window_dependence` (across cells). The sweep is a
+mechanism study on a fixture: the within-day shape is the baseline's, the search-cost
+parameters are unmeasured, and the fixture's zones are nothing like Philadelphia's. Provenance
+is in `outputs/tables/cm_sweep.meta.json`. Regenerate with
+`scripts/07_export_report_assets.py --rebuild-cm-sweep` (about an hour at 100 replications).
 
 ## Script 06 synthetic fallback
 
@@ -274,8 +297,8 @@ clean tree if the commit matters. `make_synthetic_segments` and `load_segments` 
 
 `scripts/07_export_report_assets.py` writes the white paper's `scenario_comparison.tex` (at
 the saved scenarios' own scale, no multiplier) and the zone map, occupancy/revenue and
-Chatman-Manville year figures from config and saved results. Order: 05, 06, 07. `--check`
-exits 1 if the table is stale; `--rebuild-cm-sweep` reruns the 200-replication sweep.
+Chatman-Manville year and breakeven figures from config and saved results. Order: 05, 06, 07.
+`--check` exits 1 if the table is stale; `--rebuild-cm-sweep` reruns the sweep.
 
 ## Allocation, consumer surplus, ranges
 
