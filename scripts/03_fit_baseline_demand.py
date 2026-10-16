@@ -16,7 +16,7 @@ import click
 from phillyparking._config import data_dir
 from phillyparking.demand.synthetic_baseline import baseline_occupancy, panel_cache_key
 from phillyparking.scenarios.runner import check_panel
-from phillyparking.spatial.segments import load_segments
+from phillyparking.spatial.segments import load_priced_segments
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +32,8 @@ def main(seed: int, verbose: bool) -> None:
     )
     proc = data_dir() / "processed"
     seg_path = proc / "segments.parquet"
-    segs = load_segments(seg_path)  # missing -> FileNotFoundError: run script 02 first
-    log.info("Loaded segments from %s (n=%d)", seg_path, len(segs))
+    segs = load_priced_segments(seg_path)  # missing -> FileNotFoundError: run script 02 first
+    log.info("Loaded priced segments from %s (%s)", seg_path, segs.attrs["segment_source"])
 
     panel = baseline_occupancy(segs, seed=seed)
     check_panel(panel, "baseline panel")

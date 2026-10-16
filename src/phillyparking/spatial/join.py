@@ -19,6 +19,10 @@ What each column is:
 - `join_pois`: `pois_count` within `buffer_m` (100 m) of the segment, and `pois_restaurant`
   (amenity restaurant / cafe / bar / fast_food / pub), `pois_retail` (any `shop` tag),
   `pois_office` (any `office` tag). POI polygons count by their representative point.
+- `join_zoning`: `commercial_frontage_share` is the share of the zoned land within
+  `buffer_m` (25 m, flat ends) of the segment that lies in the zoning group
+  "Commercial/Commercial Mixed-Use"; 0 where no zoned land is in reach. Zoning polygons stop
+  at the property line, so the buffer has to reach across half the street to the lots.
 """
 from __future__ import annotations
 
@@ -243,3 +247,23 @@ def join_pois(
         "pois_office": g["office"].sum(),
     }).reindex(pd.Index(buf["segment_id"], name="segment_id")).fillna(0).astype(int)
     return _merge_checked(segments, feat.reset_index(), "join_pois")
+
+
+def join_zoning(segments: gpd.GeoDataFrame, zoning: gpd.GeoDataFrame, buffer_m: float = 25.0,
+                group: str = "Commercial/Commercial Mixed-Use") -> gpd.GeoDataFrame:
+    """`commercial_frontage_share` per segment; see the module docstring."""
+    buf = _to_utm(segments)[["segment_id", "geometry"]].copy()
+    buf["geometry"] = buf.geometry.buffer(buffer_m, cap_style="flat")
+    z = _to_utm(zoning)[["zoninggroup", "geometry"]].copy()
+    z["geometry"] = z.geometry.make_valid()
+    z = z.explode(index_parts=False)
+    z = z[z.geom_type.isin(["Polygon", "MultiPolygon"])]
+    inter = gpd.overlay(buf, z, how="intersection", keep_geom_type=True)
+    area = inter.geometry.area
+    zoned = area.groupby(inter["segment_id"]).sum()
+    comm = area.where(inter["zoninggroup"] == group, 0.0).groupby(inter["segment_id"]).sum()
+    feat = (comm / zoned.replace(0.0, np.nan)).rename("commercial_frontage_share")
+    feat = feat.rename_axis("segment_id").reset_index()
+    out = _merge_checked(segments, feat, "join_zoning")
+    out["commercial_frontage_share"] = out["commercial_frontage_share"].fillna(0.0)
+    return out

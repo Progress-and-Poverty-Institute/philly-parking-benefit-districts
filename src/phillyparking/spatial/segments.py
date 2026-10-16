@@ -11,6 +11,12 @@ is accounted for in `segments.attrs["build_report"]`; nothing is dropped without
 Segment ids hash a parent key that identifies the input line: `seg_id` (City Street
 Centerline), else `osmid|u|v|key` (an OSM graph edge; osmid alone repeats across edges),
 else `osmid|row`, else the row number. Ids are checked unique; a collision raises.
+
+City centerline rows whose street class has no curb (`priced_curb.no_curb_classes` in
+`config/zones.yaml`: expressways, ramps, driveways, walkways) are dropped and counted as
+`no_curb_dropped`; the class is kept as `street_class`. `assign_priced_curb` then decides
+which segments a zone prices: `zone_box` is the zone box the segment lies in, and `zone_id`
+is that box only for priced curb, else "other".
 """
 from __future__ import annotations
 
@@ -79,6 +85,10 @@ def _two_way_twins(streets: gpd.GeoDataFrame, lines_m) -> set[int]:
     return drop
 
 
+def _street_class_col(streets: gpd.GeoDataFrame) -> str | None:
+    return next((c for c in ("class", "CLASS", "street_class") if c in streets.columns), None)
+
+
 def _street_name_col(streets: gpd.GeoDataFrame) -> str | None:
     return next((c for c in ("street_name", "stname", "name") if c in streets.columns), None)
 
@@ -98,13 +108,21 @@ def build_segments(
         neighborhoods = neighborhoods if neighborhoods is not None else fetch_neighborhoods()
 
     streets = streets.to_crs(4326).reset_index(drop=True)
+    class_col = _street_class_col(streets)
+    no_curb_dropped = 0
+    if class_col:
+        no_curb = set(load_config("zones")["priced_curb"]["no_curb_classes"])
+        drop = pd.to_numeric(streets[class_col], errors="coerce").isin(no_curb)
+        no_curb_dropped = int(drop.sum())
+        streets = streets[~drop].reset_index(drop=True)
     lines_m = list(streets.to_crs(UTM).geometry)
     zones = load_config("zones").get("zones", [])
     name_col = _street_name_col(streets)
     parents = _parent_keys(streets)
     twins = _two_way_twins(streets, lines_m)
 
-    report = {"input_rows": len(streets), "empty_dropped": 0, "non_line_dropped": 0,
+    report = {"input_rows": len(streets) + no_curb_dropped, "no_curb_dropped": no_curb_dropped,
+              "empty_dropped": 0, "non_line_dropped": 0,
               "multipart_rows": 0, "two_way_twins_dropped": len(twins)}
     rows = []
     for idx, geom in enumerate(lines_m):
@@ -122,6 +140,7 @@ def build_segments(
             report["non_line_dropped"] += 1
             continue
         sname = streets[name_col].iloc[idx] if name_col else None
+        sclass = pd.to_numeric(streets[class_col].iloc[idx], errors="coerce") if class_col else None
         for key, part in parts:
             for sub_idx, piece in enumerate(_split_line(part, target_length_m)):
                 rows.append({
@@ -129,6 +148,7 @@ def build_segments(
                     "geometry": piece,
                     "length_m": float(piece.length),
                     "street_name": sname,
+                    "street_class": sclass,
                     "capacity": max(0, int((piece.length / METERS_PER_CAR) * DRIVEWAY_HYDRANT_SLACK)),
                     "has_meter": False,
                     "n_meters": 0,
@@ -186,6 +206,37 @@ def build_segments(
     return seg
 
 
+def assign_priced_curb(seg: gpd.GeoDataFrame, inventory: bool,
+                       cfg: dict | None = None) -> gpd.GeoDataFrame:
+    """Set `zone_box`, `priced_curb` and the pricing `zone_id` (see the module docstring).
+
+    With a meter inventory (`inventory=True`) a segment is priced curb when it has a meter.
+    Without one there is no public record of which blocks are metered, so the stand-in is a
+    street class with curb parking (`street_classes`) and at least `min_commercial_share` of
+    the zoned land within `frontage_buffer_m` in the `zoning_group` (`commercial_frontage_share`
+    from `join_zoning`). Segments in a zone box that are not priced curb get zone "other": they
+    keep their baseline and earn nothing.
+    """
+    cfg = cfg or load_config("zones")["priced_curb"]
+    seg = seg.copy()
+    seg["zone_box"] = seg["zone_box"] if "zone_box" in seg.columns else seg["zone_id"]
+    if inventory:
+        priced = seg["has_meter"].astype(bool)
+        rule = "meter inventory: has_meter"
+    else:
+        if "commercial_frontage_share" not in seg.columns:
+            raise ValueError("assign_priced_curb: no meter inventory and no "
+                             "commercial_frontage_share; run join_zoning first")
+        priced = (seg["street_class"].isin(cfg["street_classes"])
+                  & (seg["commercial_frontage_share"] >= float(cfg["min_commercial_share"])))
+        rule = (f"no meter inventory: street_class in {list(cfg['street_classes'])} and "
+                f"commercial_frontage_share >= {cfg['min_commercial_share']}")
+    seg["priced_curb"] = priced & (seg["zone_box"] != "other")
+    seg["zone_id"] = seg["zone_box"].where(seg["priced_curb"], "other")
+    seg.attrs["priced_curb_rule"] = rule
+    return seg
+
+
 def _default_path() -> Path:
     p = data_dir() / "interim"
     p.mkdir(parents=True, exist_ok=True)
@@ -204,3 +255,20 @@ def load_segments(path: Path | None = None) -> gpd.GeoDataFrame:
     segs = gpd.read_parquet(path)
     segs.attrs["segment_source"] = {"kind": "file", "path": str(path.resolve())}
     return segs
+
+
+def load_priced_segments(path: Path | None = None) -> gpd.GeoDataFrame:
+    """`load_segments`, keeping only segments in a zone that `config/zones.yaml` prices.
+
+    The rest (zone "other": outside every zone box, or in one but not priced curb) earn
+    nothing, are not scored for cruising and carry no trips, so the scenarios leave them out.
+    `attrs["segment_source"]` records the filter and both counts.
+    """
+    segs = load_segments(path)
+    zones = {z["id"] for z in load_config("zones")["zones"]}
+    keep = segs["zone_id"].isin(zones)
+    out = segs[keep].reset_index(drop=True)
+    out.attrs["segment_source"] = {**segs.attrs["segment_source"],
+                                   "filter": "zone_id priced in config/zones.yaml",
+                                   "n_in_file": int(len(segs)), "n_kept": int(keep.sum())}
+    return out

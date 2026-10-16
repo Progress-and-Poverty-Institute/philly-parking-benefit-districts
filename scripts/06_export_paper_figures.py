@@ -17,7 +17,7 @@ from phillyparking._config import data_dir, outputs_dir
 from phillyparking.scenarios.runner import ScenarioResults, default_results_dir
 from phillyparking.scenarios.compare import comparison_table
 from phillyparking.scenarios.cm_sweep import chatman_manville_sweep
-from phillyparking.spatial.segments import load_segments
+from phillyparking.spatial.segments import load_priced_segments
 from phillyparking.demand.synthetic_baseline import baseline_occupancy
 from phillyparking.revenue.forecast import revenue_curve
 from phillyparking.viz.charts import (
@@ -114,7 +114,7 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     proc = data_dir() / "processed"
     seg_path = proc / "segments.parquet"
     NAMED_ZONES = {"ccc", "cca", "ucity", "south_philly", "fishtown"}
-    segs = load_segments(seg_path) if seg_path.exists() else None
+    segs = load_priced_segments(seg_path) if seg_path.exists() else None
     n_named = int(segs["zone_id"].isin(NAMED_ZONES).sum()) if segs is not None else 0
     if n_named < 5:
         log.warning("Only %d segments in named zones; using synthetic segments for figures", n_named)
