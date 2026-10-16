@@ -5,7 +5,7 @@
 A demand-responsive curb parking pricing model for Philadelphia, supporting three deliverables:
 
 1. **PPI / 5th Square white paper** — Georgist framing of curb pricing as land-rent capture.
-2. **Academic paper** — empirical test of the Chatman–Manville (2014) hypothesis: targeting *minimum vacancy at peak* vs *average occupancy*.
+2. **Academic paper** — a simulation study of the Chatman–Manville (2014) question: when does targeting *the peak* (keep a vacancy at the busiest block-hours) give more welfare than targeting *average occupancy*, once the parkers it prices off blocks with space are counted?
 3. **Operational simulation/pricing tool** — Seattle-style transparent rule-based pricing, with ML/RL as advanced mode.
 
 See [research/demand-based-curb-parking-pricing-model-for-philadelphia---claude-2026-04-28.md](research/demand-based-curb-parking-pricing-model-for-philadelphia---claude-2026-04-28.md) for the literature review and design rationale, and `docs/PLAN.md` (mirrored from the planning session) for the implementation roadmap.
@@ -88,10 +88,14 @@ Real Philadelphia has ~10× the metered inventory, so the central real-data esti
 | Cruising DWL | $6K | $97K | $74K |
 | Revenue to PBD | $0 | $0 | $1.07M (30%) |
 
-The **Chatman-Manville sweep** (n=200 replications, ε ∈ [−0.2, −0.7], 3 noise levels, 5 years)
-confirms the paper's core hypothesis: `min_vacancy_peak` targeting achieves **~53× lower
-cruising DWL** and **2.5× higher revenue** at year 5 versus `avg_occupancy` targeting.
-Full results: `outputs/tables/cm_sweep_n200.parquet`; figures: `outputs/figures/cm_sweep_n200_*.png`.
+The **Chatman-Manville sweep** runs peak-targeting and mean-targeting rules (one rate per
+zone, or per zone and time band, plus the project's Seattle rule) on the same demand draws and
+scores each on welfare: consumer surplus + revenue - search cost. Because the search cost's
+level is unmeasured, the paired tables report each comparison's *breakeven*: the search time at
+95% occupancy above which the higher-priced rule gives more welfare. Results are per cell
+(elasticity x start occupancy x block dispersion x observation noise), never pooled:
+`outputs/tables/cm_sweep_paired.csv` and `cm_sweep_window_dependence.csv`; raw rows in
+`outputs/tables/cm_sweep.parquet`; figures `outputs/figures/cm_sweep_*.png` and `cm_breakeven_*.png`.
 
 ## Paper outputs
 
@@ -103,9 +107,9 @@ Full results: `outputs/tables/cm_sweep_n200.parquet`; figures: `outputs/figures/
 | `outputs/figures/occupancy_and_revenue_detail.png` | Occupancy profile + revenue breakdown by scenario |
 | `outputs/figures/revenue_by_scenario.png` | Bar chart of annual revenue across 3 scenarios |
 | `outputs/figures/laffer_curve_ccc.png` | Laffer curve for CCC zone |
-| `outputs/figures/chatman_manville_sweep.png` | CM sweep (DWL by rule/elasticity) |
-| `outputs/figures/cm_sweep_n200_*.png` | Full n=200 sweep: DWL, revenue, peak-occ share |
-| `outputs/tables/cm_sweep_n200.parquet` | Raw CM sweep data for academic paper |
+| `outputs/figures/chatman_manville_sweep.png` | CM sweep (welfare by rule and block dispersion, small run) |
+| `outputs/figures/cm_sweep_*.png and cm_breakeven_*.png` | Full n=200 sweep: DWL, revenue, peak-occ share |
+| `outputs/tables/cm_sweep.parquet` | Raw CM sweep data for academic paper |
 | `outputs/tables/comparison_table.csv` | Wide-format scenario comparison |
 
 ## PPA Data (RTKL)

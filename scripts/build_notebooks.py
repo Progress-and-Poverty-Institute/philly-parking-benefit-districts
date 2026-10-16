@@ -532,50 +532,40 @@ write("07_welfare_incidence.ipynb", nb07)
 # 08 chatman manville test
 # ---------------------------------------------------------------------------
 nb08 = [
-    md("# 08 — Chatman–Manville Rule Comparison\n\nThe academic-paper centerpiece. Compare "
-       "average-occupancy targeting against minimum-vacancy-at-peak targeting across elasticity scenarios."),
+    md("# 08 — Chatman–Manville Rule Comparison\n\nTargeting rules (peak or mean statistic; one "
+       "rate per zone or per zone and time band; the project's Seattle rule) run paired on the same "
+       "demand draws and scored on welfare: consumer surplus + revenue - search cost. A small run; "
+       "the full sweep is `outputs/tables/cm_sweep.parquet` (script 07 `--rebuild-cm-sweep`)."),
     code("%matplotlib inline\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n"),
     code(
-        "from phillyparking.scenarios.cm_sweep import chatman_manville_sweep\n"
+        "from phillyparking.scenarios.cm_sweep import chatman_manville_sweep, paired_table, window_dependence\n"
         "from phillyparking.viz.charts import chatman_manville_results_chart\n"
-        "results = chatman_manville_sweep(n_replications=30, rolls_forward_years=3)\n"
+        "results = chatman_manville_sweep(n_replications=5, rolls_forward_years=4)\n"
         "results.head()\n"
     ),
-    md("## Group by rule × elasticity"),
+    md("## Welfare terms by rule and start occupancy, last year (median over cells)"),
     code(
-        "grouped = results.groupby(['rule', 'elasticity']).agg(\n"
-        "    cruising_dwl=('cruising_dwl', 'mean'),\n"
-        "    revenue=('revenue', 'mean'),\n"
-        "    peak_share_gt_85=('peak_share_gt_85', 'mean'),\n"
-        "    gini=('gini', 'mean'),\n"
-        ").reset_index()\n"
+        "last = results[results['year'] == results['year'].max()]\n"
+        "grouped = last.groupby(['start_occupancy', 'rule'])[\n"
+        "    ['welfare_change', 'cs_change', 'revenue', 'search_cost', 'mean_price']].median()\n"
         "grouped\n"
     ),
-    md("## Four-metric small multiples"),
+    md("## Each comparison against its reference, per cell\n\n`breakeven_minutes_median` is the search "
+       "time at 95% occupancy on a 10-space block at which the two rules give equal welfare; below it the "
+       "lower-priced rule gives more, above it the higher-priced one."),
     code(
-        "metrics = ['cruising_dwl', 'revenue', 'peak_share_gt_85', 'gini']\n"
-        "fig, axes = plt.subplots(2, 2, figsize=(11, 8))\n"
-        "for ax, metric in zip(axes.ravel(), metrics):\n"
-        "    pivot = grouped.pivot(index='elasticity', columns='rule', values=metric)\n"
-        "    pivot.plot.bar(ax=ax)\n"
-        "    ax.set_title(metric); ax.set_xlabel('')\n"
-        "plt.tight_layout(); plt.show()\n"
+        "paired = paired_table(results)\n"
+        "window_dependence(paired)\n"
     ),
     md("## Use the packaged chart"),
     code(
-        "try:\n"
-        "    fig = chatman_manville_results_chart(results)\n"
-        "    plt.show()\n"
-        "except Exception as e:\n"
-        "    print('packaged chart unavailable:', e)\n"
+        "fig = chatman_manville_results_chart(results)\n"
+        "plt.show()\n"
     ),
-    md("## Discussion\n\nMin-vacancy-at-peak targeting tends to **outperform** average-occupancy "
-       "targeting when (a) demand is highly peaked relative to off-peak hours and (b) elasticities are "
-       "moderate (central scenario). Under inelastic demand the rule pushes prices high enough to keep "
-       "a vacant space available, sharply reducing cruising DWL even at the cost of slightly lower peak "
-       "revenue. Under highly elastic demand the two rules converge because either mechanism induces "
-       "the same flat occupancy curve. The peak-share-above-0.85 metric is the clearest separator: "
-       "min-vacancy-at-peak nearly eliminates exceedances by construction.\n"),
+    md("## Reading the result\n\nOn cruising alone the peak rule wins by construction (a mean is never "
+       "above a 95th percentile of the same block-hours), so the question is the breakeven: how costly "
+       "must cruising be for the parkers a peak rule prices off blocks with space to be worth it. Read "
+       "the paired table cell by cell; nothing is pooled.\n"),
     md("## Next steps\n\n- Roll up all scenarios in `09_scenario_comparison.ipynb`.\n"),
 ]
 write("08_chatman_manville_test.ipynb", nb08)

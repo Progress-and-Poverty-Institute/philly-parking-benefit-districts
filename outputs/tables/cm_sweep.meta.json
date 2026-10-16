@@ -1,0 +1,65 @@
+{
+  "baseline": "baseline_occupancy(segments, seed=seed, anchor_set='synthetic_fixture')",
+  "block_dispersion": [
+    0.0,
+    0.3,
+    0.6
+  ],
+  "config_sha256": {
+    "allocation": "9973d2abac6c8cc9fbe51b1c38a8d07da10f4bdf3d685bbf6406d8e435803f19",
+    "demand_baseline": "96601806b8063d5e4320d4587c179f9c3ca812b336aae5b2a83bad926a77f01c",
+    "elasticity_priors": "56be8e207cfa99df54d786030f65b4422be0956fff6a6df554c389f66797ad1a",
+    "ppa_ingest": "55a451be56f214667c9a7cceb8f23126070923669c569deb70c468cb03c65a06",
+    "pricing_rules": "6c95ce2d0d7a3a676dd02aa9390d5605fc26faac104d7792129c074f0890f3d2",
+    "scenarios": "6f09acd1b9bbad430eba3635b8c69ebd3ad0ac596ef687a92fa94dda103851f2",
+    "zones": "804af6bc50fa583729643e85972bad75702e3dca910258c27283d49cbfcf7d83"
+  },
+  "created_utc": "2026-10-16T15:49:51+00:00",
+  "elasticity_values": [
+    -0.2,
+    -0.4,
+    -0.7
+  ],
+  "git": {
+    "commit": "6c1ff571e1b4ba596459619123d9ee48d3c18fd7",
+    "dirty": true
+  },
+  "n_replications": 100,
+  "observation_noise": [
+    0.0,
+    0.1
+  ],
+  "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
+  "rolls_forward_years": 8,
+  "rules": [
+    "peak_zone",
+    "mean_zone",
+    "peak_band",
+    "mean_band",
+    "seattle_rule"
+  ],
+  "search_cost": {
+    "mean_duration_hr": 1.5,
+    "minutes_at_reference": 5.0,
+    "occupancy_cap": 0.99,
+    "reference_capacity": 10.0,
+    "reference_occupancy": 0.95,
+    "value_of_time_usd_per_hr": 20.0
+  },
+  "seed": 42,
+  "segment_source": {
+    "function": "make_synthetic_segments",
+    "kind": "synthetic_fixture",
+    "n": 120,
+    "n_priced_block_hours_per_week": 7812,
+    "n_priced_segments": 112,
+    "n_segments": 120,
+    "seed": 42
+  },
+  "start_occupancy": [
+    0.6,
+    0.75,
+    0.9
+  ],
+  "start_price_usd": 2.0
+}

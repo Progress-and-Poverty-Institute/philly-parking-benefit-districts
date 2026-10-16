@@ -41,13 +41,21 @@ scenarios:
     rolls_forward_years: 10   # maximum reviews; the runner stops at a fixed point
     notes: "Full Shoupian PBD with Georgist land-rent capture framing."
 
-# Sensitivity sweep for the academic Chatman-Manville paper (scenarios/cm_sweep.py).
-# Every rule sees the same noise draw in a replication (paired). Rules are defined in
-# pricing/targeting_rules.py; the first is the reference the others are compared with.
+# The Chatman-Manville sweep (scenarios/cm_sweep.py): targeting rules, paired on the same
+# demand draws, scored on welfare (welfare/targeting_welfare.py). Rules are defined in
+# pricing/targeting_rules.py. `comparisons` are (comparator, reference) pairs for the paired
+# tables; every rule in them must be in `rules`. The grid below is 3 x 3 x 3 x 2 = 54 cells; the
+# cruising cost level (pricing_rules.yaml search_cost) is not an axis: welfare is linear in it
+# and the paired tables report each comparison's breakeven level.
 chatman_manville_sweep:
-  elasticity_values: [-0.20, -0.30, -0.40, -0.50, -0.60, -0.70]
-  demand_noise_sigma: [0.0, 0.05, 0.10, 0.20]
-  rules: [min_vacancy_peak, avg_occupancy, avg_priced_hours, avg_priced_bands, seattle_rule]
+  fixture: { n: 120, seed: 42 }          # make_synthetic_segments; "other" segments are dropped
+  elasticity_values: [-0.20, -0.40, -0.70]
+  start_occupancy: [0.60, 0.75, 0.90]    # m: each zone's priced-hour mean occupancy at the start price
+                                         # (below the 0.70-0.85 band, inside it, above it)
+  block_dispersion: [0.0, 0.3, 0.6]      # tau: log-sd of the block demand multiplier
+  observation_noise: [0.0, 0.10]         # sigma: sd of the occupancy the rule reviews, per block-hour
+  rules: [peak_zone, mean_zone, peak_band, mean_band, seattle_rule]
+  comparisons: [[mean_zone, peak_zone], [mean_band, peak_band], [seattle_rule, peak_band], [peak_band, peak_zone]]
   start_price_usd: 2.00
-  n_replications: 200
-  rolls_forward_years: 5
+  n_replications: 100
+  rolls_forward_years: 8

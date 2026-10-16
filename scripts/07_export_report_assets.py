@@ -6,15 +6,16 @@ Chatman-Manville sweep table (with its `.meta.json` provenance), and writes:
   outputs/reports/white_paper/tables/scenario_comparison.tex
   outputs/figures/zone_map.png
   outputs/figures/occupancy_and_revenue_detail.png
-  outputs/figures/cm_sweep_n200_{cruising_dwl_total,revenue_total,peak_occupancy_share_above_85}.png
-  outputs/tables/cm_sweep_cells.csv               median and range per elasticity x noise x rule x year
-  outputs/tables/cm_sweep_paired.csv              each rule against the peak rule, same replication
-  outputs/tables/cm_sweep_window_dependence.csv   per comparator, across cells, last year
+  outputs/figures/cm_sweep_{welfare_change,cs_change,search_cost,revenue,mean_price}.png
+  outputs/figures/cm_breakeven_{comparator}_vs_{reference}.png   one per configured comparison
+  outputs/tables/cm_sweep_cells.csv               median and range per cell x rule x year
+  outputs/tables/cm_sweep_paired.csv              each configured comparison, same replication
+  outputs/tables/cm_sweep_window_dependence.csv   per comparison, across cells, last year
 
 `--check` regenerates the table in memory and exits 1 if the file on disk differs (the
-figures are not compared byte for byte). `--rebuild-cm-sweep` reruns the 200-replication
-sweep and rewrites outputs/tables/cm_sweep_n200.parquet and its .meta.json first; it takes
-about half an hour (five rules, 24 cells).
+figures are not compared byte for byte). `--rebuild-cm-sweep` reruns the sweep at the
+config's size (`chatman_manville_sweep` in config/scenarios.yaml) and rewrites
+outputs/tables/cm_sweep.parquet and its .meta.json first; about an hour at 100 replications.
 """
 from __future__ import annotations
 
@@ -30,20 +31,18 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from phillyparking._config import outputs_dir  # noqa: E402
 from phillyparking.scenarios.cm_sweep import (  # noqa: E402
-    cell_table, chatman_manville_sweep, load_sweep, paired_table, save_sweep, window_dependence,
+    cell_table, chatman_manville_sweep, comparisons_from_config, load_sweep, paired_table,
+    save_sweep, window_dependence,
 )
 from phillyparking.scenarios.runner import default_results_dir, load_saved_scenarios  # noqa: E402
 from phillyparking.viz.report_figures import (  # noqa: E402
-    cm_sweep_year_chart, occupancy_and_revenue_detail, zone_map_figure,
+    cm_breakeven_chart, cm_sweep_year_chart, occupancy_and_revenue_detail, zone_map_figure,
 )
 from phillyparking.viz.tables import scenario_comparison_tex  # noqa: E402
 
 log = logging.getLogger(__name__)
 
-CM_METRICS = ("cruising_dwl_total", "revenue_total", "peak_occupancy_share_above_85")
-CM_N_REPLICATIONS = 200
-CM_YEARS = 5
-CM_REFERENCE = "min_vacancy_peak"
+CM_METRICS = ("welfare_change", "cs_change", "search_cost", "revenue", "mean_price")
 
 
 def table_path() -> Path:
@@ -58,7 +57,7 @@ def render_scenario_table() -> str:
 @click.command()
 @click.option("--check", is_flag=True, help="Exit 1 if scenario_comparison.tex is stale; write nothing.")
 @click.option("--rebuild-cm-sweep", is_flag=True,
-              help=f"Rerun the {CM_N_REPLICATIONS}-replication sweep and rewrite its parquet first.")
+              help="Rerun the Chatman-Manville sweep at the config size and rewrite its parquet first.")
 @click.option("--seed", default=42, type=int)
 @click.option("--verbose", "-v", is_flag=True)
 def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
@@ -88,11 +87,10 @@ def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
     plt.close(fig)
     log.info("Wrote %s", figs / "occupancy_and_revenue_detail.png")
 
-    sweep_path = outputs_dir() / "tables" / "cm_sweep_n200.parquet"
+    sweep_path = outputs_dir() / "tables" / "cm_sweep.parquet"
     if rebuild_cm_sweep:
-        log.info("Rerunning the Chatman-Manville sweep (n=%d, %d years)", CM_N_REPLICATIONS, CM_YEARS)
-        sweep = chatman_manville_sweep(n_replications=CM_N_REPLICATIONS,
-                                       rolls_forward_years=CM_YEARS, seed=seed)
+        log.info("Rerunning the Chatman-Manville sweep at the config's size")
+        sweep = chatman_manville_sweep(seed=seed)
         save_sweep(sweep, sweep_path)
         log.info("Wrote %s and its provenance", sweep_path)
     sweep = load_sweep(sweep_path)
@@ -102,7 +100,7 @@ def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
              (prov.get("git") or {}).get("commit"))
 
     tables = outputs_dir() / "tables"
-    paired = paired_table(sweep, CM_REFERENCE)
+    paired = paired_table(sweep)
     for name, frame in (("cm_sweep_cells.csv", cell_table(sweep)),
                         ("cm_sweep_paired.csv", paired),
                         ("cm_sweep_window_dependence.csv", window_dependence(paired))):
@@ -110,8 +108,13 @@ def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
         log.info("Wrote %s", tables / name)
 
     for metric in CM_METRICS:
-        out = figs / f"cm_sweep_n200_{metric}.png"
+        out = figs / f"cm_sweep_{metric}.png"
         fig = cm_sweep_year_chart(sweep, metric, save_to=out)
+        plt.close(fig)
+        log.info("Wrote %s", out)
+    for comparison in comparisons_from_config():
+        out = figs / f"cm_breakeven_{comparison[0]}_vs_{comparison[1]}.png"
+        fig = cm_breakeven_chart(paired, comparison, save_to=out)
         plt.close(fig)
         log.info("Wrote %s", out)
 
