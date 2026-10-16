@@ -57,7 +57,7 @@ def render_scenario_table() -> str:
 @click.command()
 @click.option("--check", is_flag=True, help="Exit 1 if scenario_comparison.tex is stale; write nothing.")
 @click.option("--rebuild-cm-sweep", is_flag=True,
-              help=f"Rerun the {CM_N_REPLICATIONS}-replication sweep and rewrite its parquet first.")
+              help="Rerun the Chatman-Manville sweep at the config size and rewrite its parquet first.")
 @click.option("--seed", default=42, type=int)
 @click.option("--verbose", "-v", is_flag=True)
 def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
