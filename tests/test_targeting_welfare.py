@@ -7,65 +7,80 @@ import pytest
 from phillyparking._config import load_config
 from phillyparking.welfare.targeting_welfare import (
     cited_cruising_minutes, cs_change_usd, expected_search_minutes, load_search_cost_config,
-    reference_minutes_per_full_block_minute, search_cost_usd,
+    minutes_per_full_block, reference_minutes_per_cruising_minute, search_cost_usd,
 )
 
+CAPS = (0.95, 0.99, 0.999)
 
-def test_search_minutes_equal_the_configured_level_at_a_full_reference_block():
+
+def test_level_is_per_cruiser_and_an_arrival_at_a_full_block_searches_cap_k_of_it():
+    """The level is in the units of the cited studies, the mean search of the drivers who
+    cruise. When every block is full a cruiser passes 1 / (1 - cap^K) full blocks, and an
+    arrival cruises only if the first block is full (probability cap^K), so the expected
+    search per arrival there is cap^K x the level, not the level itself."""
+    for cap in CAPS:
+        cfg = load_search_cost_config(occupancy_cap=cap)
+        p_full = cap ** cfg.search_unit_spaces
+        assert minutes_per_full_block(cfg) / (1.0 - p_full) == pytest.approx(cfg.cruising_minutes_at_full_block)
+        per_arrival = expected_search_minutes(np.array([1.0]), cfg)[0]
+        assert per_arrival == pytest.approx(p_full * cfg.cruising_minutes_at_full_block)
+        assert per_arrival == pytest.approx(cfg.minutes_at_full_block)
+        assert per_arrival < cfg.cruising_minutes_at_full_block
     cfg = load_search_cost_config()
-    full = expected_search_minutes(np.array([1.0]), np.array([cfg.reference_capacity]), cfg)
-    assert full[0] == pytest.approx(cfg.minutes_at_full_block)
-    twice = load_search_cost_config(2 * cfg.minutes_at_full_block)
-    assert expected_search_minutes(np.array([0.9]), np.array([8.0]), twice)[0] == pytest.approx(
-        2 * expected_search_minutes(np.array([0.9]), np.array([8.0]), cfg)[0])
+    twice = load_search_cost_config(2 * cfg.cruising_minutes_at_full_block)
+    assert expected_search_minutes(np.array([0.9]), twice)[0] == pytest.approx(
+        2 * expected_search_minutes(np.array([0.9]), cfg)[0])
 
 
 def test_cap_sets_how_much_more_a_full_block_costs_than_the_reference_block():
-    """At every cap a full block costs the stated minutes; the cap decides the 95% block's cost,
-    and `reference_minutes_per_full_block_minute` is exactly that conversion."""
-    ref_occ, k = 0.95, np.array([10.0])
-    for cap in (0.95, 0.99, 0.999):
+    """The cap decides the 95% block's cost relative to a full one, and
+    `reference_minutes_per_cruising_minute` is exactly the conversion of the level to minutes
+    per arrival at the 95% block. A block short of the lower cap costs less at a higher cap."""
+    for cap in CAPS:
         cfg = load_search_cost_config(occupancy_cap=cap)
-        full = expected_search_minutes(np.array([1.0]), k, cfg)[0]
-        at_ref = expected_search_minutes(np.array([ref_occ]), k, cfg)[0]
-        assert full == pytest.approx(cfg.minutes_at_full_block)
-        assert at_ref / full == pytest.approx(reference_minutes_per_full_block_minute(cfg))
-    assert reference_minutes_per_full_block_minute(load_search_cost_config(occupancy_cap=0.95)) == pytest.approx(1.0)
-    assert reference_minutes_per_full_block_minute(load_search_cost_config(occupancy_cap=0.999)) < 0.02
+        at_ref = expected_search_minutes(np.array([0.95]), cfg)[0]
+        assert at_ref / cfg.cruising_minutes_at_full_block == pytest.approx(reference_minutes_per_cruising_minute(cfg))
+    full_over_ref = {cap: float(expected_search_minutes(np.array([1.0]), load_search_cost_config(occupancy_cap=cap))[0]
+                                / expected_search_minutes(np.array([0.95]), load_search_cost_config(occupancy_cap=cap))[0])
+                     for cap in CAPS}
+    assert full_over_ref[0.95] == pytest.approx(1.0)
+    assert 6.0 < full_over_ref[0.99] < 6.5 and full_over_ref[0.999] > 60
+    lo, hi = (expected_search_minutes(np.array([0.9]), load_search_cost_config(occupancy_cap=c))[0] for c in (0.95, 0.99))
+    assert hi < lo
     with pytest.raises(ValueError):
         load_search_cost_config(occupancy_cap=1.5)
+    with pytest.raises(ValueError):
+        load_search_cost_config(occupancy_cap=1.0)   # a cruiser at a full block would never find a space
 
 
-def test_level_is_inside_the_cited_cruising_range():
-    """The config level is a per-arrival full-block figure set at the cited per-cruiser mean."""
+def test_level_is_the_cited_mean_cruising_time():
+    """The config level is set at the cited per-cruiser mean, in the cited units."""
     cfg, cited = load_search_cost_config(), cited_cruising_minutes()
     assert cited["low"] < cited["mean"] < cited["high"]
-    assert cited["low"] <= cfg.minutes_at_full_block <= cited["high"]
+    assert cfg.cruising_minutes_at_full_block == cited["mean"]
     assert "cruise" in cited["source"]
 
 
-def test_search_minutes_increase_and_are_convex_in_occupancy_and_fall_with_block_size():
+def test_search_minutes_increase_and_are_convex_in_occupancy_up_to_the_cap():
     cfg = load_search_cost_config()
-    o = np.linspace(0.5, 0.99, 50)
-    m = expected_search_minutes(o, np.full_like(o, 10.0), cfg)
+    o = np.linspace(0.5, cfg.occupancy_cap, 50)
+    m = expected_search_minutes(o, cfg)
     assert (np.diff(m) > 0).all() and (np.diff(m, 2) > 0).all()
-    small = expected_search_minutes(np.array([0.9]), np.array([4.0]), cfg)[0]
-    big = expected_search_minutes(np.array([0.9]), np.array([16.0]), cfg)[0]
-    assert small > big  # a small block is full more often at the same mean occupancy
     # A full block costs the capped search, not an infinite one.
-    full = expected_search_minutes(np.array([1.0]), np.array([10.0]), cfg)[0]
-    assert np.isfinite(full) and full == expected_search_minutes(np.array([cfg.occupancy_cap]), np.array([10.0]), cfg)[0]
+    full = expected_search_minutes(np.array([1.0]), cfg)[0]
+    assert np.isfinite(full) and full == expected_search_minutes(np.array([cfg.occupancy_cap]), cfg)[0]
 
 
 def test_search_cost_is_arrivals_times_time_times_value_of_time():
     cfg = load_search_cost_config()
     occ, cap = np.array([0.95]), np.array([10.0])
     arrivals = 0.95 * 10.0 / cfg.mean_duration_hr
-    minutes = expected_search_minutes(occ, cap, cfg)[0]
+    minutes = expected_search_minutes(occ, cfg)[0]
     assert search_cost_usd(occ, cap, cfg)[0] == pytest.approx(arrivals * (minutes / 60.0) * cfg.value_of_time_usd_per_hr)
     full = search_cost_usd(np.array([1.0]), cap, cfg)[0]
     assert full == pytest.approx(10.0 / cfg.mean_duration_hr * (cfg.minutes_at_full_block / 60.0) * cfg.value_of_time_usd_per_hr)
     assert search_cost_usd(np.array([0.0]), cap, cfg)[0] == 0.0
+    assert search_cost_usd(np.array([0.9]), np.array([0.0]), cfg)[0] == 0.0   # no space, no arrivals
     assert cfg.value_of_time_usd_per_hr == load_config("pricing_rules")["arnott_inci"]["value_of_time_usd_per_hr"]
 
 

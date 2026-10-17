@@ -177,20 +177,21 @@ sweep therefore scores each priced block-hour on `welfare/targeting_welfare.py`:
 surplus change + revenue - search cost, all three on the cars that park (see "Welfare
 objects"). The search cost is the project's one cruising model (`welfare/search_cost.py`); its
 level is a stated assumption, and welfare is linear in it, so every row carries
-`search_cost_per_full_block_minute` and `paired_table` reports each comparison's breakeven:
-`breakeven_full_block_minutes`, the search time per arrival at a full 10-space block at which
-the two rules tie (the headline; it is the quantity that drives the cost, because full
-block-hours carry most of it), and `breakeven_reference_minutes`, the same level quoted at the
-95% reference block-hour (c* x `reference_minutes_per_full_block_minute`, which depends on the
-cap: 1 at 0.95, 0.16 at 0.99, 0.015 at 0.999, so that column is not comparable across caps).
+`search_cost_per_cruising_minute` and `paired_table` reports each comparison's breakeven:
+`breakeven_cruising_minutes`, the level at which the two rules tie, in the level's own units
+(the mean cruising time of the drivers who cruise when every block is full, the units of the
+cited studies; the headline), and `breakeven_reference_minutes`, the same level quoted as
+search per arrival at the 95% reference block-hour (c* x `reference_minutes_per_cruising_minute`,
+which depends on the cap: 0.60 at 0.95, 0.14 at 0.99, 0.015 at 0.999, so that column is not
+comparable across caps).
 For a same-instrument pair (`mean_zone` vs `peak_zone`, `mean_band` vs `peak_band`) the SIGN
 of the breakeven is a property of the design, not a finding: a mean is never above a q95 of
 the same block-hours, so the mean rule prices at or below the peak rule, total surplus
 (surplus + revenue) is higher at the lower price and search cost higher at the higher
 occupancy, in every replication; `ordering_violations` is the test of that identity. The
 sweep's content for such pairs is the SIZE of the breakeven against the cruising times the
-config cites (`search_cost.cited_cruising_minutes`: Shoup 2006, 3.5-14 minutes, per cruiser;
-`cm_breakeven_*.png` shade that range). The sign is not an identity across instruments or for
+config cites (`search_cost.cited_cruising_minutes`: Shoup 2006, 3.5-14 minutes, per cruiser,
+the same units as the breakeven; `cm_breakeven_*.png` shade that range). The sign is not an identity across instruments or for
 `seattle_rule`.
 
 **Axes** (`chatman_manville_sweep:` in `scenarios.yaml`): elasticity; `start_occupancy` m
@@ -200,7 +201,7 @@ replication); `observation_noise` sigma (what the rule reviews is true occupancy
 redrawn yearly; welfare is scored on the truth, so noise biases a peak statistic upward);
 `occupancy_cap` (the search cost's cap: the rules never see it, so each rule's price path is
 run once and scored once per cap, and the rows of one path differ across caps only in
-`search_cost`, `search_cost_per_full_block_minute` and `welfare_change`). Demand is latent
+`search_cost`, `search_cost_per_cruising_minute` and `welfare_change`). Demand is latent
 and unclipped: d = d0 x `demand_level(p)` in closed form (path independent, the same law as
 `apply_elasticity`); occupancy is min(d, 1). u and z are shared by every rule and cell in a
 replication (paired). The fixture is `fixture` (n=120, seed 42) with the never-priced "other"
@@ -209,7 +210,7 @@ segments dropped; the baseline uses the `synthetic_fixture` anchor set.
 Report per cell, never pooled: `cell_table` (median and range), `paired_table` (each configured
 `comparisons` pair per replication: welfare, surplus, revenue and search-cost differences, the
 two breakeven columns, search-cost and revenue ratios), `window_dependence` (across the cells
-of the other four axes, one row per comparison and cap, so the full-block breakeven's stability
+of the other four axes, one row per comparison and cap, so the cruising-minute breakeven's stability
 across caps is visible). The year charts are drawn at the config's default cap. The sweep is a
 mechanism study on a fixture: the within-day shape is the baseline's, the search-cost
 parameters are unmeasured, and the fixture's zones are nothing like Philadelphia's. Provenance
@@ -226,18 +227,38 @@ to other segments. Without the fallback the Laffer figure would be skipped.
 
 `welfare/search_cost.py` is the project's only cruising cost, used by the scenario runner's
 cruising row (`ScenarioResults.search_cost`, `search_cost.parquet`, `search_cost_total` in the
-comparison table) and by the sweep's scorer. A block of K spaces at mean occupancy o is full
-with probability o^K; an arriving driver passes p/(1-p) full blocks; cost per block-hour =
+comparison table) and by the sweep's scorer. An arriving driver checks a block of
+K = `search_unit_spaces` spaces at the occupancy o of the segment they arrive at; it is full
+with probability o^K, and the driver passes p/(1-p) full blocks; cost per segment-hour =
 served arrivals (occupancy x capacity / `mean_duration_hr`) x minutes x value of time. It is
-convex in occupancy and has no occupancy target in it. The level (`search_cost:` in
-`pricing_rules.yaml`) is `minutes_at_full_block`, the expected search of an arrival at a full
-block of `reference_capacity` spaces, because full block-hours carry most of the cost on a
-priced panel; the per-block constant is minutes_at_full_block / (cap^K / (1 - cap^K)), so the
-`occupancy_cap` decides how much more a full block costs than a 95% one (6.3x at 0.99 on 10
-spaces, 1x at 0.95, 67x at 0.999). `cited_cruising_minutes` is Shoup's range (3.5-14, mean
-8.1): the average cruising time of the drivers who cruise, not the expected search of all
-arrivals, which at a full block is cap^K times it; the level is set at that mean. No
-Philadelphia measurement of any of these exists. There is no second cruising model: the old
+convex in occupancy and has no occupancy target in it.
+
+**The search unit is the block, not the segment.** A segment is a piece of centerline cut at
+intersections, attribute breaks and by the builder at about 80 m (`spatial/segments.py`); its
+capacity counts one curb side, length / 7 m x 0.85, so it is set by where the data break the
+street. Passing a block costs the same minutes wherever it is, so a segment-sized unit would
+charge a short segment far more per arrival at the same occupancy (85 minutes for one space at
+the 0.99 cap against 8.1 for ten). With the fixed unit, search minutes per arrival are a
+function of occupancy alone (`expected_search_minutes` takes no capacity), capacity enters
+only through arrivals, and the cost is additive over any cut of the curb
+(`test_cost_is_additive_over_any_cut_of_the_curb`); keep it that way. Alternatives weighed in
+the PR that introduced the unit: pooling segments into blocks by centerline topology leaves
+short pieces short (priced curb is fragmented and the centerline breaks at alleys); a
+per-segment unit whose pass time scales with its spaces agrees with the fixed unit near the cap
+(K o^K / (1 - o^K) hardly depends on K there) but still depends on the cut at moderate
+occupancy. The unit's size matters only away from the cap: it barely moves the reform
+scenarios' search cost, which sits at the cap, but moves the status quo's several-fold, because
+no status-quo priced block-hour is near the cap, so read that cell as unpinned by this model.
+
+**Level units.** `cruising_minutes_at_full_block` (`search_cost:` in `pricing_rules.yaml`) is
+the mean search of the drivers who cruise when every block is full, the units of
+`cited_cruising_minutes` (Shoup's range, 3.5-14, mean 8.1: the average cruising time of those
+who cruise); the level is set at that mean. A cruiser passes 1/(1 - cap^K) full blocks, so the
+per-block constant is level x (1 - cap^K); an arrival at a full block cruises with probability
+cap^K, so its expected search (`SearchCostConfig.minutes_at_full_block`) is cap^K x level: 7.3
+at cap 0.99, 4.9 at 0.95, 8.0 at 0.999. The `occupancy_cap` decides how much more a full block
+costs than a 95% one (6.3x at 0.99 on 10 spaces, 1x at 0.95, 67x at 0.999); it must be below 1.
+No Philadelphia measurement of any of these exists. There is no second cruising model: the old
 linear proxy (excess over the target x 5 minutes x $20) had the pricing target built into it
 and scored zero below it, so it could only restate the band; do not reintroduce it, and do not
 put a cruising constant in a function default.

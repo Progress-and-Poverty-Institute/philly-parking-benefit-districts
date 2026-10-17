@@ -492,8 +492,8 @@ nb07 = [
         "results = run_all_scenarios()\n"
     ),
     md("## Annual search cost of parkers per scenario\n\nThe project's one cruising model "
-       "(`welfare/search_cost.py`), scored at the config's level in minutes per arrival at a full "
-       "block; the level is a stated assumption."),
+       "(`welfare/search_cost.py`), scored at the config's level in cruising minutes per cruiser "
+       "when blocks are full; the level is a stated assumption."),
     code(
         "pd.Series({name: float(res.search_cost['annual_search_cost_usd'].sum())\n"
         "           for name, res in results.items()}, name='search_cost_usd')\n"
@@ -545,8 +545,9 @@ nb08 = [
         "    ['welfare_change', 'cs_change', 'revenue', 'search_cost', 'mean_price']].median()\n"
         "grouped\n"
     ),
-    md("## Each comparison against its reference, per cell\n\n`breakeven_full_block_minutes_median` is "
-       "the search time per arrival at a full 10-space block at which the two rules give equal welfare; "
+    md("## Each comparison against its reference, per cell\n\n`breakeven_cruising_minutes_median` is "
+       "the cruising time per cruiser, every block full (the level's units, those of the cited "
+       "cruising times), at which the two rules give equal welfare; "
        "below it the lower-priced rule gives more, above it the higher-priced one. For a same-instrument "
        "pair its sign is a property of the design (mean <= q95 of the same block-hours); its size against "
        "the cited cruising times is the content."),

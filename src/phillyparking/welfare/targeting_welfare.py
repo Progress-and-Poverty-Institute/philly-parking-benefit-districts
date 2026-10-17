@@ -10,7 +10,7 @@ park:
 
 - **search cost**: the project's cruising model (`welfare/search_cost.py`): served arrivals
   x the expected minutes spent passing full blocks x the value of time. Its level is
-  `minutes_at_full_block` and its cap `occupancy_cap` (`search_cost:` in
+  `cruising_minutes_at_full_block` and its cap `occupancy_cap` (`search_cost:` in
   `config/pricing_rules.yaml`); the sweep varies the cap and reports the level at which
   rules tie, because no Philadelphia measurement of either exists.
 - **consumer surplus change** against the start of the run: the exact integral of the
@@ -35,7 +35,7 @@ import numpy as np
 from phillyparking.demand.response import cs_change_served
 from phillyparking.welfare.search_cost import (  # noqa: F401  (re-exported for the sweep and tests)
     SearchCostConfig, cited_cruising_minutes, expected_search_minutes, load_search_cost_config,
-    minutes_per_full_block, reference_minutes_per_full_block_minute, search_cost_usd,
+    minutes_per_full_block, reference_minutes_per_cruising_minute, search_cost_usd,
 )
 
 
