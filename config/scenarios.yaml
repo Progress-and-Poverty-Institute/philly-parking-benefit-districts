@@ -38,7 +38,8 @@ scenarios:
       kind: market_clearing
       revenue_share_to_pbd: 0.30   # Mexico City EcoParq precedent
     elasticity_scenario: central
-    rolls_forward_years: 10   # maximum reviews; the runner stops at a fixed point
+    rolls_forward_years: 20   # maximum reviews; the runner stops at a fixed point (the fixture needs
+                              # up to 12 across the three elasticities)
     notes: "Full Shoupian PBD with Georgist land-rent capture framing."
 
 # The Chatman-Manville sweep (scenarios/cm_sweep.py): targeting rules, paired on the same
@@ -51,7 +52,7 @@ scenarios:
 # in minutes per arrival at a full block.
 chatman_manville_sweep:
   fixture: { n: 120, seed: 42 }          # make_synthetic_segments; "other" segments are dropped
-  elasticity_values: [-0.20, -0.40, -0.70]
+  elasticity_values: [-0.40, -0.60, -0.90]
   start_occupancy: [0.60, 0.75, 0.90]    # m: each zone's priced-hour mean occupancy at the start price
                                          # (below the 0.70-0.85 band, inside it, above it)
   block_dispersion: [0.0, 0.3, 0.6]      # tau: log-sd of the block demand multiplier

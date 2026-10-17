@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from phillyparking._config import load_config
 from phillyparking.demand.response import demand_factor
 from phillyparking.elasticity.scenarios import (
     all_scenarios,
@@ -84,6 +85,7 @@ def test_apply_elasticity_needs_zone_for_the_mask():
 
 
 def test_get_scenario_and_all():
-    assert get_scenario("central").elasticity == pytest.approx(-0.40)
+    assert get_scenario("central").elasticity == pytest.approx(
+        float(load_config("elasticity_priors")["scenarios"]["central"]))
     names = {s.name for s in all_scenarios()}
     assert names == {"pessimistic", "central", "optimistic"}

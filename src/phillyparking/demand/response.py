@@ -6,13 +6,15 @@ moves away from that price is the `demand_form` in the same config, and every pr
 in the package comes from here: `apply_elasticity` (the scenario runner, the app), the
 revenue curve, the Arnott-Inci inversion, the Chatman-Manville sweep and its surplus term.
 
-The form and the elasticities are stated assumptions. Lehner and Peer (2019) support the sign
-of the rise of elasticity with the price level (p. 186; the coefficient on the price per hour
-relative to daily GDP per capita is negative in Table 3, EPO, and Table 5, EPV) and nothing
-about its rate: the paper estimates no functional form, and its slope (EPV -0.03 against a
+The form and the elasticities are stated assumptions. The priors are elasticities of occupancy
+(EPO = EPD + EPV in Lehner and Peer's terms, p. 178), the quantity this module moves. The paper
+supports the sign of the rise of elasticity with the price level (p. 186; the coefficient on the
+price per hour relative to daily GDP per capita is negative in Table 3, EPO, and Table 5, EPV)
+and nothing about its rate: it estimates no functional form, and its slope (EPV -0.03 against a
 constant of -0.33) is much shallower than the exponential's proportional rise. Neither the
 central value nor the pessimistic / optimistic bracket is a reported estimate of the paper
-(`config/elasticity_priors.yaml` has the comparison with its Table 6). Constant elasticity
+(`config/elasticity_priors.yaml` cites the intervals of its Table 6 and Fig. 3 they are informed
+by). Constant elasticity
 (no rise) and the exponential bracket the paper's gradient; linear rises faster than either.
 `scripts/05_run_scenarios.py` and `scripts/07_export_report_assets.py
 --rebuild-cm-form-sensitivity` report how the results move across the three forms below.
@@ -35,7 +37,7 @@ Every form is path independent: moving from p_old to p_new multiplies demand by
 the exact integral -int_{p_ref}^{p} q(x) dx of the same law, in closed form.
 
 **Where the elasticity is anchored.** The scenario runner applies the prior at each zone's own
-posted rate (`reference_price=` the posted rates): e = -0.40 is the elasticity at $1.50 in
+posted rate (`reference_price=` the posted rates): e = -0.60 is the elasticity at $1.50 in
 Fishtown and at $4.00 in Center City Core, so the zones do not share one demand curve. The
 alternative is one citywide law anchored at a single reference price p0 with elasticity e
 there; `citywide_zone_elasticities` gives each zone's elasticity at its posted rate under it,
