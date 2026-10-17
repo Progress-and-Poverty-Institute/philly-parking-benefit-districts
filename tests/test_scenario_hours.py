@@ -134,11 +134,11 @@ def test_arnott_prices_busiest_priced_zone_hour_to_target(results, fixture_data)
         assert peak[zid] == pytest.approx(target, abs=2e-3), zid
         checked += 1
     assert checked >= 1   # the fixture's other zones sit at a floor or ceiling
-    # The iteration reaches a fixed point; how many reviews it takes depends on the panel
-    # (on this fixture the last move is at review 10, one short of confirming it under the
-    # configured cap of 10), so convergence is checked with a looser cap.
+    # The iteration reaches a fixed point within the configured cap, and a longer cap does not
+    # move it.
+    assert r.diagnostics["converged"]
     longer = run_scenario("full_pbd", segments=segs, baseline_panel=fixture_data[1], seed=7,
-                          rolls_forward_years=30)
+                          rolls_forward_years=40)
     assert longer.diagnostics["converged"]
     assert np.allclose(longer.prices.drop_duplicates("zone_id").set_index("zone_id")
                        ["price_usd_per_hr"].dropna().sort_index(), prices.sort_index(), atol=1e-3)
@@ -213,19 +213,21 @@ def test_arnott_ignores_busier_unpriced_hours():
     assert float(r.prices["price_usd_per_hr"].iloc[0]) == pytest.approx(expected, rel=1e-6)
 
 
-def test_seattle_two_cycle_is_detected_and_both_phases_reported():
+@pytest.mark.parametrize("elasticity_scenario, occ_at_1", [("pessimistic", 0.69), ("central", 0.698)])
+def test_seattle_two_cycle_is_detected_and_both_phases_reported(elasticity_scenario, occ_at_1):
     # Fishtown: $1.50 -> one cut to $1.00 leaves occupancy under the band, the next cut to
     # its $0.50 floor lifts it over the band, so it alternates. A $0.50 step moves demand by
     # exp(|e| 0.5 / 1.5) under the exponential form, which clears the band's 0.85 / 0.70
-    # ratio only for the pessimistic elasticity (-0.7); at -0.4 the rule settles.
+    # ratio only when |e| / 1.5 is above about 0.39: always for the pessimistic elasticity, and
+    # for the central one only if the occupancy at $1.00 lies in the thin window just under
+    # the band's lower edge (0.85 / exp(0.2) = 0.696 to 0.70).
     from phillyparking.demand.response import demand_level
     from phillyparking.scenarios.compare import comparison_table
-    eps = _raw("elasticity_priors")["scenarios"]["pessimistic"]
-    occ_at_1 = 0.69
+    eps = _raw("elasticity_priors")["scenarios"][elasticity_scenario]
     occ_at_1_5 = occ_at_1 / float(demand_level(1.0, eps, 1.5))
     assert occ_at_1 < 0.70 < 0.85 < occ_at_1 * float(demand_level(0.5, eps, 1.5) / demand_level(1.0, eps, 1.5))
     segs, panel = _one_zone("fishtown", occ_at_1_5, 0.2)
-    r = run_scenario("seattle", segments=segs, baseline_panel=panel, elasticity_scenario="pessimistic")
+    r = run_scenario("seattle", segments=segs, baseline_panel=panel, elasticity_scenario=elasticity_scenario)
     d = r.diagnostics
     assert not d["converged"] and d["cycle_period"] == 2
     phase_prices = [{p["price_usd_per_hr"] for p in ph["prices"]} for ph in d["phases"]]

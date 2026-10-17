@@ -24,6 +24,7 @@ from phillyparking.viz.charts import (
     incidence_bar_chart, chatman_manville_results_chart, laffer_curve, laffer_curve_forms,
 )
 from phillyparking.demand.response import FORMS
+from phillyparking.elasticity.priors import named_scenario
 
 log = logging.getLogger(__name__)
 
@@ -128,7 +129,8 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     if len(ccc_segs):
         ccc_panel = panel[panel["segment_id"].isin(ccc_segs["segment_id"])]
         baseline_prices = pd.DataFrame({"zone_id": ["ccc"], "price_usd_per_hr": [4.0]})
-        curve_df = revenue_curve(ccc_segs, ccc_panel, baseline_prices, elasticity=-0.4)
+        central_e = named_scenario("central")
+        curve_df = revenue_curve(ccc_segs, ccc_panel, baseline_prices, elasticity=central_e)
         ccc_curve = curve_df[curve_df["zone_id"] == "ccc"].sort_values("price")
         laffer_path = figs / "laffer_curve_ccc.png"
         fig = laffer_curve(ccc_curve, save_to=laffer_path)
@@ -137,13 +139,13 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
         # The same zone, elasticity and grid under each demand form: how much of the curve's
         # shape (a peak at all, and where) is the form's.
         forms_curves = {
-            f: revenue_curve(ccc_segs, ccc_panel, baseline_prices, elasticity=-0.4,
+            f: revenue_curve(ccc_segs, ccc_panel, baseline_prices, elasticity=central_e,
                              price_multiplier_grid=np.linspace(0.25, 4.0, 76), form=f)
             for f in FORMS
         }
         forms_curves = {f: c[c["zone_id"] == "ccc"] for f, c in forms_curves.items()}
         forms_path = figs / "laffer_curve_ccc_forms.png"
-        fig = laffer_curve_forms(forms_curves, posted_price=4.0, elasticity=-0.4, save_to=forms_path)
+        fig = laffer_curve_forms(forms_curves, posted_price=4.0, elasticity=central_e, save_to=forms_path)
         plt.close(fig)
         log.info("Wrote %s", forms_path)
     else:

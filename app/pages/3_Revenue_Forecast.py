@@ -16,6 +16,7 @@ if str(_SRC) not in sys.path:
 
 from phillyparking._config import load_config  # noqa: E402
 from phillyparking.demand.synthetic_baseline import baseline_occupancy  # noqa: E402
+from phillyparking.elasticity.priors import named_scenario  # noqa: E402
 from phillyparking.elasticity.scenarios import all_scenarios, apply_elasticity  # noqa: E402
 from phillyparking.revenue.forecast import revenue_curve  # noqa: E402
 from phillyparking.viz.charts import laffer_curve, revenue_fan_chart  # noqa: E402
@@ -67,7 +68,7 @@ def main() -> None:
         "Own-price elasticity (Laffer)",
         min_value=-1.0,
         max_value=-0.1,
-        value=-0.4,
+        value=named_scenario("central"),
         step=0.05,
     )
     mult_lo, mult_hi = st.sidebar.slider(

@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from phillyparking._config import load_config
 from phillyparking.elasticity.priors import (
     ElasticityPrior,
     central_prior,
@@ -13,15 +14,21 @@ from phillyparking.elasticity.priors import (
 
 
 def test_cbd_central_mean():
+    cfg = load_config("elasticity_priors")["central"]
     p = central_prior("cbd")
-    assert p.mean == pytest.approx(-0.40)
-    assert p.sd == pytest.approx(0.15)
+    assert p.mean == pytest.approx(float(cfg["mean"]))
+    assert p.sd == pytest.approx(float(cfg["sd"]))
+
+
+def test_central_prior_is_the_central_scenario():
+    # The prior's mean and the named central scenario are one number (an occupancy elasticity).
+    assert central_prior("cbd").mean == pytest.approx(named_scenario("central"))
 
 
 def test_context_shifts_apply():
-    assert central_prior("mixed_use").mean == pytest.approx(-0.45)
-    assert central_prior("residential").mean == pytest.approx(-0.50)
-    assert central_prior("long_run").mean == pytest.approx(-0.70)
+    cfg = load_config("elasticity_priors")
+    for ctx, shift in cfg["context_shifts"].items():
+        assert central_prior(ctx).mean == pytest.approx(float(cfg["central"]["mean"]) + float(shift))
 
 
 def test_unknown_context_raises():
@@ -40,9 +47,21 @@ def test_sample_shape_and_logpdf_sign():
 
 
 def test_named_scenarios():
-    assert named_scenario("pessimistic") == pytest.approx(-0.70)
-    assert named_scenario("central") == pytest.approx(-0.40)
-    assert named_scenario("optimistic") == pytest.approx(-0.20)
+    cfg = load_config("elasticity_priors")["scenarios"]
+    for name, value in cfg.items():
+        assert named_scenario(name) == pytest.approx(float(value))
+    # ordered by size of response, and the central prior's plus/minus 2 sd is about the bracket's width
+    assert named_scenario("pessimistic") < named_scenario("central") < named_scenario("optimistic") < 0
+    sd = float(load_config("elasticity_priors")["central"]["sd"])
+    width = named_scenario("optimistic") - named_scenario("pessimistic")
+    assert 4 * sd == pytest.approx(width, abs=0.25 * width)
+
+
+def test_dwell_time_is_not_read_by_the_pipeline():
+    # EPD is carried in the config for reference only (EPO = EPD + EPV): nothing under src/ reads it.
+    from pathlib import Path
+    src = Path(__file__).resolve().parents[1] / "src"
+    assert not [f for f in src.rglob("*.py") if "dwell_time" in f.read_text(encoding="utf-8")]
 
 
 def test_cross_priors_keys():

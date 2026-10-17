@@ -1,23 +1,33 @@
-# Price elasticity of parking demand priors.
+# Price elasticity of parking OCCUPANCY (EPO) priors.
 # Every value in this file is a stated assumption. The reference literature is Lehner & Peer
 # (2019), "The price elasticity of parking: A meta-analysis," Transportation Research A 121:
 # 177-191 (50 studies; seemingly unrelated regressions of the elasticity of occupancy (EPO),
-# dwell time (EPD) and volume (EPV) on study characteristics). What it does and does not
-# give for the values below:
-# - Central -0.40 and the sd: not a reported estimate. For comparison, Table 6 (revealed
-#   preference, non-commuting) has 95% intervals EPV -0.45 / -0.18, EPD -0.46 / -0.15 and
-#   EPO -0.72 / -0.54; the pooled mean EPV of published papers is -0.38 (p. 185).
-# - The -0.2 / -0.7 bracket: not reported; it is near the ends of the Table 6 EPV and EPO
-#   intervals above.
+# dwell time (EPD) and volume (EPV) on study characteristics; EPO = EPD + EPV, p. 178).
+# The model applies the elasticity to occupancy (elasticity/scenarios.apply_elasticity
+# multiplies occupancy by the demand factor), so the priors below are occupancy elasticities.
+# The paper's estimates they are informed by, and what each does and does not give:
+# - Central -0.60: rounded from the revealed-preference (RP) non-commuting EPO baseline of
+#   -0.63 (Section 6), whose 95% interval in Table 6 (p. 188, SUR-CER) is -0.72 / -0.54.
+# - Optimistic -0.40: about the upper end of the RP commuting EPO interval, -0.63 / -0.41
+#   (baseline -0.52; Table 6, p. 188), and of the low-substitution settings of Fig. 3
+#   (p. 188), where EPO falls in magnitude as substitutes (mode, parking location) become
+#   unavailable.
+# - Pessimistic -0.90: inside the stated-preference (SP) non-commuting EPV interval,
+#   -0.98 / -0.75 (Table 6, p. 188). It reflects that RP estimates may be biased toward zero
+#   by latent demand, since occupancy cannot exceed 100% (pp. 186, 188); the model's
+#   elasticity acts on latent demand.
+# - sd 0.125 on the central prior: plus or minus 2 sd (-0.85 / -0.35) is about the width of
+#   the bracket (-0.90 / -0.40), not its exact ends.
 # - Context shifts: not from the paper (it excludes residential parking, footnote 4).
-# - Which elasticity: the central prior is labelled the volume elasticity, and the model
-#   applies it to occupancy, which in the paper's terms is EPO = EPD + EPV (p. 178).
-# Anchored on revealed-preference estimates in intent; no stated-preference value is used.
+# None of the three values is an estimate the paper reports; each is an assumption informed
+# by the intervals above. For other quantities of Table 6 (RP non-commuting): EPD -0.46 /
+# -0.15 (baseline -0.30) and EPV -0.45 / -0.18 (baseline -0.32); the pooled mean EPV of
+# published papers is -0.38 (p. 185).
 
-# Central prior on price elasticity of volume (EPV).
+# Central prior on the price elasticity of occupancy (EPO).
 central:
-  mean: -0.40
-  sd: 0.15
+  mean: -0.60
+  sd: 0.125
   distribution: normal
 
 # Context shifts applied additively to the mean. Stated assumptions that elasticity is more
@@ -30,11 +40,12 @@ context_shifts:
   residential: -0.10
   long_run: -0.30        # equilibrium with mode/destination shift
 
-# Elasticity of dwell time (separately small).
-# Used to decompose volume response into entry vs. duration effects.
+# Elasticity of dwell time (EPD): Lehner & Peer Table 6 (p. 188), RP non-commuting baseline
+# -0.30, 95% interval -0.46 / -0.15 (sd taken as a quarter of the interval's width). The
+# pipeline does not read it: occupancy responds as one elasticity (EPO = EPD + EPV).
 dwell_time:
-  mean: -0.15
-  sd: 0.05
+  mean: -0.30
+  sd: 0.08
 
 # Cross-elasticities (curb → off-street, transit, ride-hail).
 # Source: Calthrop, Proost & Van Dender (2000), Inci (2015) review.
@@ -56,7 +67,7 @@ cross:
 # exponential; linear rises faster than the exponential.
 #   exponential          q = q_ref exp(e (p - p_ref) / p_ref): elasticity e p / p_ref, rising
 #                        in proportion to the price (semi-log demand); revenue peaks at
-#                        p_ref / |e| (Center City Core: $10 at -0.4, $5.71 at -0.7).
+#                        p_ref / |e| (Center City Core, posted $4.00: $6.67 at -0.60, $4.44 at -0.90).
 #   linear               q = q_ref (1 + e (p - p_ref) / p_ref): a choke price at p_ref (1 - 1/e).
 #   constant_elasticity  q = q_ref (p / p_ref)^e: revenue never peaks for |e| < 1.
 # Every price response in the package uses this form, and the consumer-surplus term is the
@@ -64,23 +75,23 @@ cross:
 # scripts/05 (scenario_ranges.csv) and scripts/07 --rebuild-cm-form-sensitivity
 # (cm_sweep_form_sensitivity.csv) show how the results move with the form.
 #
-# Anchoring: each zone's prior is its elasticity AT THAT ZONE'S OWN posted rate, so e = -0.40
+# Anchoring: each zone's prior is its elasticity AT THAT ZONE'S OWN posted rate, so e = -0.60
 # is the elasticity at $1.50 in Fishtown and at $4.00 in Center City Core. That is not one
-# demand curve for the city: a single exponential law with e = -0.40 at $1.50 would give
-# -1.07 at $4.00. scripts/05 reruns the scenarios under one citywide law (column
-# citywide_law_* of scenario_ranges.csv: e = -0.40 at the capacity-weighted mean posted rate,
+# demand curve for the city: a single exponential law with e = -0.60 at $1.50 would give
+# -1.60 at $4.00. scripts/05 reruns the scenarios under one citywide law (column
+# citywide_law_* of scenario_ranges.csv: e = -0.60 at the capacity-weighted mean posted rate,
 # every zone's elasticity at its posted rate following from the law) as the sensitivity.
 demand_form: exponential
 
 # Three named scenarios used by revenue/welfare forecasts.
 scenarios:
-  pessimistic: -0.70
-  central: -0.40
-  optimistic: -0.20
+  pessimistic: -0.90
+  central: -0.60
+  optimistic: -0.40
 
 # Hierarchical pooling structure for the PyMC model.
 # Three levels: zone < neighborhood < city.
 hierarchy:
-  city_mu_prior: { mean: -0.40, sd: 0.20 }
+  city_mu_prior: { mean: -0.60, sd: 0.20 }   # the fit is of log occupancy on log price: EPO
   neighborhood_sd_prior: { mean: 0.10, sd: 0.05 }   # half-normal
   zone_sd_prior: { mean: 0.05, sd: 0.03 }           # half-normal
