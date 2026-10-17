@@ -16,7 +16,7 @@ CM_METRIC_LABELS = {
     "cs_change": "Consumer surplus change since the start (USD a year)",
     "revenue": "Annual revenue, priced hours (USD)",
     "search_cost": "Annual search cost (USD)",
-    "cruising_dwl": "Annual cruising DWL proxy (USD)",
+    "search_cost_per_full_block_minute": "Annual search cost per minute of full-block search (USD)",
     "share_block_hours_above_high": "Share of priced block-hours above the band",
     "share_block_hours_below_low": "Share of priced block-hours below the band",
     "mean_price": "Mean price, priced hours (USD/hr)",
@@ -24,6 +24,7 @@ CM_METRIC_LABELS = {
 CM_AXIS_LABELS = {
     "elasticity": "elasticity", "start_occupancy": "start mean occupancy m",
     "block_dispersion": "block dispersion tau", "observation_noise": "observation noise sigma",
+    "occupancy_cap": "search cost cap",
 }
 
 _SCENARIO_STYLE = {
@@ -40,18 +41,25 @@ def _save(fig, save_to) -> None:
 
 
 def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, facet: str = "start_occupancy",
-                        save_to: Path | None = None):
+                        save_to: Path | None = None, fixed: dict | None = None):
     """Chatman-Manville sweep: `metric` by year for each rule, one panel per value of `facet`.
 
     Each point is built from per-cell medians (median over replications within one cell of
     the sweep's axes x rule x year). The line is the median of those cell medians across the
     other axes and the band is their minimum to maximum, so the band is the spread between
-    cells, not a standard deviation of pooled rows.
+    cells, not a standard deviation of pooled rows. `fixed` holds axes to fix at one value
+    (for example the search-cost cap, so that `search_cost` and `welfare_change` are drawn
+    at one scoring and not pooled across caps); they are named in the title.
     """
     import matplotlib.pyplot as plt
     from phillyparking.scenarios.cm_sweep import AXES
 
-    axes_cols = [a for a in AXES if a in sweep.columns]
+    fixed = dict(fixed or {})
+    for k, v in fixed.items():
+        sweep = sweep[np.isclose(sweep[k], v)]
+    if sweep.empty:
+        raise ValueError(f"no sweep rows at {fixed}")
+    axes_cols = [a for a in AXES if a in sweep.columns and a not in fixed]
     cells = sweep.groupby(axes_cols + ["rule", "year"])[metric].median().reset_index()
     levels = sorted(cells[facet].unique())
     others = [a for a in axes_cols if a != facet]
@@ -70,7 +78,8 @@ def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, facet: str = "start_oc
         ax.axhline(0, color="black", lw=0.5)
     axes[0][0].legend(fontsize=8)
     axes[0][0].set_ylabel(CM_METRIC_LABELS.get(metric, metric))
-    fig.suptitle(f"Chatman-Manville sweep (n={n_rep} replications): {metric}; "
+    fixed_note = "".join(f"; {CM_AXIS_LABELS.get(k, k)} = {v:g}" for k, v in fixed.items())
+    fig.suptitle(f"Chatman-Manville sweep (n={n_rep} replications): {metric}{fixed_note}; "
                  f"line = median, band = range over {n_other} cells of the other axes")
     fig.tight_layout()
     _save(fig, save_to)
@@ -79,47 +88,61 @@ def cm_sweep_year_chart(sweep: pd.DataFrame, metric: str, facet: str = "start_oc
 
 def cm_breakeven_chart(paired: pd.DataFrame, comparison: tuple[str, str], year: int | None = None,
                        save_to: Path | None = None, cap_minutes: float = 60.0):
-    """Breakeven cruising minutes for one comparison, by start occupancy and block dispersion.
+    """Breakeven search time for one comparison: one row of panels per search-cost cap, one
+    panel per start occupancy, bars by block dispersion.
 
-    Each bar is the median over replications of the breakeven within one cell (one elasticity
-    and noise level); bars within a group are the cells of elasticity x noise. Above the bar
-    the higher-priced rule gives more welfare; below it the lower-priced rule does. The
-    dashed line is the config's cruising cost level, at which `welfare_change` is scored.
-    Blue bars: the comparator searches more (prices lower); red: it searches less. The axis
-    is capped at `cap_minutes`.
+    The breakeven is in minutes per arrival at a full block of 10 spaces
+    (`breakeven_full_block_minutes`, the units that drive the cost). Each bar is the median
+    over replications within one cell (one elasticity and noise level); bars within a group
+    are the cells of elasticity x noise. Above the bar the higher-priced rule gives more
+    welfare; below it the lower-priced rule does. Blue bars: the comparator searches more
+    (prices lower); red: it searches less. The shaded band is the range of average cruising
+    times the config cites (`cited_cruising_minutes`, Shoup 2006, Table 1), with its mean as
+    a line: those are the times of the drivers who cruise, not the expected search of all
+    arrivals, so per arrival at a full block they sit a factor cap^K lower (0.60 at cap 0.95,
+    0.90 at 0.99 on 10 spaces). For a same-instrument pair the sign of the bars is a
+    property of the design (see `cm_sweep.paired_table`); their size against the band is
+    the content. The axis is capped at `cap_minutes`.
     """
     import matplotlib.pyplot as plt
-    from phillyparking.welfare.targeting_welfare import load_search_cost_config
+    from phillyparking.welfare.search_cost import cited_cruising_minutes
 
     comparator, reference = comparison
     year = int(paired["year"].max()) if year is None else int(year)
     p = paired[(paired["rule"] == comparator) & (paired["reference"] == reference) & (paired["year"] == year)]
     if p.empty:
         raise ValueError(f"no rows for {comparison} at year {year}")
+    col = "breakeven_full_block_minutes_median"
     levels = sorted(p["start_occupancy"].unique())
     taus = sorted(p["block_dispersion"].unique())
-    fig, axes = plt.subplots(1, len(levels), figsize=(4.6 * len(levels), 4), squeeze=False, sharey=True)
-    cfg_minutes = load_search_cost_config().minutes_at_reference
-    for ax, level in zip(axes[0], levels):
-        sub = p[p["start_occupancy"] == level]
-        for k, tau in enumerate(taus):
-            g = sub[sub["block_dispersion"] == tau].sort_values(["elasticity", "observation_noise"])
-            n = len(g)
-            x = k + (np.arange(n) - (n - 1) / 2) * (0.8 / max(n, 1))
-            ax.bar(x, g["breakeven_minutes_median"], width=0.8 / max(n, 1),
-                   color=["#1f6fd1" if m else "#d62728" for m in g["share_comparator_searches_more"] > 0.5])
-        ax.axhline(cfg_minutes, color="black", ls="--", lw=0.8, label=f"config level ({cfg_minutes:g} min)")
-        ax.set_xticks(range(len(taus)))
-        ax.set_xticklabels([f"tau={t}" for t in taus])
-        ax.set_title(f"start mean occupancy m = {level}")
-    axes[0][0].set_ylabel("Breakeven minutes (95%, 10 spaces)")
-    axes[0][0].legend(fontsize=8)
+    caps = sorted(p["occupancy_cap"].unique())
+    cited = cited_cruising_minutes()
+    fig, axes = plt.subplots(len(caps), len(levels), figsize=(4.6 * len(levels), 3.6 * len(caps)),
+                             squeeze=False, sharey=True)
+    for r, cap in enumerate(caps):
+        for ax, level in zip(axes[r], levels):
+            sub = p[(p["start_occupancy"] == level) & np.isclose(p["occupancy_cap"], cap)]
+            for k, tau in enumerate(taus):
+                g = sub[sub["block_dispersion"] == tau].sort_values(["elasticity", "observation_noise"])
+                n = len(g)
+                x = k + (np.arange(n) - (n - 1) / 2) * (0.8 / max(n, 1))
+                ax.bar(x, g[col], width=0.8 / max(n, 1),
+                       color=["#1f6fd1" if m else "#d62728" for m in g["share_comparator_searches_more"] > 0.5])
+            ax.axhspan(cited["low"], cited["high"], color="#999999", alpha=0.25,
+                       label=f"cited average cruising time of those who cruise ({cited['low']:g}-{cited['high']:g} min)")
+            ax.axhline(cited["mean"], color="#555555", ls="--", lw=0.8, label=f"cited mean ({cited['mean']:g} min)")
+            ax.set_xticks(range(len(taus)))
+            ax.set_xticklabels([f"tau={t}" for t in taus])
+            ax.set_title(f"start mean occupancy m = {level}; search cost cap = {cap:g}", fontsize=10)
+        axes[r][0].set_ylabel("Breakeven minutes per arrival\nat a full 10-space block")
+    axes[0][0].legend(fontsize=7, loc="upper left")
     # Where the two rules price nearly alike the breakeven is a ratio of two small numbers;
     # the axis is capped so the informative bars stay readable (bars beyond it are clipped).
-    lo = min(0.0, float(p["breakeven_minutes_median"].min()))
-    axes[0][0].set_ylim(max(lo, -cap_minutes), min(float(p["breakeven_minutes_median"].max()) * 1.05 + 1e-9, cap_minutes))
-    fig.suptitle(f"{comparator} vs {reference}, year {year}: cruising cost level at which the two rules "
-                 f"give equal welfare (bars: cells of elasticity x noise)")
+    lo = min(0.0, float(p[col].min()))
+    hi = max(float(p[col].max()) * 1.05, cited["high"] * 1.1) + 1e-9
+    axes[0][0].set_ylim(max(lo, -cap_minutes), min(hi, cap_minutes))
+    fig.suptitle(f"{comparator} vs {reference}, year {year}: search time per arrival at a full block at "
+                 f"which the two rules give equal welfare (bars: cells of elasticity x noise)")
     fig.tight_layout()
     _save(fig, save_to)
     return fig

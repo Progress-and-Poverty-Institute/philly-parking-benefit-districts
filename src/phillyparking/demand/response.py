@@ -136,3 +136,31 @@ def cs_change(q_ref, p_ref, p, elasticity, form: str | None = None) -> np.ndarra
         power = -q_ref * p_ref * (np.power(ratio, e1) - 1.0) / safe
         return np.where(unit, -q_ref * p_ref * np.log(ratio), power)
     raise ValueError(f"unknown demand form {form!r}")
+
+
+def cs_change_served(q_ref, p_ref, p, elasticity, capacity, form: str | None = None) -> np.ndarray:
+    """Consumer surplus change from p_ref to p counting only the cars that get a space.
+
+    -int_{p_ref}^{p} min(q(x), capacity) dx: where the law's demand exceeds the block's
+    capacity the spaces are rationed to the parkers who value them most (efficient
+    rationing), so the surplus lost to a price rise on a block that stays full is exactly
+    capacity x the rise, and the unserved cars carry no surplus. Equal to `cs_change` wherever
+    demand is within capacity over the whole price range. Units as `cs_change`.
+    """
+    form = form or load_demand_form()
+    q_ref, p_ref, p, e, cap = _arrays(q_ref, p_ref, p, elasticity, capacity)
+    q_ref, p_ref, p, e, cap = np.broadcast_arrays(q_ref, p_ref, p, e, cap)
+    lo, hi = np.minimum(p, p_ref), np.maximum(p, p_ref)
+    sign = np.where(p >= p_ref, 1.0, -1.0)
+    # The price below which the law's demand exceeds capacity (demand falls in price).
+    with np.errstate(divide="ignore", invalid="ignore"):
+        p_cap = price_for_demand_ratio(cap / q_ref, p_ref, e, p_ref, form)
+    p_cap = np.where(np.isfinite(p_cap), p_cap, -np.inf)
+
+    def integral(a, b):  # int_a^b q(x) dx under the law, for a <= b
+        return cs_change(q_ref, p_ref, a, e, form) - cs_change(q_ref, p_ref, b, e, form)
+
+    capped_to = np.clip(p_cap, lo, hi)              # [lo, capped_to] is rationed, [capped_to, hi] is not
+    rationed = cap * (capped_to - lo)
+    unrationed = integral(capped_to, hi)
+    return -sign * (rationed + unrationed)

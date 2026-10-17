@@ -1,4 +1,4 @@
-"""Scenario-level guards on hours, revenue units, the Arnott-Inci peak and the DWL threshold.
+"""Scenario-level guards on hours, revenue units, the Arnott-Inci peak and the search cost.
 
 Every expected value is recomputed here from the raw YAML and the scenario's own panel,
 independently of `pricing.priced_hours`, so a change to the mask, to the revenue hours or
@@ -100,11 +100,22 @@ def _busiest_priced_zone_hour(r, segs) -> pd.Series:
     return (zh["oc"] / zh["capacity"]).groupby("zone_id").max()
 
 
-def _expected_dwl(r, segs, target_vacancy: float) -> float:
+def _expected_search_cost(r, segs) -> float:
+    """The search-cost row recomputed from the raw YAML: served arrivals x minutes passing
+    full blocks (p/(1-p), p = min(o, cap)^K, scaled so a full block of the reference size
+    costs the stated minutes) x value of time, priced rows only, 52 weeks."""
+    pr = _raw("pricing_rules")
+    sc, vot = pr["search_cost"], pr["arnott_inci"]["value_of_time_usd_per_hr"]
     df = _with_zone(r, segs)
     priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
-    excess = np.maximum(df["occupancy"] * df["capacity"] - (1 - target_vacancy) * df["capacity"], 0.0)
-    return float((excess[priced] * (5.0 / 60.0) * 20.0).sum() * 52)
+    occ = df["occupancy"].to_numpy(dtype=float)
+    cap = df["capacity"].to_numpy(dtype=float)
+    ratio = lambda o, k: o ** k / (1 - o ** k)  # noqa: E731
+    per_block = sc["minutes_at_full_block"] / ratio(sc["occupancy_cap"], sc["reference_capacity"])
+    minutes = per_block * ratio(np.minimum(occ, sc["occupancy_cap"]), np.maximum(cap, 1.0))
+    arrivals = occ * cap / sc["mean_duration_hr"]
+    cost = arrivals * minutes / 60.0 * vot
+    return float(cost[priced].sum() * 52)
 
 
 def test_arnott_prices_busiest_priced_zone_hour_to_target(results, fixture_data):
@@ -142,17 +153,20 @@ def test_seattle_reports_fixed_point_or_both_phases(results):
 
 
 @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
-def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+def test_search_cost_is_the_search_model_over_priced_hours(results, fixture_data, name):
+    """The scenario's cruising row is the project's search model, with no target in it."""
     segs, _ = fixture_data
     r = results[name]
     default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
     tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
-    assert r.diagnostics["dwl_target_vacancy"] == tv
-    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, tv), rel=1e-9)
+    assert r.diagnostics["target_vacancy"] == tv
+    assert "dwl_target_vacancy" not in r.diagnostics
+    assert float(r.search_cost["annual_search_cost_usd"].sum()) == pytest.approx(_expected_search_cost(r, segs), rel=1e-9)
 
 
-def test_pricer_and_scorer_follow_scenario_target_vacancy(fixture_data, tmp_path, monkeypatch):
-    """Retune full_pbd's target_vacancy in a copied config: both the price and the DWL line move."""
+def test_pricer_follows_scenario_target_vacancy_and_scorer_has_no_target(fixture_data, tmp_path, monkeypatch):
+    """Retune full_pbd's target_vacancy in a copied config: the price moves; the search cost
+    is scored by the same target-free formula on the new panel."""
     cfg = tmp_path / "config"
     shutil.copytree(project_root() / "config", cfg)
     sc = yaml.safe_load((cfg / "scenarios.yaml").read_text(encoding="utf-8"))
@@ -166,8 +180,8 @@ def test_pricer_and_scorer_follow_scenario_target_vacancy(fixture_data, tmp_path
     finally:
         monkeypatch.delenv("PHILLYPARKING_CONFIG_DIR")
         load_config.cache_clear()
-    assert r.diagnostics["dwl_target_vacancy"] == 0.25
-    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, 0.25), rel=1e-9)
+    assert r.diagnostics["target_vacancy"] == 0.25
+    assert float(r.search_cost["annual_search_cost_usd"].sum()) == pytest.approx(_expected_search_cost(r, segs), rel=1e-9)
     peak = _busiest_priced_zone_hour(r, segs)
     assert peak["ccc"] == pytest.approx(0.75, abs=2e-3)
 
@@ -223,8 +237,8 @@ def test_seattle_holding_band_converges_at_once():
     assert d["converged"] and d["converged_year"] == 1 and "phases" not in d
 
 
-def test_pricer_and_scorer_fall_back_to_the_same_pricing_rules_target(fixture_data, tmp_path, monkeypatch):
-    """With no scenario `target_vacancy`, both read `pricing_rules.yaml` (not a literal in the runner)."""
+def test_pricer_falls_back_to_the_pricing_rules_target(fixture_data, tmp_path, monkeypatch):
+    """With no scenario `target_vacancy`, the pricer reads `pricing_rules.yaml` (not a literal in the runner)."""
     cfg = tmp_path / "config"
     shutil.copytree(project_root() / "config", cfg)
     sc = yaml.safe_load((cfg / "scenarios.yaml").read_text(encoding="utf-8"))
@@ -241,6 +255,6 @@ def test_pricer_and_scorer_fall_back_to_the_same_pricing_rules_target(fixture_da
     finally:
         monkeypatch.delenv("PHILLYPARKING_CONFIG_DIR")
         load_config.cache_clear()
-    assert r.diagnostics["dwl_target_vacancy"] == 0.25
-    assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, 0.25), rel=1e-9)
+    assert r.diagnostics["target_vacancy"] == 0.25
+    assert float(r.search_cost["annual_search_cost_usd"].sum()) == pytest.approx(_expected_search_cost(r, segs), rel=1e-9)
     assert _busiest_priced_zone_hour(r, segs)["ccc"] == pytest.approx(0.75, abs=2e-3)

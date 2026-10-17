@@ -30,18 +30,30 @@ def _rate(v: float) -> str:
     return f"\\${v:,.2f}/hr"
 
 
-# (row label, comparison-table row, formatter)
-ROWS = (
-    ("Annual meter revenue", "total_revenue", _usd_m),
-    ("Revenue to neighborhoods (PBD)", "pbd_revenue", _usd_m),
-    ("PBD share not payable after the General Fund minimum", "pbd_unfunded", _usd_m),
-    ("Revenue to school district", "sdp_revenue", _usd_m),
-    ("Revenue to general fund", "gf_to_general_fund", _usd_m),
-    ("Mean meter rate --- CCC", "mean_price_ccc", _rate),
-    ("Mean meter rate --- CCA", "mean_price_cca", _rate),
-    ("Annual cruising DWL", "cruising_dwl_total", _usd),
-    ("Consumer surplus change (annual, first order)", "cs_change_total", _usd_m),
-)
+def rows() -> tuple:
+    """(row label, comparison-table row, formatter), in print order.
+
+    Parkers' surplus and meter revenue are printed as one row, both as changes from the
+    status quo: that sum is a welfare object in its own right (the price change's effect
+    before any search time is valued). The search cost is printed with the level it is
+    scored at and is not netted against it: the level is a stated assumption, and the
+    Chatman-Manville sweep reports breakevens in it rather than nets.
+    """
+    from phillyparking.welfare.search_cost import load_search_cost_config
+    cfg = load_search_cost_config()
+    search_label = (f"Annual search cost of parkers, at {cfg.minutes_at_full_block:g} min per "
+                    f"arrival at a full block")
+    return (
+        ("Annual meter revenue", "total_revenue", _usd_m),
+        ("Revenue to neighborhoods (PBD)", "pbd_revenue", _usd_m),
+        ("PBD share not payable after the General Fund minimum", "pbd_unfunded", _usd_m),
+        ("Revenue to school district", "sdp_revenue", _usd_m),
+        ("Revenue to general fund", "gf_to_general_fund", _usd_m),
+        ("Mean meter rate --- CCC", "mean_price_ccc", _rate),
+        ("Mean meter rate --- CCA", "mean_price_cca", _rate),
+        ("Parkers' surplus + meter revenue, annual change from status quo", "surplus_plus_revenue_change", _usd_m),
+        (search_label, "search_cost_total", _usd_m),
+    )
 
 
 def scenario_comparison_tex(table: pd.DataFrame) -> str:
@@ -57,7 +69,7 @@ def scenario_comparison_tex(table: pd.DataFrame) -> str:
         "\\textbf{Metric} & " + " & ".join(f"\\textbf{{{column_label(c)}}}" for c in cols) + " \\\\",
         "\\midrule",
     ]
-    for label, key, fmt in ROWS:
+    for label, key, fmt in rows():
         cells = " & ".join(fmt(float(table.loc[key, c])) for c in cols)
         lines.append(f"{label} & {cells} \\\\")
     lines += ["\\bottomrule", "\\end{tabularx}", ""]

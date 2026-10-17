@@ -22,7 +22,7 @@ class ScenarioResults:
     prices: pd.DataFrame
     occupancy: pd.DataFrame
     revenue: pd.DataFrame
-    cruising_dwl: pd.DataFrame
+    search_cost: pd.DataFrame
     cs_change_total: float
     allocation: dict
     diagnostics: dict = field(default_factory=dict)
@@ -34,7 +34,7 @@ class ScenarioResults:
         self.prices.to_parquet(path / "prices.parquet")
         self.occupancy.to_parquet(path / "occupancy.parquet")
         self.revenue.to_parquet(path / "revenue.parquet")
-        self.cruising_dwl.to_parquet(path / "cruising_dwl.parquet")
+        self.search_cost.to_parquet(path / "search_cost.parquet")
         meta = {
             "name": self.name,
             "elasticity_scenario": self.elasticity_scenario,
@@ -58,7 +58,7 @@ class ScenarioResults:
             prices=pd.read_parquet(path / "prices.parquet"),
             occupancy=pd.read_parquet(path / "occupancy.parquet"),
             revenue=pd.read_parquet(path / "revenue.parquet"),
-            cruising_dwl=pd.read_parquet(path / "cruising_dwl.parquet"),
+            search_cost=pd.read_parquet(path / "search_cost.parquet"),
             cs_change_total=float(meta["cs_change_total"]),
             allocation=meta["allocation"],
             diagnostics=meta.get("diagnostics", {}),
@@ -217,28 +217,31 @@ def _allocation(total_revenue: float, pbd_share: float) -> dict:
     return allocate(total_revenue, pbd_share).to_dict()
 
 
-def _state_metrics(panel, prices, segments, baseline_panel, current_prices, dwl_target_vacancy,
+def _state_metrics(panel, prices, segments, baseline_panel, current_prices,
                    pbd_share, elasticity) -> dict:
-    """Revenue, cruising DWL, allocation and CS change of one (panel, prices) state.
+    """Revenue, search cost, allocation and CS change of one (panel, prices) state.
 
-    Revenue and DWL both count only priced hours (`pricing.priced_hours`).
+    Revenue, search cost and surplus all count only priced hours (`pricing.priced_hours`)
+    and only the cars that park: the search cost is the project's one cruising model
+    (`welfare/search_cost.py`, served arrivals x search time x value of time) and the
+    surplus is the integral of served demand (`_annual_cs_change`).
     """
     from phillyparking.pricing.priced_hours import hourly_prices, zone_mean_price
     from phillyparking.revenue.forecast import annual_revenue
-    from phillyparking.welfare.cruising_dwl import annual_cruising_dwl
+    from phillyparking.welfare.search_cost import annual_search_cost
     revenue_df = annual_revenue(segments, panel, hourly_prices(prices))
-    dwl = annual_cruising_dwl(panel, segments, target_vacancy=dwl_target_vacancy)
+    search = annual_search_cost(panel, segments)
     total_revenue = float(revenue_df["annual_revenue_usd"].sum())
     zone_prices = zone_mean_price(prices).rename("price_usd_per_hr")
     cs_total = _annual_cs_change(segments, baseline_panel, current_prices, hourly_prices(prices), elasticity)
     return {
         "revenue": revenue_df,
-        "cruising_dwl": dwl,
+        "search_cost": search,
         "allocation": _allocation(total_revenue, pbd_share),
         "cs_change_total": cs_total,
         "mean_price_by_zone": zone_prices.to_dict(),
         "total_revenue": total_revenue,
-        "cruising_dwl_total": float(dwl["annual_dwl_usd"].sum()),
+        "search_cost_total": float(search["annual_search_cost_usd"].sum()),
     }
 
 
@@ -249,21 +252,24 @@ def _annual_cs_change(
     scenario_prices: pd.DataFrame,
     elasticity: float,
 ) -> float:
-    """Annual consumer-surplus change in USD: the integral of the demand law over every
+    """Annual consumer-surplus change in USD: the integral of served demand over every
     priced block-hour, commensurable with annual revenue.
 
     For each priced block-hour the baseline panel's demand at the baseline (reference) price
     is q_ref = occupancy x capacity; the scenario price p gives
-    `demand.response.cs_change(q_ref, p_ref, p, elasticity)`, the exact
-    -int_{p_ref}^{p} q(x) dx of the same law the runner moves occupancy with; summed and
-    taken over 52 weeks. Negative when prices rise. It values parkers' surplus only: search
-    time is the cruising proxy's job, so this is not a welfare total.
+    `demand.response.cs_change_served(q_ref, p_ref, p, elasticity, capacity)`, the exact
+    -int_{p_ref}^{p} min(q(x), capacity) dx of the same law the runner moves occupancy
+    with; summed and taken over 52 weeks. Negative when prices rise. Only the cars that get
+    a space count, the same population as revenue and the search cost (a block whose demand
+    exceeds its capacity at the scenario price is rationed to the parkers who value it
+    most). It values parkers' surplus only: search time is the search-cost row's job, so
+    this is not a welfare total.
 
     `baseline_prices` is zone-level; `scenario_prices` is zone-level or (zone_id,
     hour_of_week) from `hourly_prices`. A zone with priced block-hours must have a price in
     both; none is invented.
     """
-    from phillyparking.demand.response import cs_change
+    from phillyparking.demand.response import cs_change_served
     from phillyparking.pricing.priced_hours import frame_priced_mask
 
     panel = baseline_panel.drop(columns=[c for c in ("zone_id", "capacity") if c in baseline_panel.columns])
@@ -282,8 +288,9 @@ def _annual_cs_change(
     if missing.any():
         zones = sorted(panel.loc[missing, "zone_id"].unique())
         raise KeyError(f"zones {zones} have priced block-hours but no baseline or scenario price")
-    q_ref = panel["occupancy"].to_numpy(dtype=float) * panel["capacity"].to_numpy(dtype=float)
-    per_hour = cs_change(q_ref, panel["_p_ref"].to_numpy(), panel["_p"].to_numpy(), elasticity)
+    cap = panel["capacity"].to_numpy(dtype=float)
+    q_ref = panel["occupancy"].to_numpy(dtype=float) * cap
+    per_hour = cs_change_served(q_ref, panel["_p_ref"].to_numpy(), panel["_p"].to_numpy(), elasticity, cap)
     return float(per_hour.sum() * 52)
 
 
@@ -317,16 +324,15 @@ def run_scenario(
 
     policy = scfg["pricing_policy"]
     policy_kind = policy["kind"]
-    # The scorer's cruising threshold is the scenario's own target vacancy when it sets
-    # one, else the shared default, so pricer and scorer use the same line.
-    dwl_target_vac = float(policy.get(
+    # The Arnott-Inci pricer's target; the search-cost scorer has no target in it.
+    target_vac = float(policy.get(
         "target_vacancy", load_config("pricing_rules")["arnott_inci"]["target_vacancy"]
     ))
     pbd_share = float(scfg.get("rpp_policy", {}).get("revenue_share_to_pbd", 0.0))
     panel = baseline_with_price.copy()
     prices = current_prices.copy()
     diagnostics: dict = {"policy": policy_kind, "max_years": rolls_forward_years,
-                         "dwl_target_vacancy": dwl_target_vac}
+                         "target_vacancy": target_vac}
     # Zones the fixture or the real segments carry that zones.yaml does not configure have
     # no price and no priced hours: they earn nothing and are not scored for cruising.
     configured = set(current_prices["zone_id"])
@@ -347,7 +353,7 @@ def run_scenario(
             bands = policy["time_of_day_bands"]
             step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands)  # noqa: E731
         else:
-            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, dwl_target_vac, elasticity, current_prices)  # noqa: E731
+            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, target_vac, elasticity, current_prices)  # noqa: E731
         # Review annually until the prices stop changing (a fixed point) or repeat with
         # period 2, up to rolls_forward_years reviews. Nothing else in the map moves from
         # year to year, so the state at a fixed point is the rule's long-run outcome and
@@ -376,12 +382,12 @@ def run_scenario(
             phases = []
             for y, pnl, pr, _ in cycle:
                 m = _state_metrics(pnl, pr, segments, baseline_panel, current_prices,
-                                   dwl_target_vac, pbd_share, elasticity)
+                                   pbd_share, elasticity)
                 phases.append({
                     "year": y,
                     "prices": pr[[c for c in ("zone_id", "band", "price_usd_per_hr") if c in pr.columns]]
                     .to_dict("records"),
-                    **{k: m[k] for k in ("mean_price_by_zone", "total_revenue", "cruising_dwl_total",
+                    **{k: m[k] for k in ("mean_price_by_zone", "total_revenue", "search_cost_total",
                                          "cs_change_total", "allocation")},
                 })
             diagnostics["cycle_period"] = 2
@@ -398,7 +404,7 @@ def run_scenario(
         columns=[c for c in ("previous_price", "band_occ", "n_hours", "direction", "peak_occ") if c in prices.columns]
     ))
     m = _state_metrics(panel, prices, segments, baseline_panel, current_prices,
-                       dwl_target_vac, pbd_share, elasticity)
+                       pbd_share, elasticity)
 
     check_panel(panel, "scenario panel")
     if not np.isfinite(m["total_revenue"]):
@@ -410,7 +416,7 @@ def run_scenario(
         prices=seg_prices,
         occupancy=panel,
         revenue=m["revenue"],
-        cruising_dwl=m["cruising_dwl"],
+        search_cost=m["search_cost"],
         cs_change_total=m["cs_change_total"],
         allocation=m["allocation"],
         diagnostics=diagnostics,

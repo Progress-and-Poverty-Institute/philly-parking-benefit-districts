@@ -187,7 +187,8 @@ def test_run_values_drops_bookkeeping_rows_and_tags_the_run(fixture_data):
     long = run_values(res, "central", 11)
     assert set(long["scenario"]) == set(SCENARIOS)
     assert not {"review_year", "converged"} & set(long["metric"])
-    assert {"total_revenue", "cruising_dwl_total", "cs_change_total", "pbd_unfunded"} <= set(long["metric"])
+    assert {"total_revenue", "search_cost_total", "cs_change_total", "surplus_plus_revenue_change",
+            "pbd_unfunded"} <= set(long["metric"])
     assert set(long["seed"]) == {11} and set(long["elasticity_scenario"]) == {"central"}
 
 
@@ -264,7 +265,7 @@ def test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixtur
     monkeypatch.setattr(mod, "load_priced_segments", _no_named_zones)
     a1 = _run_05(mod, root, 1)
     a2 = _run_05(mod, root, 2)
-    for row in ("total_revenue", "cruising_dwl_total", "cs_change_total"):
+    for row in ("total_revenue", "search_cost_total", "cs_change_total"):
         assert a1.loc[row, "status_quo"] != a2.loc[row, "status_quo"] or row == "cs_change_total", row
         assert a1.loc[row, "full_pbd"] != a2.loc[row, "full_pbd"], row
 

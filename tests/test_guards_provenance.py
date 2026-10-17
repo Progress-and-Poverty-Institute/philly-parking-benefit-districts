@@ -33,7 +33,7 @@ from phillyparking.spatial.synthetic import make_synthetic_segments  # noqa: E40
 from phillyparking.viz.report_figures import (  # noqa: E402
     cm_sweep_year_chart, occupancy_and_revenue_detail, zone_map_figure,
 )
-from phillyparking.viz.tables import ROWS, scenario_comparison_tex  # noqa: E402
+from phillyparking.viz.tables import rows as table_rows, scenario_comparison_tex  # noqa: E402
 
 pytestmark = pytest.mark.slow
 
@@ -64,7 +64,7 @@ def test_table_column_reads_the_allocation_keys_allocate_emits():
     share = _raw("scenarios")["scenarios"]["full_pbd"]["rpp_policy"]["revenue_share_to_pbd"]
     total = 100e6
     gf_min = RevenueAllocation(total_revenue_usd=total).general_fund_minimum_usd
-    col = _table_column({}, total, 0.0, 0.0, allocate(total, share).to_dict(), 1, True)
+    col = _table_column({}, total, 0.0, 0.0, allocate(total, share).to_dict(), 1, True, 0.0)
     # Statutory order: General Fund minimum first, then the PBD, then the School District.
     expected_gf = min(total, gf_min)
     expected_pbd = min(total * share, total - expected_gf)
@@ -78,7 +78,7 @@ def test_table_column_reads_the_allocation_keys_allocate_emits():
 def test_table_column_does_not_default_a_missing_allocation_key():
     stale = {"total_revenue_usd": 1.0, "pbd_revenue_usd": 1.0, "general_fund_usd": 0.0}
     with pytest.raises(KeyError):
-        _table_column({}, 1.0, 0.0, 0.0, stale, 1, True)
+        _table_column({}, 1.0, 0.0, 0.0, stale, 1, True, 0.0)
 
 
 def test_comparison_table_allocation_rows_conserve_revenue(results):
@@ -250,7 +250,7 @@ def _cells(tex: str, label: str) -> list[str]:
 def test_scenario_table_values_come_from_the_comparison_table(results):
     table = comparison_table(results)
     tex = scenario_comparison_tex(table)
-    for label, key, _ in ROWS:
+    for label, key, _ in table_rows():
         cells = _cells(tex, label)
         assert len(cells) == len(table.columns)
         for cell, col in zip(cells, table.columns):
@@ -262,6 +262,27 @@ def test_scenario_table_values_come_from_the_comparison_table(results):
             tol = 0.5 * 10 ** -decimals * scale + 1e-9
             assert float(number) * scale == pytest.approx(abs(v), abs=tol), (label, col, cell)
     assert tex.count("\\textbf{") == 1 + len(table.columns)
+
+
+def test_scenario_table_prints_surplus_plus_revenue_and_no_net(results):
+    """Audit 2026-10-16 finding 3: one labelled row for parkers' surplus + revenue (a partial
+    welfare object), the search cost labelled with the level it is scored at, no "first
+    order", no DWL row, and nothing printed as a net of the two."""
+    from phillyparking.welfare.search_cost import load_search_cost_config
+    table = comparison_table(results)
+    tex = scenario_comparison_tex(table)
+    labels = [lab for lab, _, _ in table_rows()]
+    assert any("surplus + meter revenue" in lab and "change from status quo" in lab for lab in labels)
+    assert not any("first order" in lab.lower() or "dwl" in lab.lower() or "welfare" in lab.lower() for lab in labels)
+    level = load_search_cost_config().minutes_at_full_block
+    assert any(f"{level:g} min per arrival at a full block" in lab for lab in labels)
+    assert "first order" not in tex and "DWL" not in tex
+    sq = float(table.loc["total_revenue", "status_quo"])
+    for col in table.columns:
+        assert table.loc["surplus_plus_revenue_change", col] == pytest.approx(
+            table.loc["cs_change_total", col] + table.loc["total_revenue", col] - sq)
+    assert table.loc["surplus_plus_revenue_change", "status_quo"] == pytest.approx(0.0)
+    assert (table.loc["search_cost_total"] > 0).all()
 
 
 def test_tracked_scenario_table_matches_tracked_comparison_csv():

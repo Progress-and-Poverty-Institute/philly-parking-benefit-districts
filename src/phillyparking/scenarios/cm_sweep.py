@@ -27,22 +27,30 @@ Design:
 * **Observation noise sigma.** The rule reviews occupancy + sigma z with z ~ N(0, 1) per
   block-hour, redrawn every year (a fresh week's observation); welfare is scored on the true
   occupancy. Noise biases a peak statistic upward and leaves a mean almost unchanged.
-* **Cruising cost level.** The welfare scorer's search time at the reference block-hour
-  (`search_cost.minutes_at_reference` in `config/pricing_rules.yaml`; see
-  `welfare/targeting_welfare.py`) sets `search_cost` and `welfare_change`. The rules never
-  see it and the cost is linear in it, so every row also carries `search_cost_per_minute`
-  and `paired_table` reports each comparison's breakeven: the minutes at the reference
-  block-hour above which the higher-priced rule gives more welfare.
+* **Search cost cap and level.** The welfare scorer (`welfare/targeting_welfare.py`) charges
+  the project's search cost (`welfare/search_cost.py`): a full block costs
+  `minutes_at_full_block` of search per arrival, and `occupancy_cap` decides how much more
+  a full block costs than a nearly full one. The rules never see either. The cap is an axis
+  (`occupancy_cap`): each rule's price path is run once and scored once per cap. The level
+  is not: the cost is linear in it, so every row carries
+  `search_cost_per_full_block_minute` and `paired_table` reports each comparison's
+  breakeven, the minutes per arrival at a full block above which the higher-priced rule
+  gives more welfare, with the same number in minutes at the 95% reference block-hour as a
+  secondary column.
+* **One population.** Surplus, revenue and search cost all count the cars that park: a
+  block whose latent demand exceeds its capacity is rationed to the parkers who value it
+  most (`demand.response.cs_change_served`), and the cars it turns away carry neither
+  surplus nor search cost.
 * **Pairing.** u and z are shared by every rule, elasticity, tau and sigma within a
   replication, so rule differences on one draw are paired.
 * **Prices.** Every rule starts each zone at `start_price_usd`, reviews once a year for
   `rolls_forward_years`, and prices only the zone's priced hours (`config/zones.yaml`): a
   rate change does not reach an hour when the meter is off.
 
-Metrics per rule-year, over priced block-hours, in dollars a year (52 weeks): `revenue`,
-`search_cost` and `search_cost_per_minute`, `cs_change` (since the start), `welfare_change`
-(since the start), `cruising_dwl` (the project's proxy, for continuity), plus
-`share_block_hours_above_high`, `share_block_hours_below_low` and `mean_price`. Read the paired tables cell by cell
+Metrics per rule-year and cap, over priced block-hours, in dollars a year (52 weeks):
+`revenue`, `search_cost` and `search_cost_per_full_block_minute`, `cs_change` (since the
+start), `welfare_change` (since the start), plus `share_block_hours_above_high`,
+`share_block_hours_below_low` and `mean_price`. Read the paired tables cell by cell
 (`paired_table`, `window_dependence`); nothing is pooled across cells.
 """
 from __future__ import annotations
@@ -63,17 +71,17 @@ from phillyparking.pricing.targeting_rules import (
 )
 from phillyparking.scenarios.provenance import config_hashes, git_state, segment_source
 from phillyparking.welfare.targeting_welfare import (
-    cs_change_usd, load_search_cost_config, search_cost_usd,
+    cs_change_usd, load_search_cost_config, reference_minutes_per_full_block_minute, search_cost_usd,
 )
 
 logger = logging.getLogger(__name__)
 
 WEEKS_PER_YEAR = 52
 SWEEP_METRICS = (
-    "welfare_change", "cs_change", "revenue", "search_cost", "search_cost_per_minute",
-    "cruising_dwl", "share_block_hours_above_high", "share_block_hours_below_low", "mean_price",
+    "welfare_change", "cs_change", "revenue", "search_cost", "search_cost_per_full_block_minute",
+    "share_block_hours_above_high", "share_block_hours_below_low", "mean_price",
 )
-AXES = ["elasticity", "start_occupancy", "block_dispersion", "observation_noise"]
+AXES = ["elasticity", "start_occupancy", "block_dispersion", "observation_noise", "occupancy_cap"]
 KEYS = AXES + ["rule", "replication", "year"]
 DEFAULT_COMPARISONS = (("mean_zone", "peak_zone"), ("mean_band", "peak_band"),
                        ("seattle_rule", "peak_band"), ("peak_band", "peak_zone"))
@@ -129,13 +137,14 @@ def chatman_manville_sweep(
     start_occupancy: list[float] | None = None,
     block_dispersion: list[float] | None = None,
     observation_noise: list[float] | None = None,
+    occupancy_cap: list[float] | None = None,
     rules: list[str] | None = None,
     n_replications: int | None = None,
     rolls_forward_years: int | None = None,
     seed: int = 42,
     start_price: float | None = None,
 ) -> pd.DataFrame:
-    """Rows of elasticity x start_occupancy x block_dispersion x observation_noise x rule x replication x year.
+    """Rows of elasticity x start_occupancy x block_dispersion x observation_noise x occupancy_cap x rule x replication x year.
 
     Arguments left as None come from `chatman_manville_sweep` in `config/scenarios.yaml`.
     `result.attrs["provenance"]` records the segment source, grid, seed, config hashes and
@@ -149,6 +158,7 @@ def chatman_manville_sweep(
     start_occupancy = list(cfg["start_occupancy"] if start_occupancy is None else start_occupancy)
     block_dispersion = list(cfg["block_dispersion"] if block_dispersion is None else block_dispersion)
     observation_noise = list(cfg["observation_noise"] if observation_noise is None else observation_noise)
+    occupancy_cap = [float(c) for c in (cfg["occupancy_cap"] if occupancy_cap is None else occupancy_cap)]
     rules = list(cfg["rules"] if rules is None else rules)
     n_replications = int(cfg["n_replications"] if n_replications is None else n_replications)
     rolls_forward_years = int(cfg["rolls_forward_years"] if rolls_forward_years is None else rolls_forward_years)
@@ -170,8 +180,11 @@ def chatman_manville_sweep(
         baseline_panel = baseline_occupancy(segments, seed=seed, anchor_set="synthetic_fixture")
         baseline_note = "baseline_occupancy(segments, seed=seed, anchor_set='synthetic_fixture')"
 
+    # Captured before the run: the provenance names the tree the sweep started from.
+    git, hashes = git_state(), config_hashes()
     tcfg = load_targeting_config()
     scfg = load_search_cost_config()
+    scfgs = {cap: load_search_cost_config(occupancy_cap=cap) for cap in occupancy_cap}
     base = baseline_panel.drop(columns=[c for c in ("zone_id", "capacity") if c in baseline_panel.columns]).merge(
         segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
     base = base.sort_values(["segment_id", "hour_of_week"]).reset_index(drop=True)
@@ -185,26 +198,28 @@ def chatman_manville_sweep(
     p0 = np.full(len(base), start_price)
     n_priced = int(priced.sum())
 
-    def search_cost(occ: np.ndarray) -> float:
-        return float(search_cost_usd(occ, cap, scfg)[priced].sum() * WEEKS_PER_YEAR)
+    def search_cost(occ: np.ndarray, sc) -> float:
+        return float(search_cost_usd(occ, cap, sc)[priced].sum() * WEEKS_PER_YEAR)
 
-    def metrics(d: np.ndarray, price: np.ndarray, eps: float, rev0: float, cost0: float) -> dict:
+    def metrics(d: np.ndarray, price: np.ndarray, eps: float, rev0: float, cost0: dict) -> list[dict]:
+        """One dict per occupancy cap: the price path is the rule's, the search cost the cap's."""
         occ = np.minimum(d, 1.0)
         rev = float((occ * cap * price)[priced].sum() * WEEKS_PER_YEAR)
-        cost = search_cost(occ)
         cs = float(cs_change_usd(d0, p0, price, eps, cap)[priced].sum() * WEEKS_PER_YEAR)
-        excess = np.maximum(occ * cap - (1.0 - target_vacancy) * cap, 0.0)
-        dwl = float((excess * (5.0 / 60.0) * scfg.value_of_time_usd_per_hr)[priced].sum() * WEEKS_PER_YEAR)
-        return {
-            "welfare_change": cs + (rev - rev0) - (cost - cost0),
-            "cs_change": cs, "revenue": rev, "search_cost": cost,
-            "search_cost_per_minute": cost / scfg.minutes_at_reference, "cruising_dwl": dwl,
+        shared = {
+            "cs_change": cs, "revenue": rev,
             "share_block_hours_above_high": float((occ[priced] > tcfg.occ_high).mean()),
             "share_block_hours_below_low": float((occ[priced] < tcfg.occ_low).mean()),
             "mean_price": float(price[priced].mean()),
         }
+        out = []
+        for c, sc in scfgs.items():
+            cost = search_cost(occ, sc)
+            out.append({"occupancy_cap": c, "welfare_change": cs + (rev - rev0) - (cost - cost0[c]),
+                        "search_cost": cost,
+                        "search_cost_per_full_block_minute": cost / sc.minutes_at_full_block, **shared})
+        return out
 
-    target_vacancy = 1.0 - tcfg.occ_high
     rows = []
     for rep in range(n_replications):
         u = _block_draw(seed, rep, n_seg)[seg_index]
@@ -214,7 +229,7 @@ def chatman_manville_sweep(
                                            zone_index, priced, float(level))
             occ0 = np.minimum(d0, 1.0)
             rev0 = float((occ0 * cap * p0)[priced].sum() * WEEKS_PER_YEAR)
-            cost0 = search_cost(occ0)
+            cost0 = {c: search_cost(occ0, sc) for c, sc in scfgs.items()}
             for sigma in observation_noise:
                 for eps in elasticity_values:
                     for rule in rules:
@@ -227,10 +242,10 @@ def chatman_manville_sweep(
                             new = _apply_prices(review(rule, panel, tcfg), panel, price)
                             price = np.where(priced, new, price)
                             d = np.where(priced, d0 * demand_level(price, eps, p0), d0)
-                            rows.append({"elasticity": eps, "start_occupancy": level,
-                                         "block_dispersion": tau, "observation_noise": sigma,
-                                         "rule": rule, "replication": rep, "year": year,
-                                         **metrics(d, price, eps, rev0, cost0)})
+                            for m in metrics(d, price, eps, rev0, cost0):
+                                rows.append({"elasticity": eps, "start_occupancy": level,
+                                             "block_dispersion": tau, "observation_noise": sigma,
+                                             "rule": rule, "replication": rep, "year": year, **m})
     out = pd.DataFrame(rows)
     out.attrs["provenance"] = {
         "created_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -241,15 +256,18 @@ def chatman_manville_sweep(
         "start_occupancy": start_occupancy,
         "block_dispersion": block_dispersion,
         "observation_noise": observation_noise,
+        "occupancy_cap": occupancy_cap,
         "rules": rules,
         "n_replications": n_replications,
         "rolls_forward_years": rolls_forward_years,
         "start_price_usd": start_price,
         "demand_form": load_demand_form(),
         "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
-        "search_cost": scfg.__dict__,
-        "config_sha256": config_hashes(),
-        "git": git_state(),
+        "search_cost": {**scfg.__dict__, "level_units": "minutes per arrival at a full block of "
+                        "reference_capacity spaces; occupancy_cap is swept (see occupancy_cap)"},
+        "welfare_population": "served cars: surplus on min(demand, capacity), revenue and search cost on served arrivals",
+        "config_sha256": hashes,
+        "git": git,
     }
     return out
 
@@ -277,7 +295,7 @@ def load_sweep(path: Path) -> pd.DataFrame:
 
 
 def cell_table(sweep: pd.DataFrame, metrics: tuple[str, ...] = SWEEP_METRICS) -> pd.DataFrame:
-    """Median and range over replications for every elasticity x level x dispersion x noise x rule x year cell."""
+    """Median and range over replications for every elasticity x level x dispersion x noise x cap x rule x year cell."""
     g = sweep.groupby(AXES + ["rule", "year"], sort=True)
     out = g.size().rename("n_replications").to_frame()
     for m in metrics:
@@ -293,27 +311,41 @@ def comparisons_from_config() -> tuple[tuple[str, str], ...]:
 
 
 def paired_table(sweep: pd.DataFrame, comparisons=None) -> pd.DataFrame:
-    """Each (comparator, reference) pair on the same replication, per elasticity x level x dispersion x noise x year.
+    """Each (comparator, reference) pair on the same replication, per elasticity x level x dispersion x noise x cap x year.
 
     `comparisons` is a sequence of (comparator, reference) rule names (default: the config's).
-    `welfare_diff` is comparator minus reference in dollars a year at the config's cruising
-    cost level (positive: the comparator gives more surplus); `cs_diff`, `revenue_diff` and
-    `search_cost_diff` are its parts, and `dwl_ratio` / `revenue_ratio` are comparator over
-    reference (the DWL ratio is NaN where the reference's proxy DWL is zero).
-    `share_welfare_better` is the share of replications in which the comparator's welfare
-    change is strictly higher; `share_dwl_better` and `share_revenue_better` likewise for
-    less DWL and more revenue.
+    `welfare_diff` is comparator minus reference in dollars a year at the config's search-cost
+    level (positive: the comparator gives more surplus); `cs_diff`, `revenue_diff` and
+    `search_cost_diff` are its parts, and `search_cost_ratio` / `revenue_ratio` are
+    comparator over reference (NaN where the reference's is zero). `share_welfare_better`
+    is the share of replications in which the comparator's welfare change is strictly
+    higher; `share_search_cost_better` and `share_revenue_better` likewise for less search
+    cost and more revenue.
 
-    `breakeven_minutes` is the cruising cost level at which the two rules give the same
-    welfare: welfare_diff(c) = cs_diff + revenue_diff - c x search_cost_diff_per_minute, so
-    c* = (cs_diff + revenue_diff) / search_cost_diff_per_minute. When the comparator has
-    the higher search cost (it prices lower; `comparator_searches_more` is True) it gives
-    more welfare below c* and less above; the reverse when it searches less. NaN where the
-    two rules' search costs are equal.
+    `breakeven_full_block_minutes` is the search-cost level at which the two rules give the
+    same welfare, in minutes per arrival at a full block (the units the cost is driven by):
+    welfare_diff(c) = cs_diff + revenue_diff - c x search_cost_diff_per_full_block_minute, so
+    c* = (cs_diff + revenue_diff) / search_cost_diff_per_full_block_minute. When the
+    comparator has the higher search cost (it prices lower; `comparator_searches_more` is
+    True) it gives more welfare below c* and less above; the reverse when it searches less.
+    NaN where the two rules' search costs are equal. `breakeven_reference_minutes` is the same
+    level quoted at the 95% reference block-hour on 10 spaces: c* x the row's cap's
+    `reference_minutes_per_full_block_minute` (1 at cap 0.95, 0.16 at 0.99, 0.015 at 0.999),
+    so it is not comparable across caps; the full-block column is.
+
+    For a same-instrument pair (the mean against the peak statistic over the same
+    block-hours: `mean_zone` vs `peak_zone`, `mean_band` vs `peak_band`) the SIGN of c* is a
+    property of the design, not a finding: a mean is never above a 95th percentile of the
+    same block-hours, so the mean rule prices at or below the peak rule, total surplus (surplus
+    + revenue) falls in price at zero marginal cost and search cost rises in occupancy, so
+    cs_diff + revenue_diff >= 0 and search_cost_diff >= 0 in every replication
+    (`ordering_violations` checks that identity). The sweep's content for such pairs is the
+    SIZE of c* against the cited cruising times (`welfare/search_cost.py`). The sign is not an
+    identity for pairs across instruments or for `seattle_rule`.
     """
     comparisons = comparisons_from_config() if comparisons is None else comparisons
     keys = AXES + ["replication", "year"]
-    cols = ["welfare_change", "cs_change", "revenue", "search_cost", "search_cost_per_minute", "cruising_dwl"]
+    cols = ["welfare_change", "cs_change", "revenue", "search_cost", "search_cost_per_full_block_minute"]
     frames = []
     for comparator, reference in comparisons:
         ref = sweep.loc[sweep["rule"] == reference, keys + cols].rename(columns={c: f"{c}_ref" for c in cols})
@@ -323,17 +355,21 @@ def paired_table(sweep: pd.DataFrame, comparisons=None) -> pd.DataFrame:
         j = comp.merge(ref, on=keys, how="inner", validate="one_to_one")
         d = j[keys].copy()
         d["rule"], d["reference"] = comparator, reference
-        for c in ("welfare_change", "cs_change", "revenue", "search_cost", "search_cost_per_minute"):
+        for c in cols:
             d[f"{c.replace('_change', '')}_diff"] = j[c] - j[f"{c}_ref"]
-        scd = d["search_cost_per_minute_diff"].to_numpy()
+        scd = d["search_cost_per_full_block_minute_diff"].to_numpy()
         gain = (d["cs_diff"] + d["revenue_diff"]).to_numpy()
-        d["breakeven_minutes"] = np.where(np.abs(scd) > 1e-9, gain / np.where(np.abs(scd) > 1e-9, scd, 1.0), np.nan)
+        nonzero = np.abs(scd) > 1e-9
+        d["breakeven_full_block_minutes"] = np.where(nonzero, gain / np.where(nonzero, scd, 1.0), np.nan)
+        to_ref = {c: reference_minutes_per_full_block_minute(load_search_cost_config(occupancy_cap=c))
+                  for c in d["occupancy_cap"].unique()}
+        d["breakeven_reference_minutes"] = d["breakeven_full_block_minutes"] * d["occupancy_cap"].map(to_ref)
         d["comparator_searches_more"] = scd > 1e-9
-        r, c = j["cruising_dwl_ref"].to_numpy(), j["cruising_dwl"].to_numpy()
-        d["dwl_ratio"] = np.where(r > 0, c / np.where(r > 0, r, 1.0), np.nan)
+        r, c = j["search_cost_ref"].to_numpy(), j["search_cost"].to_numpy()
+        d["search_cost_ratio"] = np.where(r > 0, c / np.where(r > 0, r, 1.0), np.nan)
         d["revenue_ratio"] = j["revenue"] / j["revenue_ref"]
         d["welfare_better"] = j["welfare_change"] > j["welfare_change_ref"]
-        d["dwl_better"] = c < r
+        d["search_cost_better"] = c < r
         d["revenue_better"] = j["revenue"] > j["revenue_ref"]
         frames.append(d)
     if not frames:
@@ -341,12 +377,13 @@ def paired_table(sweep: pd.DataFrame, comparisons=None) -> pd.DataFrame:
     d = pd.concat(frames, ignore_index=True)
     g = d.groupby(AXES + ["rule", "reference", "year"], sort=True)
     out = g.size().rename("n_replications").to_frame()
-    for col in ("welfare_diff", "cs_diff", "revenue_diff", "search_cost_diff", "breakeven_minutes",
-                "dwl_ratio", "revenue_ratio"):
+    for col in ("welfare_diff", "cs_diff", "revenue_diff", "search_cost_diff",
+                "breakeven_full_block_minutes", "breakeven_reference_minutes",
+                "search_cost_ratio", "revenue_ratio"):
         agg = g[col].agg(["median", "min", "max"])
         for stat in ("median", "min", "max"):
             out[f"{col}_{stat}"] = agg[stat]
-    for col in ("welfare_better", "dwl_better", "revenue_better", "comparator_searches_more"):
+    for col in ("welfare_better", "search_cost_better", "revenue_better", "comparator_searches_more"):
         out[f"share_{col}"] = g[col].mean()
     return out.reset_index()
 
@@ -354,24 +391,28 @@ def paired_table(sweep: pd.DataFrame, comparisons=None) -> pd.DataFrame:
 def window_dependence(paired: pd.DataFrame, year: int | None = None) -> pd.DataFrame:
     """How each comparison's gap depends on the cell, across cells, at `year` (default the last).
 
-    One row per (comparator, reference): the median, minimum and maximum over
+    One row per (comparator, reference, occupancy_cap): the median, minimum and maximum over
     elasticity x level x dispersion x noise cells of the per-cell median welfare difference,
-    breakeven minutes, DWL ratio and revenue ratio, and the number of cells in which the
-    comparator's median welfare change is above the reference's (`cells_welfare_better`), its
-    median DWL below and its median revenue above. Cells are never pooled into one number.
+    breakeven minutes (per arrival at a full block, and at the 95% reference), search-cost
+    ratio and revenue ratio, and the number of cells in which the comparator's median welfare
+    change is above the reference's (`cells_welfare_better`), its median search cost below
+    and its median revenue above. The cap gets its own rows so that the stability of the
+    full-block breakeven across caps, and the instability of the reference-minute one, is
+    visible. Cells are never pooled into one number.
     """
     year = int(paired["year"].max()) if year is None else int(year)
     p = paired[paired["year"] == year]
     rows = []
-    for (rule, ref), g in p.groupby(["rule", "reference"], sort=False):
-        row = {"rule": rule, "reference": ref, "year": year, "n_cells": len(g)}
-        for col in ("welfare_diff_median", "breakeven_minutes_median", "dwl_ratio_median",
+    for (rule, ref, cap), g in p.groupby(["rule", "reference", "occupancy_cap"], sort=False):
+        row = {"rule": rule, "reference": ref, "occupancy_cap": cap, "year": year, "n_cells": len(g)}
+        for col in ("welfare_diff_median", "breakeven_full_block_minutes_median",
+                    "breakeven_reference_minutes_median", "search_cost_ratio_median",
                     "revenue_ratio_median"):
             row[f"{col}_cells_median"] = g[col].median()
             row[f"{col}_cells_min"] = g[col].min()
             row[f"{col}_cells_max"] = g[col].max()
         row["cells_welfare_better"] = int((g["welfare_diff_median"] > 0).sum())
-        row["cells_dwl_better"] = int((g["dwl_ratio_median"] < 1).sum())
+        row["cells_search_cost_better"] = int((g["search_cost_ratio_median"] < 1).sum())
         row["cells_revenue_better"] = int((g["revenue_ratio_median"] > 1).sum())
         rows.append(row)
     return pd.DataFrame(rows)
@@ -379,18 +420,26 @@ def window_dependence(paired: pd.DataFrame, year: int | None = None) -> pd.DataF
 
 def ordering_violations(sweep: pd.DataFrame, comparator: str = "avg_occupancy",
                         reference: str = "min_vacancy_peak") -> pd.DataFrame:
-    """Replication-years in which `comparator` does NOT have at least the reference's DWL and at most its revenue.
+    """Replication-years in which `comparator` does NOT have at least the reference's search cost and total surplus.
 
-    A mean over the same window as a 95th percentile is never above it, so with the same band
-    and step the mean rule never raises what the peak rule holds: its proxy DWL is at least
-    the peak rule's and, for |elasticity| < 1, its revenue at most, in every replication-year.
-    An empty frame is that identity holding; it is a property of mean <= q95, not a finding.
-    The same holds for `mean_zone` against `peak_zone` and `mean_band` against `peak_band`.
+    A mean over the same window as a 95th percentile is never above it, so with the same
+    band and step the mean rule never raises what the peak rule holds: it prices at or below
+    the peak rule on every block-hour, where total surplus (consumer surplus + revenue) is
+    higher at the lower price and search cost higher at the higher occupancy, in every
+    replication-year. An empty frame is that identity holding; it is a property of mean <=
+    q95, not a finding, and it is what makes the sign of the paired tables' breakeven a
+    property of the design for same-instrument pairs (`paired_table`). The same holds for
+    `mean_zone` against `peak_zone` and `mean_band` against `peak_band`.
     """
     keys = AXES + ["replication", "year"]
     a = sweep[sweep["rule"] == comparator].set_index(keys)
     b = sweep[sweep["rule"] == reference].set_index(keys)
     j = a.join(b, lsuffix="_cmp", rsuffix="_ref", how="inner")
-    bad = (j["cruising_dwl_cmp"] < j["cruising_dwl_ref"] - 1e-9) | (
-        j["revenue_cmp"] > j["revenue_ref"] + 1e-9)
-    return j.loc[bad, ["cruising_dwl_cmp", "cruising_dwl_ref", "revenue_cmp", "revenue_ref"]].reset_index()
+    surplus_cmp = j["cs_change_cmp"] + j["revenue_cmp"]
+    surplus_ref = j["cs_change_ref"] + j["revenue_ref"]
+    bad = (j["search_cost_cmp"] < j["search_cost_ref"] - 1e-6) | (surplus_cmp < surplus_ref - 1e-6)
+    out = j.loc[bad, ["search_cost_cmp", "search_cost_ref", "cs_change_cmp", "cs_change_ref",
+                      "revenue_cmp", "revenue_ref"]].copy()
+    out["total_surplus_cmp"] = surplus_cmp[bad]
+    out["total_surplus_ref"] = surplus_ref[bad]
+    return out.reset_index()

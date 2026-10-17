@@ -83,11 +83,11 @@ nb00 = [
         "from phillyparking.elasticity.priors import central_prior, named_scenario, cross_priors\n"
         "from phillyparking.elasticity.scenarios import all_scenarios, get_scenario, apply_elasticity\n"
         "from phillyparking.pricing.seattle_rule import adjust_zone_prices\n"
-        "from phillyparking.pricing.arnott_inci import optimal_price_arnott_inci, cruising_dwl\n"
+        "from phillyparking.pricing.arnott_inci import optimal_price_arnott_inci\n"
         "from phillyparking.pricing.targeting_rules import review, RULE_NAMES\n"
         "from phillyparking.revenue.forecast import annual_revenue, revenue_under_scenarios, revenue_curve\n"
         "from phillyparking.revenue.allocation import allocate\n"
-        "from phillyparking.welfare.cruising_dwl import annual_cruising_dwl\n"
+        "from phillyparking.welfare.search_cost import annual_search_cost\n"
         "from phillyparking.welfare.incidence import gini, incidence_summary\n"
         "from phillyparking.scenarios.runner import run_scenario, run_all_scenarios\n"
         "from phillyparking.scenarios.compare import comparison_table\n"
@@ -483,25 +483,20 @@ write("06_revenue_scenarios.ipynb", nb06)
 # 07 welfare incidence
 # ---------------------------------------------------------------------------
 nb07 = [
-    md("# 07 — Welfare & Incidence\n\nCruising deadweight loss and a placeholder distributional "
-       "incidence calculation."),
+    md("# 07 — Welfare & Incidence\n\nThe search cost of parkers under each scenario and a "
+       "placeholder distributional incidence calculation."),
     code("%matplotlib inline\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n"),
     code(
         "from phillyparking.scenarios.runner import run_all_scenarios\n"
-        "from phillyparking.welfare.cruising_dwl import annual_cruising_dwl\n"
         "from phillyparking.welfare.incidence import gini, simple_incidence_summary\n"
         "results = run_all_scenarios()\n"
     ),
-    md("## Annual cruising DWL per scenario"),
+    md("## Annual search cost of parkers per scenario\n\nThe project's one cruising model "
+       "(`welfare/search_cost.py`), scored at the config's level in minutes per arrival at a full "
+       "block; the level is a stated assumption."),
     code(
-        "dwl = {}\n"
-        "for name, res in results.items():\n"
-        "    try:\n"
-        "        dwl[name] = float(annual_cruising_dwl(res['segments'], res['panel']))\n"
-        "    except Exception as e:\n"
-        "        dwl[name] = float('nan')\n"
-        "        print(name, 'failed:', e)\n"
-        "pd.Series(dwl, name='cruising_dwl_usd')\n"
+        "pd.Series({name: float(res.search_cost['annual_search_cost_usd'].sum())\n"
+        "           for name, res in results.items()}, name='search_cost_usd')\n"
     ),
     md("## Synthetic decile-uniform incidence"),
     code(
@@ -550,9 +545,11 @@ nb08 = [
         "    ['welfare_change', 'cs_change', 'revenue', 'search_cost', 'mean_price']].median()\n"
         "grouped\n"
     ),
-    md("## Each comparison against its reference, per cell\n\n`breakeven_minutes_median` is the search "
-       "time at 95% occupancy on a 10-space block at which the two rules give equal welfare; below it the "
-       "lower-priced rule gives more, above it the higher-priced one."),
+    md("## Each comparison against its reference, per cell\n\n`breakeven_full_block_minutes_median` is "
+       "the search time per arrival at a full 10-space block at which the two rules give equal welfare; "
+       "below it the lower-priced rule gives more, above it the higher-priced one. For a same-instrument "
+       "pair its sign is a property of the design (mean <= q95 of the same block-hours); its size against "
+       "the cited cruising times is the content."),
     code(
         "paired = paired_table(results)\n"
         "window_dependence(paired)\n"
@@ -575,8 +572,8 @@ write("08_chatman_manville_test.ipynb", nb08)
 # 09 scenario comparison
 # ---------------------------------------------------------------------------
 nb09 = [
-    md("# 09 — Scenario Comparison\n\nFinal roll-up: compare elasticity scenarios on revenue, cruising "
-       "DWL, mean price, and PBD allocation."),
+    md("# 09 — Scenario Comparison\n\nFinal roll-up: compare elasticity scenarios on revenue, search "
+       "cost, mean price, and PBD allocation."),
     code("%matplotlib inline\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n"),
     code(
         "from phillyparking.scenarios.runner import run_all_scenarios\n"
@@ -587,7 +584,7 @@ nb09 = [
     ),
     md("## Small multiples across scenarios"),
     code(
-        "metrics = [c for c in ['revenue', 'cruising_dwl', 'mean_price', 'pbd_allocation']\n"
+        "metrics = [c for c in ['revenue', 'search_cost', 'mean_price', 'pbd_allocation']\n"
         "           if c in table.columns]\n"
         "fig, axes = plt.subplots(1, len(metrics), figsize=(4 * len(metrics), 4))\n"
         "if len(metrics) == 1:\n"

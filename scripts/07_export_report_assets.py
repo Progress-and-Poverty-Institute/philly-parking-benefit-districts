@@ -10,7 +10,7 @@ Chatman-Manville sweep table (with its `.meta.json` provenance), and writes:
   outputs/figures/cm_breakeven_{comparator}_vs_{reference}.png   one per configured comparison
   outputs/tables/cm_sweep_cells.csv               median and range per cell x rule x year
   outputs/tables/cm_sweep_paired.csv              each configured comparison, same replication
-  outputs/tables/cm_sweep_window_dependence.csv   per comparison, across cells, last year
+  outputs/tables/cm_sweep_window_dependence.csv   per comparison and cap, across cells, last year
 
 `--check` regenerates the table in memory and exits 1 if the file on disk differs (the
 figures are not compared byte for byte). `--rebuild-cm-sweep` reruns the sweep at the
@@ -39,6 +39,7 @@ from phillyparking.viz.report_figures import (  # noqa: E402
     cm_breakeven_chart, cm_sweep_year_chart, occupancy_and_revenue_detail, zone_map_figure,
 )
 from phillyparking.viz.tables import scenario_comparison_tex  # noqa: E402
+from phillyparking.welfare.search_cost import load_search_cost_config  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -107,9 +108,12 @@ def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
         frame.to_csv(tables / name, index=False, float_format="%.6g")
         log.info("Wrote %s", tables / name)
 
+    # Year charts at the project's default cap: search_cost and welfare_change depend on it,
+    # and the other metrics are the same at every cap.
+    default_cap = load_search_cost_config().occupancy_cap
     for metric in CM_METRICS:
         out = figs / f"cm_sweep_{metric}.png"
-        fig = cm_sweep_year_chart(sweep, metric, save_to=out)
+        fig = cm_sweep_year_chart(sweep, metric, save_to=out, fixed={"occupancy_cap": default_cap})
         plt.close(fig)
         log.info("Wrote %s", out)
     for comparison in comparisons_from_config():

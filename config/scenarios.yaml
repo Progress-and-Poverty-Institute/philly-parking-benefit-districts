@@ -44,9 +44,11 @@ scenarios:
 # The Chatman-Manville sweep (scenarios/cm_sweep.py): targeting rules, paired on the same
 # demand draws, scored on welfare (welfare/targeting_welfare.py). Rules are defined in
 # pricing/targeting_rules.py. `comparisons` are (comparator, reference) pairs for the paired
-# tables; every rule in them must be in `rules`. The grid below is 3 x 3 x 3 x 2 = 54 cells; the
-# cruising cost level (pricing_rules.yaml search_cost) is not an axis: welfare is linear in it
-# and the paired tables report each comparison's breakeven level.
+# tables; every rule in them must be in `rules`. The grid below is 3 x 3 x 3 x 2 x 3 = 162
+# cells. `occupancy_cap` is the search-cost cap (pricing_rules.yaml search_cost): the rules
+# never see it, so each price path is scored once per cap. The search-cost level is not an
+# axis: welfare is linear in it and the paired tables report each comparison's breakeven level
+# in minutes per arrival at a full block.
 chatman_manville_sweep:
   fixture: { n: 120, seed: 42 }          # make_synthetic_segments; "other" segments are dropped
   elasticity_values: [-0.20, -0.40, -0.70]
@@ -54,6 +56,7 @@ chatman_manville_sweep:
                                          # (below the 0.70-0.85 band, inside it, above it)
   block_dispersion: [0.0, 0.3, 0.6]      # tau: log-sd of the block demand multiplier
   observation_noise: [0.0, 0.10]         # sigma: sd of the occupancy the rule reviews, per block-hour
+  occupancy_cap: [0.95, 0.99, 0.999]     # search cost cap: how much more a full block costs than a 95% one
   rules: [peak_zone, mean_zone, peak_band, mean_band, seattle_rule]
   comparisons: [[mean_zone, peak_zone], [mean_band, peak_band], [seattle_rule, peak_band], [peak_band, peak_zone]]
   start_price_usd: 2.00
