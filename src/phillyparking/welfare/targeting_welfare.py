@@ -40,13 +40,14 @@ from phillyparking.welfare.search_cost import (  # noqa: F401  (re-exported for 
 
 
 def cs_change_usd(demand0: np.ndarray, price0: np.ndarray, price: np.ndarray,
-                  elasticity: float, capacity: np.ndarray) -> np.ndarray:
+                  elasticity: float, capacity: np.ndarray, form: str | None = None) -> np.ndarray:
     """Consumer surplus change in dollars for one hour of one block, from price0 to price.
 
     `demand0` is the latent demand share at `price0`, the reference price the elasticity
     applies at (it may exceed 1 when more cars want the block than it holds); q0 = demand0
     x capacity cars. Only the cars that get a space count: the integral is of
-    min(q(x), capacity). Zero where the price is unchanged.
+    min(q(x), capacity). Zero where the price is unchanged. `form` is the demand law (default:
+    the config's).
     """
     q0 = np.asarray(demand0, dtype=float) * np.asarray(capacity, dtype=float)
-    return cs_change_served(q0, price0, price, elasticity, capacity)
+    return cs_change_served(q0, price0, price, elasticity, capacity, form)

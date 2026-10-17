@@ -1,8 +1,9 @@
-"""Lehner-Peer 2019 elasticity priors.
+"""Elasticity priors, oriented to the Lehner-Peer (2019) meta-analysis.
 
-Encodes the central RP-only meta-analytic prior, the context shifts (CBD,
-mixed-use, residential, long-run), the cross-elasticity priors, and the three
-named scenarios used by revenue/welfare forecasts.
+Encodes the central prior, the context shifts (CBD, mixed-use, residential,
+long-run), the cross-elasticity priors, and the three named scenarios used by
+revenue/welfare forecasts. The values are stated assumptions
+(`config/elasticity_priors.yaml`); none is read from a table of the paper.
 """
 from __future__ import annotations
 

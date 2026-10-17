@@ -1,8 +1,18 @@
 # Price elasticity of parking demand priors.
-# Source: Lehner & Peer (2019), "The price elasticity of parking: A meta-analysis,"
-# Transportation Research A 121: 177-191 (50-study seemingly-unrelated regression).
-# Anchored on revealed-preference estimates only (RP); SP estimates are systematically
-# larger and less credible (per the meta-analysis).
+# Every value in this file is a stated assumption. The reference literature is Lehner & Peer
+# (2019), "The price elasticity of parking: A meta-analysis," Transportation Research A 121:
+# 177-191 (50 studies; seemingly unrelated regressions of the elasticity of occupancy (EPO),
+# dwell time (EPD) and volume (EPV) on study characteristics). What it does and does not
+# give for the values below:
+# - Central -0.40 and the sd: not a reported estimate. For comparison, Table 6 (revealed
+#   preference, non-commuting) has 95% intervals EPV -0.45 / -0.18, EPD -0.46 / -0.15 and
+#   EPO -0.72 / -0.54; the pooled mean EPV of published papers is -0.38 (p. 185).
+# - The -0.2 / -0.7 bracket: not reported; it is near the ends of the Table 6 EPV and EPO
+#   intervals above.
+# - Context shifts: not from the paper (it excludes residential parking, footnote 4).
+# - Which elasticity: the central prior is labelled the volume elasticity, and the model
+#   applies it to occupancy, which in the paper's terms is EPO = EPD + EPV (p. 178).
+# Anchored on revealed-preference estimates in intent; no stated-preference value is used.
 
 # Central prior on price elasticity of volume (EPV).
 central:
@@ -10,10 +20,9 @@ central:
   sd: 0.15
   distribution: normal
 
-# Context shifts applied additively to the mean. These reflect findings that
-# elasticity is more negative (more elastic) for:
+# Context shifts applied additively to the mean. Stated assumptions that elasticity is more
+# negative (more elastic) for:
 # - longer-run / equilibrium adjustments
-# - higher prevailing prices (Lehner-Peer table 5)
 # - residential land use (more substitution to off-street / mode shift)
 context_shifts:
   cbd: 0.00
@@ -36,14 +45,31 @@ cross:
   curb_to_forgo: { mean: 0.05, sd: 0.03 }    # trip not made
 
 # How demand moves away from the posted rate (demand/response.py). The priors above are
-# the elasticity AT each zone's posted rate; the form says what happens elsewhere.
+# the elasticity AT each zone's posted rate; the form says what happens elsewhere. Both are
+# stated assumptions. Lehner & Peer (2019) support the sign of the rise only: their
+# regressions have a significantly negative coefficient on the hourly price relative to daily
+# GDP per capita (EPO -0.10 to -0.15, Table 3; EPV -0.03 in all three specifications,
+# Table 5; p. 186), so higher-priced contexts have more elastic estimates. The paper
+# estimates no functional form, and a slope of -0.03 against an EPV constant of -0.33 is far
+# shallower than the proportional rise of the exponential below, which takes the elasticity
+# to zero as the price does. Its gradient lies between constant_elasticity (no rise) and
+# exponential; linear rises faster than the exponential.
 #   exponential          q = q_ref exp(e (p - p_ref) / p_ref): elasticity e p / p_ref, rising
-#                        with the price (Lehner & Peer 2019: higher prevailing prices are more
-#                        elastic); revenue peaks at p_ref / |e| (Center City Core: $10 at -0.4).
+#                        in proportion to the price (semi-log demand); revenue peaks at
+#                        p_ref / |e| (Center City Core: $10 at -0.4, $5.71 at -0.7).
 #   linear               q = q_ref (1 + e (p - p_ref) / p_ref): a choke price at p_ref (1 - 1/e).
 #   constant_elasticity  q = q_ref (p / p_ref)^e: revenue never peaks for |e| < 1.
 # Every price response in the package uses this form, and the consumer-surplus term is the
 # integral of the same law. The hierarchical model estimates e at the observed prices.
+# scripts/05 (scenario_ranges.csv) and scripts/07 --rebuild-cm-form-sensitivity
+# (cm_sweep_form_sensitivity.csv) show how the results move with the form.
+#
+# Anchoring: each zone's prior is its elasticity AT THAT ZONE'S OWN posted rate, so e = -0.40
+# is the elasticity at $1.50 in Fishtown and at $4.00 in Center City Core. That is not one
+# demand curve for the city: a single exponential law with e = -0.40 at $1.50 would give
+# -1.07 at $4.00. scripts/05 reruns the scenarios under one citywide law (column
+# citywide_law_* of scenario_ranges.csv: e = -0.40 at the capacity-weighted mean posted rate,
+# every zone's elasticity at its posted rate following from the law) as the sensitivity.
 demand_form: exponential
 
 # Three named scenarios used by revenue/welfare forecasts.

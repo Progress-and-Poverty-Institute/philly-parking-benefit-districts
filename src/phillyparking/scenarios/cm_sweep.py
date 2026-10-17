@@ -65,7 +65,7 @@ import numpy as np
 import pandas as pd
 
 from phillyparking._config import load_config
-from phillyparking.demand.response import demand_level, load_demand_form
+from phillyparking.demand.response import FORMS, demand_level, load_demand_form, revenue_maximising_price
 from phillyparking.pricing.priced_hours import frame_priced_mask
 from phillyparking.pricing.targeting_rules import (
     PEAK_RULE, load_targeting_config, review,
@@ -144,10 +144,13 @@ def chatman_manville_sweep(
     rolls_forward_years: int | None = None,
     seed: int = 42,
     start_price: float | None = None,
+    demand_form: str | None = None,
 ) -> pd.DataFrame:
     """Rows of elasticity x start_occupancy x block_dispersion x observation_noise x occupancy_cap x rule x replication x year.
 
-    Arguments left as None come from `chatman_manville_sweep` in `config/scenarios.yaml`.
+    Arguments left as None come from `chatman_manville_sweep` in `config/scenarios.yaml`
+    (`demand_form`: from `config/elasticity_priors.yaml`; the form sensitivity passes the
+    other two, see `form_sensitivity_table`).
     `result.attrs["provenance"]` records the segment source, grid, seed, config hashes and
     git state; `save_sweep` writes it beside the parquet.
     """
@@ -164,6 +167,9 @@ def chatman_manville_sweep(
     n_replications = int(cfg["n_replications"] if n_replications is None else n_replications)
     rolls_forward_years = int(cfg["rolls_forward_years"] if rolls_forward_years is None else rolls_forward_years)
     start_price = float(cfg["start_price_usd"] if start_price is None else start_price)
+    form = load_demand_form() if demand_form is None else str(demand_form)
+    if form not in FORMS:
+        raise ValueError(f"demand_form must be one of {FORMS}, not {form!r}")
     if PEAK_RULE not in rules:
         logger.warning("%s is not among the rules; the default comparisons have no reference", PEAK_RULE)
 
@@ -206,7 +212,7 @@ def chatman_manville_sweep(
         """One dict per occupancy cap: the price path is the rule's, the search cost the cap's."""
         occ = np.minimum(d, 1.0)
         rev = float((occ * cap * price)[priced].sum() * WEEKS_PER_YEAR)
-        cs = float(cs_change_usd(d0, p0, price, eps, cap)[priced].sum() * WEEKS_PER_YEAR)
+        cs = float(cs_change_usd(d0, p0, price, eps, cap, form)[priced].sum() * WEEKS_PER_YEAR)
         shared = {
             "cs_change": cs, "revenue": rev,
             "share_block_hours_above_high": float((occ[priced] > tcfg.occ_high).mean()),
@@ -242,7 +248,7 @@ def chatman_manville_sweep(
                             panel["price_usd_per_hr"] = price
                             new = _apply_prices(review(rule, panel, tcfg), panel, price)
                             price = np.where(priced, new, price)
-                            d = np.where(priced, d0 * demand_level(price, eps, p0), d0)
+                            d = np.where(priced, d0 * demand_level(price, eps, p0, form), d0)
                             for m in metrics(d, price, eps, rev0, cost0):
                                 rows.append({"elasticity": eps, "start_occupancy": level,
                                              "block_dispersion": tau, "observation_noise": sigma,
@@ -262,7 +268,7 @@ def chatman_manville_sweep(
         "n_replications": n_replications,
         "rolls_forward_years": rolls_forward_years,
         "start_price_usd": start_price,
-        "demand_form": load_demand_form(),
+        "demand_form": form,
         "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
         "search_cost": {**scfg.__dict__, "level_units": "cruising minutes per cruiser when every block "
                         "(search_unit_spaces spaces) is full; occupancy_cap is swept (see occupancy_cap)"},
@@ -422,16 +428,28 @@ def window_dependence(paired: pd.DataFrame, year: int | None = None) -> pd.DataF
 
 def ordering_violations(sweep: pd.DataFrame, comparator: str = "avg_occupancy",
                         reference: str = "min_vacancy_peak") -> pd.DataFrame:
-    """Replication-years in which `comparator` does NOT have at least the reference's search cost and total surplus.
+    """Replication-years in which `comparator` has less search cost or less total surplus than `reference`.
 
-    A mean over the same window as a 95th percentile is never above it, so with the same
-    band and step the mean rule never raises what the peak rule holds: it prices at or below
-    the peak rule on every block-hour, where total surplus (consumer surplus + revenue) is
-    higher at the lower price and search cost higher at the higher occupancy, in every
-    replication-year. An empty frame is that identity holding; it is a property of mean <=
-    q95, not a finding, and it is what makes the sign of the paired tables' breakeven a
-    property of the design for same-instrument pairs (`paired_table`). The same holds for
-    `mean_zone` against `peak_zone` and `mean_band` against `peak_band`.
+    Two comparisons per replication-year and nothing else: the comparator's search cost is
+    not below the reference's, and its total surplus (consumer surplus + revenue,
+    `cs_change + revenue`) is not below the reference's. It does not compare revenue alone, and
+    it does not compare the price paths.
+
+    Why both are expected to hold for a mean rule against a peak rule over the same
+    block-hours: a mean is never above a 95th percentile of them, so with the same band and
+    step the mean rule prices at or below the peak rule (the premise; the function does not
+    test it, because the two rules' paths differ after the first review). Search cost
+    rises in occupancy, so the lower price searches at least as much. Total surplus falls in
+    price under every demand law in `demand.response`, because the revenue term cancels the
+    surplus term's loss on the cars served: d(CS + p q)/dp = p q'(p) <= 0, and 0 on a
+    rationed block. That holds above the revenue-maximising price too (p_ref / |e| under the
+    exponential law), where revenue itself falls in price. Revenue alone is not checked: below
+    the peak the mean rule earns less, above it more, so it has no sign in this comparison.
+
+    An empty frame is therefore the ordering holding on the sweep's draws. It is a property
+    of mean <= q95 and a monotone demand law, not a finding, and it is what makes the sign of
+    the paired tables' breakeven a property of the design for same-instrument pairs
+    (`paired_table`): `mean_zone` against `peak_zone`, `mean_band` against `peak_band`.
     """
     keys = AXES + ["replication", "year"]
     a = sweep[sweep["rule"] == comparator].set_index(keys)
@@ -445,3 +463,104 @@ def ordering_violations(sweep: pd.DataFrame, comparator: str = "avg_occupancy",
     out["total_surplus_cmp"] = surplus_cmp[bad]
     out["total_surplus_ref"] = surplus_ref[bad]
     return out.reset_index()
+
+
+# --------------------------------------------------------------------------- form sensitivity
+
+FORM_SENSITIVITY_REPLICATIONS = 20
+FORM_SENSITIVITY_FILES = ("cm_sweep_form_sensitivity.csv", "cm_sweep_form_beyond_peak.csv",
+                          "cm_sweep_form_sensitivity.meta.json")
+
+
+def form_sensitivity_sweeps(forms=FORMS, n_replications: int = FORM_SENSITIVITY_REPLICATIONS,
+                            seed: int = 42, max_workers: int | None = None) -> dict[str, pd.DataFrame]:
+    """The sweep at the config's grid under each demand form, `n_replications` replications.
+
+    Everything but the form and the replication count is the headline sweep's, and the draws
+    are the same (replication r of a short run is replication r of a long one), so the rows of
+    different forms are paired. Forms run in separate processes.
+    """
+    from concurrent.futures import ProcessPoolExecutor
+
+    forms = list(forms)
+    with ProcessPoolExecutor(max_workers=max_workers or len(forms)) as pool:
+        futures = {f: pool.submit(chatman_manville_sweep, n_replications=n_replications, seed=seed,
+                                  demand_form=f) for f in forms}
+        return {f: fut.result() for f, fut in futures.items()}
+
+
+def form_sensitivity_table(sweeps: dict[str, pd.DataFrame], comparisons=None,
+                           year: int | None = None) -> pd.DataFrame:
+    """Each comparison's breakeven and welfare-better count under each demand form.
+
+    One row per (form, comparator, reference, occupancy_cap) in the sweep's last year (or
+    `year`): `window_dependence` of that form's paired table, so the median and range over cells
+    of the per-cell median breakeven (cruising minutes, and minutes per arrival at the 95%
+    reference), `n_cells` and `cells_welfare_better` (cells in which the comparator's median
+    welfare change is above the reference's), with `form` and `n_replications` in front. Read a
+    row against the same comparison, cap and year under the other forms.
+    """
+    frames = []
+    for form, sweep in sweeps.items():
+        w = window_dependence(paired_table(sweep, comparisons), year)
+        w.insert(0, "n_replications", int(sweep["replication"].nunique()))
+        w.insert(0, "form", form)
+        frames.append(w)
+    return pd.concat(frames, ignore_index=True)
+
+
+def beyond_peak_table(sweeps: dict[str, pd.DataFrame], start_price: float | None = None) -> pd.DataFrame:
+    """Where the rules' prices sit relative to the revenue-maximising price of each form.
+
+    One row per (form, elasticity, rule): the revenue-maximising price of that form at that
+    elasticity anchored at the start price (`demand.response.revenue_maximising_price`; NaN
+    where the form has none, constant elasticity at |e| < 1), the number of rule-years (every
+    cell, replication and year) and the share whose mean priced-hour price is above it, over
+    all years and in the last year alone (`share_beyond_peak_last_year`, where the rules have
+    settled). The price paths differ across forms, so each form's sweep is read against its
+    own peak.
+    """
+    start_price = float(load_config("scenarios")["chatman_manville_sweep"]["start_price_usd"]
+                        if start_price is None else start_price)
+    rows = []
+    for form, sweep in sweeps.items():
+        one_cap = sweep[sweep["occupancy_cap"] == sweep["occupancy_cap"].iloc[0]]   # mean_price is cap-free
+        for (eps, rule), g in one_cap.groupby(["elasticity", "rule"], sort=True):
+            peak = revenue_maximising_price(float(eps), start_price, form)
+            peak = np.nan if peak is None else float(peak)
+            rows.append({"form": form, "elasticity": eps, "rule": rule, "start_price_usd": start_price,
+                         "revenue_peak_price_usd": peak, "n_rule_years": int(len(g)),
+                         "share_beyond_peak": float((g["mean_price"] > peak).mean()) if peak == peak else np.nan,
+                         "share_beyond_peak_last_year": float((g.loc[g["year"] == g["year"].max(), "mean_price"]
+                                                               > peak).mean()) if peak == peak else np.nan,
+                         "median_mean_price": float(g["mean_price"].median())})
+    return pd.DataFrame(rows)
+
+
+def save_form_sensitivity(sweeps: dict[str, pd.DataFrame], out_dir: Path) -> list[Path]:
+    """Write the form-sensitivity tables and their provenance (`FORM_SENSITIVITY_FILES`) to `out_dir`."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    table, beyond = form_sensitivity_table(sweeps), beyond_peak_table(sweeps)
+    paths = [out_dir / f for f in FORM_SENSITIVITY_FILES]
+    table.to_csv(paths[0], index=False, float_format="%.6g")
+    beyond.to_csv(paths[1], index=False, float_format="%.6g")
+    per_form = {f: sw.attrs.get("provenance", {}) for f, sw in sweeps.items()}
+    first = next(iter(per_form.values()))
+    meta = {
+        "created_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "forms": list(sweeps),
+        "n_replications": int(first.get("n_replications", 0)),
+        "seed": first.get("seed"),
+        "config_sha256": first.get("config_sha256"),
+        "git": first.get("git"),
+        "same_inputs_across_forms": {k: first.get(k) for k in (
+            "segment_source", "baseline", "elasticity_values", "start_occupancy", "block_dispersion",
+            "observation_noise", "occupancy_cap", "rules", "rolls_forward_years", "start_price_usd",
+            "pairing", "search_cost", "welfare_population")},
+        "per_form_demand_form": {f: v.get("demand_form") for f, v in per_form.items()},
+        "per_form_created_utc": {f: v.get("created_utc") for f, v in per_form.items()},
+        "headline": "outputs/tables/cm_sweep.meta.json (config's form and replications)",
+    }
+    paths[2].write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
+    return paths

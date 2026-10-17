@@ -24,12 +24,12 @@ def revenue_per_segment_hour(
 
 
 def _project_occupancy(occ: np.ndarray, p_old: np.ndarray, p_new: np.ndarray, elasticity: float,
-                       p_ref: np.ndarray | None = None) -> np.ndarray:
-    """Occupancy at p_new under the configured demand law; the reference price defaults to p_old."""
+                       p_ref: np.ndarray | None = None, form: str | None = None) -> np.ndarray:
+    """Occupancy at p_new under the demand law (default: the config's); the reference price defaults to p_old."""
     ref = p_old if p_ref is None else p_ref
     ok = p_old > 0
     factor = np.ones_like(occ, dtype=float)
-    factor[ok] = demand_factor(p_new[ok], p_old[ok], elasticity, ref[ok])
+    factor[ok] = demand_factor(p_new[ok], p_old[ok], elasticity, ref[ok], form)
     return np.clip(occ * factor, 0.0, 1.0)
 
 
@@ -157,11 +157,13 @@ def revenue_curve(
     elasticity: float,
     price_multiplier_grid: np.ndarray | None = None,
     hours=None,
+    form: str | None = None,
 ) -> pd.DataFrame:
     """Zone revenue against a uniform price multiplier, over each zone's priced hours.
 
     `baseline_prices` are the reference prices the elasticity applies at, so under the
-    exponential form the curve peaks at p_ref / |elasticity| (`demand.response`).
+    exponential form the curve peaks at p_ref / |elasticity| (`demand.response`). `form` is the
+    demand law (default: the config's); the Laffer comparison across forms passes each.
     """
     if price_multiplier_grid is None:
         price_multiplier_grid = np.linspace(0.5, 3.0, 26)
@@ -174,7 +176,7 @@ def revenue_curve(
     for m in price_multiplier_grid:
         p_old = panel["price_usd_per_hr"].to_numpy()
         p_new = p_old * m
-        occ_new = _project_occupancy(panel["occupancy"].to_numpy(), p_old, p_new, elasticity)
+        occ_new = _project_occupancy(panel["occupancy"].to_numpy(), p_old, p_new, elasticity, form=form)
         tmp = panel.assign(occupancy=occ_new, price_usd_per_hr=p_new)
         agg = _zone_revenue(segs, tmp, hours).rename(columns={"annual_revenue_usd": "revenue"})
         agg["expected_occupancy"] = agg["paid_hours"] / agg["capacity_hours"]

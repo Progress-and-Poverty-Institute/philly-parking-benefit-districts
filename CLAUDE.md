@@ -135,7 +135,38 @@ same one, so it never enters the seed range.
 form (`demand_form`, default `exponential`: q = q_ref exp(e (p - p_ref) / p_ref), elasticity
 e p / p_ref) says what happens away from it, so revenue peaks at p_ref / |e| and the Laffer
 figure has an interior maximum (audit finding 14). `constant_elasticity` and `linear` are
-selectable for sensitivity. Every caller passes the reference price: `apply_elasticity(...,
+selectable for sensitivity. **The form and the elasticities (-0.40 central, the -0.2 / -0.7
+bracket, the context shifts) are stated assumptions.** Lehner and Peer (2019, TR-A 121: 177-191;
+copy in `research/`) support only the sign of the rise of elasticity with price: a significantly
+negative coefficient on the hourly price relative to daily GDP per capita (p. 186; EPO -0.10 to
+-0.15 in Table 3, EPV -0.03 in all three specifications of Table 5; a cross-study gradient). The
+paper estimates no functional form, and its EPV slope against a constant of -0.33 is far shallower
+than the exponential's proportional rise: its gradient lies between constant elasticity and the
+exponential, and the three forms of the sensitivity bracket it (linear rises faster than
+either). Neither -0.40 nor the bracket is a reported estimate; for comparison Table 6
+(revealed preference, non-commuting) has 95% intervals EPV -0.45 / -0.18, EPD -0.46 / -0.15 and
+EPO -0.72 / -0.54, and the pooled mean EPV of published papers is -0.38 (p. 185). The prior is
+labelled the volume elasticity and the model applies it to occupancy, which in the paper's terms
+is EPO = EPD + EPV (p. 178). What the form implies is the content to state: elasticity doubles
+when the price doubles, and revenue peaks at p_ref / |e| ($10 for Center City Core at -0.4,
+$5.71 at -0.7; the sweep's $2 start price peaks at $5.00 and $2.86). The research note's "revenue rises monotonically" for the central case is
+the constant-elasticity reading (no peak for |e| < 1), which the default form does not share.
+
+**Per-zone anchoring is an assumption.** Each zone's prior is its elasticity at that zone's own
+posted rate, so -0.40 is the elasticity at $1.50 in Fishtown and at $4.00 in Center City Core;
+the zones therefore do not share one demand curve. A single exponential law with -0.40 at
+$1.50 would give -1.07 at $4.00. The sensitivity is one citywide law: e at a single reference
+price p0, each zone's elasticity at its posted rate following from the law
+(`citywide_zone_elasticities`; re-anchoring a law at a point on its own curve leaves the curve
+unchanged, so the runner's per-zone machinery follows the single law exactly when given those
+elasticities, for every form). `run_scenario(..., citywide_reference_price=p0)` runs it;
+`diagnostics["demand_law"]` records the anchoring, p0 and every zone's elasticity at its
+posted rate. p0 is `runner.citywide_reference_price`, the capacity-weighted mean posted rate of
+the priced segments: the central prior is one number for the city, so it sits at the price of
+the average priced space (a zone's own rate would make that zone the reference and the others
+extrapolations). Script 05 writes it as the `citywide_law_*` columns of `scenario_ranges.csv`
+(and `law` / `law_reference_price` in `scenario_runs.csv`), at the central elasticity and
+headline seed; it is a different run, never part of the seed range. Every caller passes the reference price: `apply_elasticity(...,
 reference_price=<posted rates>)` raises without one; `revenue_curve` and
 `_project_occupancy` use the baseline price; `optimal_price_arnott_inci` takes
 `reference_price` (the runner passes the status-quo rate, not the rate in force);
@@ -207,11 +238,20 @@ For a same-instrument pair (`mean_zone` vs `peak_zone`, `mean_band` vs `peak_ban
 of the breakeven is a property of the design, not a finding: a mean is never above a q95 of
 the same block-hours, so the mean rule prices at or below the peak rule, total surplus
 (surplus + revenue) is higher at the lower price and search cost higher at the higher
-occupancy, in every replication; `ordering_violations` is the test of that identity. The
+occupancy, in every replication; `ordering_violations` tests it. The
 sweep's content for such pairs is the SIZE of the breakeven against the cruising times the
 config cites (`search_cost.cited_cruising_minutes`: Shoup 2006, 3.5-14 minutes, per cruiser,
 the same units as the breakeven; `cm_breakeven_*.png` shade that range). The sign is not an identity across instruments or for
 `seattle_rule`.
+
+**What `ordering_violations` checks.** Two things per replication-year: the comparator's search
+cost is not below the reference's, and its total surplus (`cs_change + revenue`) is not below the
+reference's. Not revenue alone (the mean rule earns less below the revenue peak and more above
+it, so revenue has no sign there) and not the price paths (the premise that the mean rule prices
+at or below the peak rule is the argument for the check, not something it tests). Total surplus
+falls in price under every form, including above the revenue peak, because d(CS + p q)/dp =
+p q'(p) <= 0 (and 0 on a rationed block); so an empty frame is the ordering holding on the
+sweep's draws, a property of mean <= q95 and a monotone demand law.
 
 **Axes** (`chatman_manville_sweep:` in `scenarios.yaml`): elasticity; `start_occupancy` m
 (each zone's priced-hour mean at the start price, set by scaling its latent demand; the band
@@ -235,6 +275,27 @@ mechanism study on a fixture: the within-day shape is the baseline's, the search
 parameters are unmeasured, and the fixture's zones are nothing like Philadelphia's. Provenance
 (git state captured when the run starts) is in `outputs/tables/cm_sweep.meta.json`. Regenerate
 with `scripts/07_export_report_assets.py --rebuild-cm-sweep` (over an hour at 100 replications).
+
+**Demand-form sensitivity and where the cells sit.** The headline sweep is under the
+exponential form. `scripts/07_export_report_assets.py --rebuild-cm-form-sensitivity` (run alone,
+about 15 minutes) reruns the sweep at the same grid and draws under the exponential, linear and
+constant-elasticity forms at 20 replications each (`FORM_SENSITIVITY_REPLICATIONS`; replication r
+of a short run is replication r of a long one) and writes, to `outputs/tables/`:
+`cm_sweep_form_sensitivity.csv` (per form, comparison and cap, in the last year: the median and
+range over cells of the per-cell median breakeven and welfare difference, `n_cells`,
+`cells_welfare_better`; the exponential rows are the headline form at 20 replications),
+`cm_sweep_form_beyond_peak.csv` (per form, elasticity and rule: that form's revenue-maximising
+price, the share of rule-years whose mean price is above it, over all years and in the last year)
+and `cm_sweep_form_sensitivity.meta.json` (provenance; tied to the config like the sweep's).
+The forms agree near the start price and disagree where the rules go: the peak rules settle
+at roughly two to two and a half times the start price, where the exponential elasticity is
+that multiple of e, and at e = -0.7 the
+exponential revenue peak ($2.86) is below that price, so most peak-rule rule-years there sit
+beyond the point where the law's own revenue falls (the beyond-peak file has the share; the
+mean and Seattle rules stay below the peak). The cells at -0.7 are statements about a law
+extrapolated past its revenue peak; the -0.2 and -0.4 cells sit mostly below it. Constant
+elasticity has no peak at |e| < 1 and the linear form has a choke price, so a statement
+about the sweep is a statement about its form until the form-sensitivity rows agree.
 
 ## Script 06 synthetic fallback
 
@@ -429,6 +490,11 @@ two-cycle pools both phases in each range cell. The ranges carry `search_cost_to
 `cs_change_total`, `surplus_plus_revenue_change` and the at-bound counts like any other row.
 `incidence_by_decile.png`
 is a constant placeholder, stamped as such in the figure; `Report.tex` still includes it.
+
+Script 06 draws the Center City Core Laffer curve twice at -0.4: `laffer_curve_ccc.png` under
+the configured form, and `laffer_curve_ccc_forms.png` with all three forms on the same axes
+(`viz.charts.laffer_curve_forms`; `revenue_curve(..., form=)`), so the existence and location of
+the peak are visibly the form's.
 
 ## Streamlit app
 
