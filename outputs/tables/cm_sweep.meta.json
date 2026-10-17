@@ -10,11 +10,11 @@
     "demand_baseline": "96601806b8063d5e4320d4587c179f9c3ca812b336aae5b2a83bad926a77f01c",
     "elasticity_priors": "4a37868d4199b067d64d921169a009933f9a3cd6bd42aee9803dd0a5d92a0604",
     "ppa_ingest": "55a451be56f214667c9a7cceb8f23126070923669c569deb70c468cb03c65a06",
-    "pricing_rules": "6c95ce2d0d7a3a676dd02aa9390d5605fc26faac104d7792129c074f0890f3d2",
-    "scenarios": "6f09acd1b9bbad430eba3635b8c69ebd3ad0ac596ef687a92fa94dda103851f2",
+    "pricing_rules": "ac7ad4acb359a224c8a03a32eb31558a831b953ac95ca6fdce5b5a934d3108a1",
+    "scenarios": "ffd27adb56731b4551e346d067946e0a18b91027dbab00bab165cb88881401d2",
     "zones": "804af6bc50fa583729643e85972bad75702e3dca910258c27283d49cbfcf7d83"
   },
-  "created_utc": "2026-10-16T18:19:09+00:00",
+  "created_utc": "2026-10-17T05:27:54+00:00",
   "demand_form": "exponential",
   "elasticity_values": [
     -0.2,
@@ -22,13 +22,18 @@
     -0.7
   ],
   "git": {
-    "commit": "7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc",
-    "dirty": true
+    "commit": "dec309034fd2a381255d4f644970da4241ac4c4f",
+    "dirty": false
   },
   "n_replications": 100,
   "observation_noise": [
     0.0,
     0.1
+  ],
+  "occupancy_cap": [
+    0.95,
+    0.99,
+    0.999
   ],
   "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
   "rolls_forward_years": 8,
@@ -40,8 +45,9 @@
     "seattle_rule"
   ],
   "search_cost": {
+    "level_units": "minutes per arrival at a full block of reference_capacity spaces; occupancy_cap is swept (see occupancy_cap)",
     "mean_duration_hr": 1.5,
-    "minutes_at_reference": 5.0,
+    "minutes_at_full_block": 8.1,
     "occupancy_cap": 0.99,
     "reference_capacity": 10.0,
     "reference_occupancy": 0.95,
@@ -62,5 +68,6 @@
     0.75,
     0.9
   ],
-  "start_price_usd": 2.0
+  "start_price_usd": 2.0,
+  "welfare_population": "served cars: surplus on min(demand, capacity), revenue and search cost on served arrivals"
 }
