@@ -1,0 +1,126 @@
+# External benchmarks: figures the model is compared with but never fitted to.
+#
+# Nothing in the model reads these values. They feed one diagnostic (script 06 writes
+# outputs/tables/revenue_benchmark.csv and revenue_gap_decomposition.csv) and the tests that
+# check those files against this one. Changing a figure here moves no scenario output.
+#
+# Every figure is quoted from the document named beside it. A gap factor with no source is
+# written "no source found" in the decomposition; no value is filled from memory.
+
+benchmarks:
+  ppa_on_street_meter_revenue_fy2025:
+    role: primary
+    description: >-
+      Philadelphia Parking Authority, On Street Division, "Revenue - Meters", year to date,
+      twelve months ending 3/31/2025 (fiscal year 2025; the Authority's fiscal year starts
+      April 1).
+    value_usd: 40795664
+    period: "FY2025 (twelve months ending 2025-03-31)"
+    period_months: 12
+    line_name: "Revenue - Meters"
+    division: "On Street Division (statement header: IS_On Street - Current Format)"
+    prior_year_value_usd: 39860097     # same line, "PRIOR YEAR" column (FY2024)
+    budget_value_usd: 38814742         # same line, "BUDGET" column
+    audited: false
+    status_label: "UNAUDITED - FOR INTERNAL PURPOSES ONLY (statement footer)"
+    statement_url: https://philapark.org/wp-content/uploads/March-2025-IS2-Statement.pdf
+    statement_page: 1
+    statement_date: 2025-05-07         # "Date:" printed at the top of page 1
+    retrieved: 2026-10-17
+    what_it_is: >-
+      Gross meter and kiosk revenue as the Authority books it for the whole city, before
+      program fees, payroll or any other cost.
+    what_it_is_not: >-
+      Not net of costs. Excludes tickets ("Revenue - Tickets" is a separate line), residential
+      permits ("Revenue - RPP") and the credit card convenience fee line. It covers every
+      metered block in the city, so it is wider than the model's five zone boxes.
+    mobile_payments: >-
+      The statement does not say how mobile-app payments are booked. Its only meter lines are
+      "Revenue - Meters" and "Meter Costs"; no line names the app or kiosk payments. Whether
+      app payments sit inside "Revenue - Meters" is not established by this document.
+    rate_regime: >-
+      Posted rates before the 1 July 2025 Center City increase (Core $3.00 to $4.00, Area
+      $2.50 to $3.50, long-term meters $1.50 to $2.50). zones.yaml carries the post-increase
+      rates, so this figure is the pre-increase level of the same revenue stream.
+
+  ppa_on_street_meter_revenue_fy2026_nine_months:
+    role: context
+    description: >-
+      Same line, nine months ending 12/31/2025 (fiscal year 2026 to date). The July 2025
+      increase falls inside this period, so April to June is at the old rates.
+    value_usd: 35059833
+    period: "FY2026 nine months (April-December 2025)"
+    period_months: 9
+    line_name: "Revenue - Meters"
+    division: "On Street Division"
+    prior_year_value_usd: 30749658     # nine months ending 12/31/2024
+    budget_value_usd: 31037099
+    december_month_usd: 3941452        # "CURRENT PERIOD", December 2025 alone
+    audited: false
+    status_label: "UNAUDITED - FOR INTERNAL PURPOSES ONLY (statement footer)"
+    statement_url: https://philapark.org/wp-content/uploads/December-2025-IS2-Statement.pdf
+    statement_page: 1
+    retrieved: 2026-10-17
+    what_it_is: "As the primary benchmark."
+    what_it_is_not: "As the primary benchmark. A nine-month figure annualised by 12/9 is not a fiscal year."
+    mobile_payments: "As the primary benchmark: not stated."
+    rate_regime: "Mixed: three months at the old rates, six at the new."
+
+# Sources for the factors of the identity in revenue_gap_decomposition.csv. A factor listed
+# with `sources: []` has none found; the decomposition then shows only the value that factor
+# would need, all else equal, to close the gap.
+gap_factors:
+  priced_spaces:
+    unit: spaces
+    sources:
+      - id: controller_2020
+        value: 15406
+        label: "City Controller audit: PPA On-Street Parking Unit metered spaces"
+        citation: >-
+          Office of the City Controller, "Report on the Philadelphia Parking Authority's
+          On-Street Parking Expenses and Other Matters, Fiscal Year 2016 - Fiscal Year 2019"
+          (released 2020-12-09), p. 8 and Executive Summary p. i: "The PPA's OSP Unit has
+          15,406 spaces" ("15,406 on-street metered spaces"). The same report's p. 13 quotes
+          the Authority's website at the time as "approximately 9,000 single-space parking
+          meters and 1,030 multi-space kiosks that control an additional 6,000 spaces". The
+          year of the 15,406 count is in Table II of the report, which is an image and was not
+          read as text.
+        url: https://controller.phila.gov/wp-content/uploads/2020/12/PPA-Audit-Report-FINAL.pdf
+        kind: city_audit
+        verified: true
+      - id: dnb_profile
+        value: 14500
+        label: "Dun & Bradstreet business profile (third party)"
+        citation: >-
+          Dun & Bradstreet business-directory profile of The Philadelphia Parking Authority:
+          "14,500 on-street metered parking spaces". THIRD-PARTY AND UNVERIFIED: the page
+          returned HTTP 403 when fetched on 2026-10-17, so the figure is taken from a search
+          result snippet and from the session that commissioned this benchmark; it is not
+          checked against a Parking Authority or City source.
+        url: https://www.dnb.com/business-directory/company-profiles.the_philadelphia_parking_authority.2f2399e57577acce69c20e473b09e12d.html
+        kind: third_party
+        verified: false
+  annual_priced_hours:
+    unit: hours per space per year
+    # Searched 2026-10-17: the Authority's July 2025 announcement
+    # (https://philapark.org/?p=28772) gives rates and effective date but no hours; the
+    # visitphilly.com parking page says hours are posted on signs by district; the City code
+    # page (codelibrary.amlegal.com) returned 403. No document read states a metered-hours
+    # schedule.
+    sources: []
+  mean_occupancy_priced_hours:
+    unit: share of priced space-hours occupied
+    # The model's occupancy is a stated assumption (config/demand_baseline.yaml). The Parking
+    # Authority's session data, requested under the Right-to-Know Law, would measure it.
+    sources: []
+  mean_posted_price:
+    unit: usd per hour
+    # Rates by zone are in zones.yaml (Authority announcement, philapark.org/?p=28772, for
+    # Center City). No source gives a city-wide space-weighted mean of the rates in force.
+    sources: []
+  paid_share:
+    unit: share of occupied space-hours that pay
+    # Searched 2026-10-17: no Philadelphia measurement of placard exemption, non-payment or
+    # free-parking use at meters. The 2020 Controller audit read (the keyword search covered
+    # placard, exempt, unpaid, non-payment, compliance) has no such figure.
+    sources: []

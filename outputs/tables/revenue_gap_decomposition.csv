@@ -1,0 +1,38 @@
+scope,factor,unit,model_value,external_value,external_source,external_verified,model_over_external,value_needed_to_close_gap,note
+cca,priced_spaces,spaces,7777.0,,,,,,capacity of priced segments; one curb side (length / 7 m x 0.85)
+cca,annual_priced_hours,hours per space per year,3744.0,,,,,,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+cca,mean_occupancy_priced_hours,share,0.5254099647935879,,,,,,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+cca,mean_posted_price,usd per hour,3.5,,,,,,"zones.yaml posted rates, capacity-hour weighted"
+cca,price_occupancy_interaction,ratio,1.0,,,,,,1 within a zone (one posted rate); city total is the cross-zone covariance
+cca,paid_share,share,1.0,,,,,,revenue.forecast assumes full compliance
+ccc,priced_spaces,spaces,7328.0,,,,,,capacity of priced segments; one curb side (length / 7 m x 0.85)
+ccc,annual_priced_hours,hours per space per year,3744.0,,,,,,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+ccc,mean_occupancy_priced_hours,share,0.5997862615431425,,,,,,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+ccc,mean_posted_price,usd per hour,4.0,,,,,,"zones.yaml posted rates, capacity-hour weighted"
+ccc,price_occupancy_interaction,ratio,1.0,,,,,,1 within a zone (one posted rate); city total is the cross-zone covariance
+ccc,paid_share,share,1.0,,,,,,revenue.forecast assumes full compliance
+fishtown,priced_spaces,spaces,2655.0,,,,,,capacity of priced segments; one curb side (length / 7 m x 0.85)
+fishtown,annual_priced_hours,hours per space per year,3744.0,,,,,,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+fishtown,mean_occupancy_priced_hours,share,0.4684350809088202,,,,,,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+fishtown,mean_posted_price,usd per hour,1.5,,,,,,"zones.yaml posted rates, capacity-hour weighted"
+fishtown,price_occupancy_interaction,ratio,1.0,,,,,,1 within a zone (one posted rate); city total is the cross-zone covariance
+fishtown,paid_share,share,1.0,,,,,,revenue.forecast assumes full compliance
+south_philly,priced_spaces,spaces,2728.0,,,,,,capacity of priced segments; one curb side (length / 7 m x 0.85)
+south_philly,annual_priced_hours,hours per space per year,3120.0,,,,,,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+south_philly,mean_occupancy_priced_hours,share,0.4529203411099994,,,,,,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+south_philly,mean_posted_price,usd per hour,1.5,,,,,,"zones.yaml posted rates, capacity-hour weighted"
+south_philly,price_occupancy_interaction,ratio,0.9999999999999999,,,,,,1 within a zone (one posted rate); city total is the cross-zone covariance
+south_philly,paid_share,share,1.0,,,,,,revenue.forecast assumes full compliance
+ucity,priced_spaces,spaces,2165.0,,,,,,capacity of priced segments; one curb side (length / 7 m x 0.85)
+ucity,annual_priced_hours,hours per space per year,3744.0,,,,,,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+ucity,mean_occupancy_priced_hours,share,0.5267392448173617,,,,,,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+ucity,mean_posted_price,usd per hour,2.0,,,,,,"zones.yaml posted rates, capacity-hour weighted"
+ucity,price_occupancy_interaction,ratio,1.0,,,,,,1 within a zone (one posted rate); city total is the cross-zone covariance
+ucity,paid_share,share,1.0,,,,,,revenue.forecast assumes full compliance
+total,priced_spaces,spaces,22653.0,15406.0,City Controller audit: PPA On-Street Parking Unit metered spaces (https://controller.phila.gov/wp-content/uploads/2020/12/PPA-Audit-Report-FINAL.pdf),True,1.4704011424120473,6569.415145944804,capacity of priced segments; one curb side (length / 7 m x 0.85)
+total,priced_spaces,spaces,22653.0,14500.0,Dun & Bradstreet business profile (third party) (https://www.dnb.com/business-directory/company-profiles.the_philadelphia_parking_authority.2f2399e57577acce69c20e473b09e12d.html),False,1.5622758620689656,6569.415145944804,capacity of priced segments; one curb side (length / 7 m x 0.85)
+total,annual_priced_hours,hours per space per year,3668.8544563633955,,no source found,,,1063.9751041319375,zones.yaml priced windows x 52 weeks; total is the capacity-weighted mean
+total,mean_occupancy_priced_hours,share,0.5358542623809799,,no source found,,,0.15539880401292058,"stated baseline (demand_baseline.yaml), capacity-hour weighted"
+total,mean_posted_price,usd per hour,3.074735340491028,,no source found,,,0.8916793764884788,"zones.yaml posted rates, capacity-hour weighted"
+total,price_occupancy_interaction,ratio,1.0273120587789193,,not a lever: a residual of the other factors,,,0.29792254441151156,1 within a zone (one posted rate); city total is the cross-zone covariance
+total,paid_share,share,1.0,,no source found,,,0.29000199293448126,revenue.forecast assumes full compliance
