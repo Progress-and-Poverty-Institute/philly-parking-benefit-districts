@@ -231,6 +231,13 @@ def test_script_05_writes_ranges_with_every_elasticity_and_seed(script05, monkey
     assert rev["pessimistic_lo"] != rev["optimistic_lo"]      # the elasticity reaches the run
     assert rev["seed_lo"] < rev["seed_hi"]                    # and so does the seed
     assert rev["n_seeds"] == 4
+    # the floor sensitivity: one extra run (central elasticity, headline seed, zone floors removed)
+    assert set(runs["floors"]) == {"zones", "global_only"}
+    floor_runs = runs[runs["floors"] == "global_only"]
+    assert set(floor_runs["elasticity_scenario"]) == {"central"} and set(floor_runs["seed"]) == {5}
+    assert "n_zones_at_floor" in set(runs["metric"])
+    assert rev["no_zone_floors_lo"] == pytest.approx(
+        floor_runs[(floor_runs["scenario"] == "seattle") & (floor_runs["metric"] == "total_revenue")]["value"].min())
 
 
 # --- the seed reaches the outputs ------------------------------------------------------------

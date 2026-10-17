@@ -2,6 +2,14 @@
 # Mirrors the post-July-2025 PPA rate structure (research doc §4.3) and adds
 # pilot expansion zones. Geometries are resolved at build time via
 # phillyparking.spatial.zones.resolve_zones() against the segment table.
+#
+# Floors and ceilings (`floor`, `ceiling` per zone) bound every rate the Seattle and
+# Arnott-Inci rules set. Both are STATED ASSUMPTIONS: no Parking Authority minimum or maximum
+# rate is in the repository's documents (research note section 4.3 lists posted rates only),
+# so none is sourced. Where a floor binds it sets the rate, so each run reports
+# `n_zones_at_floor` and the Arnott-Inci "target slack" (diagnostics `zone_pricing`), and
+# scenario_ranges.csv carries a `no_zone_floors_*` sensitivity (script 05: zone floors
+# removed, the global floor in pricing_rules.yaml still applies).
 
 zones:
   - id: ccc
@@ -9,7 +17,7 @@ zones:
     description: Arch–Locust × 4th–20th
     current_rate_usd_per_hr: 4.00
     long_term_meter_rate_usd_per_hr: 2.50
-    floor: 1.00
+    floor: 1.00   # stated assumption, no source
     ceiling: 8.00
     priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
     bbox: { west: -75.170, south: 39.945, east: -75.140, north: 39.960 }
@@ -20,7 +28,7 @@ zones:
     description: Spring Garden–Bainbridge × Schuylkill–Delaware (excl. Core)
     current_rate_usd_per_hr: 3.50
     long_term_meter_rate_usd_per_hr: 2.50
-    floor: 1.00
+    floor: 1.00   # stated assumption, no source
     ceiling: 7.00
     priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
     bbox: { west: -75.190, south: 39.935, east: -75.130, north: 39.975 }
@@ -30,7 +38,7 @@ zones:
     name: University City
     description: Around UPenn / Drexel
     current_rate_usd_per_hr: 2.00
-    floor: 1.00
+    floor: 1.00   # stated assumption, no source
     ceiling: 6.00
     priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
     bbox: { west: -75.205, south: 39.945, east: -75.180, north: 39.965 }
@@ -39,7 +47,7 @@ zones:
   - id: south_philly
     name: South Philadelphia commercial corridors
     current_rate_usd_per_hr: 1.50
-    floor: 0.50
+    floor: 0.50   # stated assumption, no source
     ceiling: 4.00
     priced_hours: { weekday: [8, 18], saturday: [8, 18], sunday: null }
     bbox: { west: -75.180, south: 39.910, east: -75.140, north: 39.935 }
@@ -48,7 +56,7 @@ zones:
   - id: fishtown
     name: Fishtown / Northern Liberties commercial corridors
     current_rate_usd_per_hr: 1.50
-    floor: 0.50
+    floor: 0.50   # stated assumption, no source
     ceiling: 4.00
     priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
     bbox: { west: -75.145, south: 39.965, east: -75.115, north: 39.985 }

@@ -110,18 +110,6 @@ def _zone_current_prices() -> pd.DataFrame:
     ])
 
 
-def _zone_meta() -> pd.DataFrame:
-    zones = load_config("zones")["zones"]
-    return pd.DataFrame([
-        {
-            "zone_id": z["id"],
-            "floor": float(z.get("floor", 0.5)),
-            "ceiling": float(z.get("ceiling", 10.0)),
-        }
-        for z in zones
-    ])
-
-
 def _segment_prices(segments: pd.DataFrame, zone_prices: pd.DataFrame) -> pd.DataFrame:
     return segments[["segment_id", "zone_id"]].merge(zone_prices, on="zone_id", how="left")
 
@@ -138,20 +126,40 @@ def _baseline(segments=None, baseline_panel=None, seed: int = 42):
 
 
 def _seattle_step(occupancy: pd.DataFrame, current_prices: pd.DataFrame, segments: pd.DataFrame,
-                  bands: list) -> pd.DataFrame:
-    from phillyparking.pricing.seattle_rule import adjust_zone_prices
+                  bands: list, use_zone_floors: bool = True) -> pd.DataFrame:
+    from dataclasses import replace
+    from phillyparking.pricing.seattle_rule import adjust_zone_prices, load_seattle_config
     occ = occupancy.drop(columns=[c for c in ("zone_id", "capacity") if c in occupancy.columns])
     occ = occ.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
-    return adjust_zone_prices(occ, current_prices, bands)
+    cfg = replace(load_seattle_config(), use_zone_floors=use_zone_floors)
+    return adjust_zone_prices(occ, current_prices, bands, config=cfg)
 
 
-def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elasticity, reference_prices):
+# Columns of an Arnott-Inci review beyond the rates themselves: what the busiest hour and the
+# unclipped price were, and which bound (if any) the rate ended on. They describe the review
+# and are kept in the run's diagnostics, not on the price frame the next review reads.
+_ARNOTT_REVIEW_COLS = ("target_occ", "target_slack", "unclipped_price", "floor", "ceiling",
+                       "at_floor", "at_ceiling")
+
+
+def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elasticity, reference_prices,
+                        use_zone_floors: bool = True):
     """Next zone rates under the Arnott-Inci step; `reference_prices` are the posted rates the
-    elasticity applies at (`demand.response`), `current_prices` the rates in force."""
+    elasticity applies at (`demand.response`), `current_prices` the rates in force.
+
+    Besides `price_usd_per_hr` (the unclipped solution held to the zone's floor and ceiling,
+    `seattle_rule.zone_bounds`) each row carries the review's `_ARNOTT_REVIEW_COLS`. The target
+    slack is the target occupancy minus the busiest priced hour's occupancy: positive when the
+    zone never reaches the target at the rate it has, in which case the unclipped price is
+    the rate that would fill the busiest hour to the target and may sit below any floor (or
+    below zero, where no non-negative rate attains it).
+    """
+    from dataclasses import replace
     from phillyparking.pricing.arnott_inci import optimal_price_arnott_inci
     from phillyparking.pricing.priced_hours import frame_priced_mask
+    from phillyparking.pricing.seattle_rule import load_seattle_config, zone_bounds
     rows = []
-    z_meta = _zone_meta().set_index("zone_id")
+    bounds_cfg = replace(load_seattle_config(), use_zone_floors=use_zone_floors)
     ref = reference_prices.set_index("zone_id")["price_usd_per_hr"]
     panel_drop = panel.drop(columns=[c for c in ("zone_id", "capacity") if c in panel.columns])
     panel_z = panel_drop.merge(segments[["segment_id", "zone_id", "capacity"]], on="segment_id", how="left")
@@ -188,10 +196,13 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
             target_vacancy=target_vacancy,
             reference_price=float(ref[zid]) if zid in ref.index else base_price,
         )
-        floor = z_meta.loc[zid, "floor"] if zid in z_meta.index else 0.5
-        ceiling = z_meta.loc[zid, "ceiling"] if zid in z_meta.index else 10.0
-        rows.append({"zone_id": zid, "price_usd_per_hr": float(np.clip(p, floor, ceiling)),
-                     "peak_occ": peak_occ})
+        floor, ceiling = zone_bounds(str(zid), bounds_cfg)
+        price = float(np.clip(p, floor, ceiling))
+        target_occ = 1.0 - target_vacancy
+        rows.append({"zone_id": zid, "price_usd_per_hr": price, "peak_occ": peak_occ,
+                     "target_occ": target_occ, "target_slack": target_occ - peak_occ,
+                     "unclipped_price": float(p), "floor": floor, "ceiling": ceiling,
+                     "at_floor": bool(price <= floor + 1e-9), "at_ceiling": bool(price >= ceiling - 1e-9)})
     return pd.DataFrame(rows)
 
 
@@ -302,7 +313,10 @@ def run_scenario(
     rolls_forward_years: int | None = None,
     seed: int = 42,
     segment_source: dict | None = None,
+    use_zone_floors: bool = True,
 ) -> ScenarioResults:
+    """Run one scenario. `use_zone_floors=False` is the floor sensitivity: the `floor` of each
+    zone in `zones.yaml` is ignored and only the global floor bounds a rate from below."""
     from phillyparking.elasticity.scenarios import get_scenario, apply_elasticity
 
     cfg = load_config("scenarios")["scenarios"]
@@ -332,7 +346,7 @@ def run_scenario(
     panel = baseline_with_price.copy()
     prices = current_prices.copy()
     diagnostics: dict = {"policy": policy_kind, "max_years": rolls_forward_years,
-                         "target_vacancy": target_vac}
+                         "target_vacancy": target_vac, "use_zone_floors": bool(use_zone_floors)}
     # Zones the fixture or the real segments carry that zones.yaml does not configure have
     # no price and no priced hours: they earn nothing and are not scored for cruising.
     configured = set(current_prices["zone_id"])
@@ -351,9 +365,10 @@ def run_scenario(
         from phillyparking.pricing.priced_hours import hourly_prices
         if policy_kind == "seattle_rule":
             bands = policy["time_of_day_bands"]
-            step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands)  # noqa: E731
+            step = lambda pnl, pr: _seattle_step(pnl, pr, segments, bands, use_zone_floors)  # noqa: E731
         else:
-            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, target_vac, elasticity, current_prices)  # noqa: E731
+            step = lambda pnl, pr: _arnott_zone_prices(pnl, segments, pr, target_vac, elasticity, current_prices,
+                                                       use_zone_floors)  # noqa: E731
         # Review annually until the prices stop changing (a fixed point) or repeat with
         # period 2, up to rolls_forward_years reviews. Nothing else in the map moves from
         # year to year, so the state at a fixed point is the rule's long-run outcome and
@@ -361,8 +376,12 @@ def run_scenario(
         history = [(0, panel, prices, _price_vector(prices))]
         converged_year = None
         cycle = None
+        reviews = []   # Arnott-Inci only: every review's per-zone detail
         for year in range(1, max(rolls_forward_years, 1) + 1):
             new_prices = step(panel, prices)
+            if policy_kind == "arnott_inci":
+                reviews.append(new_prices)
+                new_prices = new_prices.drop(columns=list(_ARNOTT_REVIEW_COLS))
             vec = _price_vector(new_prices)
             if _same_prices(vec, history[-1][3]):
                 converged_year = year - 1
@@ -397,6 +416,13 @@ def run_scenario(
         elif converged_year is None:
             logger.warning("%s: prices still moving after %d reviews", name, history[-1][0])
         diagnostics["final_prices"] = prices.to_dict("records")
+        if reviews:
+            # The first review is against the posted rates (is the target reachable at all?);
+            # the last against the state the run ends in (how far below it the zone stays).
+            diagnostics["zone_pricing"] = {
+                "first_review": reviews[0].to_dict("records"),
+                "last_review": reviews[-1].to_dict("records"),
+            }
     else:
         raise ValueError(f"Unsupported pricing_policy.kind: {policy_kind}")
 

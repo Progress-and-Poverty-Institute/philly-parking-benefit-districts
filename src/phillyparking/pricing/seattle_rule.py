@@ -34,6 +34,9 @@ class SeattleRuleConfig:
     max_step_per_cycle: int = 2
     floor: float = 0.50
     ceiling: float = 10.00
+    # False: ignore each zone's `floor` in zones.yaml and bound prices below by the global
+    # floor alone (the floor sensitivity; ceilings are unchanged).
+    use_zone_floors: bool = True
 
 
 def load_seattle_config() -> SeattleRuleConfig:
@@ -55,13 +58,17 @@ def band_label(band) -> str:
 
 
 def zone_bounds(zone_id: str | None, fallback: SeattleRuleConfig) -> tuple[float, float]:
-    """(floor, ceiling) for a zone from `zones.yaml`; the global bounds for an unlisted zone."""
+    """(floor, ceiling) for a zone from `zones.yaml`; the global bounds for an unlisted zone.
+
+    With `fallback.use_zone_floors` False the floor is the global one for every zone.
+    """
     if zone_id is None:
         return fallback.floor, fallback.ceiling
     zones = load_config("zones")["zones"]
     for z in zones:
         if z["id"] == zone_id:
-            return float(z.get("floor", fallback.floor)), float(z.get("ceiling", fallback.ceiling))
+            floor = float(z.get("floor", fallback.floor)) if fallback.use_zone_floors else fallback.floor
+            return floor, float(z.get("ceiling", fallback.ceiling))
     return fallback.floor, fallback.ceiling
 
 
