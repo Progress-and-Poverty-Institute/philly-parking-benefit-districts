@@ -6,15 +6,15 @@
     0.6
   ],
   "config_sha256": {
-    "allocation": "9973d2abac6c8cc9fbe51b1c38a8d07da10f4bdf3d685bbf6406d8e435803f19",
-    "demand_baseline": "96601806b8063d5e4320d4587c179f9c3ca812b336aae5b2a83bad926a77f01c",
-    "elasticity_priors": "4a37868d4199b067d64d921169a009933f9a3cd6bd42aee9803dd0a5d92a0604",
-    "ppa_ingest": "55a451be56f214667c9a7cceb8f23126070923669c569deb70c468cb03c65a06",
+    "allocation": "6746cd7879eef61cbbd6a3993474b5111b8353a2f2d8992a542ad25047c3b6ca",
+    "demand_baseline": "f610a9e7124576071d749fd9d6898b82cd0673f9ccaeae21ddc9c581ce0c3489",
+    "elasticity_priors": "f00ef9eed1e6e70bd28b5de15dc103431a2b292197fb1d072efe77ea00fcfd9f",
+    "ppa_ingest": "ca374e19d82ef7f0ebe668d4c69c3f6087d0eb2d4be956114062e8b53d775486",
     "pricing_rules": "ac7ad4acb359a224c8a03a32eb31558a831b953ac95ca6fdce5b5a934d3108a1",
     "scenarios": "ffd27adb56731b4551e346d067946e0a18b91027dbab00bab165cb88881401d2",
-    "zones": "804af6bc50fa583729643e85972bad75702e3dca910258c27283d49cbfcf7d83"
+    "zones": "3759a0af8d64c4a46b1532373429d7bb81463f7bac503a53128a0e79a1558bef"
   },
-  "created_utc": "2026-10-17T05:27:54+00:00",
+  "created_utc": "2026-10-17T15:24:20+00:00",
   "demand_form": "exponential",
   "elasticity_values": [
     -0.2,
@@ -22,8 +22,8 @@
     -0.7
   ],
   "git": {
-    "commit": "dec309034fd2a381255d4f644970da4241ac4c4f",
-    "dirty": false
+    "commit": "ddbf2c017c1c0755bdfc63594b8a5ebc963e1b60",
+    "dirty": true
   },
   "n_replications": 100,
   "observation_noise": [
