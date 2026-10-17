@@ -1,6 +1,7 @@
 {
   "config_sha256": {
     "allocation": "6746cd7879eef61cbbd6a3993474b5111b8353a2f2d8992a542ad25047c3b6ca",
+    "benchmarks": "37015ea6a47a5c84e5bf4281b34564c63e734d4128ad0e3c5090ddbcd486e178",
     "demand_baseline": "f610a9e7124576071d749fd9d6898b82cd0673f9ccaeae21ddc9c581ce0c3489",
     "elasticity_priors": "ad278cd5d4dd45216e73862510ba517fcea95f2d1c05db8952aa147060d0b64a",
     "ppa_ingest": "ca374e19d82ef7f0ebe668d4c69c3f6087d0eb2d4be956114062e8b53d775486",
@@ -8,22 +9,22 @@
     "scenarios": "b9bbb5723c641f20515681bbda463d55475fd997d24426a8b8779be0c9a9213b",
     "zones": "3759a0af8d64c4a46b1532373429d7bb81463f7bac503a53128a0e79a1558bef"
   },
-  "created_utc": "2026-10-17T19:41:31+00:00",
+  "created_utc": "2026-10-17T22:36:44+00:00",
   "forms": [
     "exponential",
     "linear",
     "constant_elasticity"
   ],
   "git": {
-    "commit": "cb8ab4009bf42893bc0b9310403c894afbb63e72",
-    "dirty": false
+    "commit": "f6fd526449236ed1b4ed8ee297d29dc789f865b2",
+    "dirty": true
   },
   "headline": "outputs/tables/cm_sweep.meta.json (config's form and replications)",
   "n_replications": 20,
   "per_form_created_utc": {
-    "constant_elasticity": "2026-10-17T19:41:29+00:00",
-    "exponential": "2026-10-17T19:41:01+00:00",
-    "linear": "2026-10-17T19:40:43+00:00"
+    "constant_elasticity": "2026-10-17T22:36:43+00:00",
+    "exponential": "2026-10-17T22:36:14+00:00",
+    "linear": "2026-10-17T22:36:09+00:00"
   },
   "per_form_demand_form": {
     "constant_elasticity": "constant_elasticity",
