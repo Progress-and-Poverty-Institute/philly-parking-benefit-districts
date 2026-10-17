@@ -41,13 +41,3 @@ def optimal_price_arnott_inci(
     ref = base_price if reference_price is None else reference_price
     return float(price_for_demand_ratio(target_demand / base_demand, base_price, elasticity, ref, form))
 
-
-def cruising_dwl(
-    demand: float,
-    capacity: float,
-    target_vacancy: float = 0.15,
-    avg_cruising_minutes: float = 5.0,
-    value_of_time_usd_per_hr: float = 20.0,
-) -> float:
-    excess = max(0.0, demand - (1.0 - target_vacancy) * capacity)
-    return excess * (avg_cruising_minutes / 60.0) * value_of_time_usd_per_hr

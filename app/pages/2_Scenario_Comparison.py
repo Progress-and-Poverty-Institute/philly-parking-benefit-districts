@@ -14,6 +14,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from phillyparking.scenarios.compare import comparison_table  # noqa: E402
+from phillyparking.welfare.search_cost import load_search_cost_config  # noqa: E402
 
 from streamlit_app import get_scenarios  # noqa: E402
 
@@ -54,7 +55,7 @@ def main() -> None:
     st.subheader("Headline metrics")
     metrics = [
         ("total_revenue", "Total annual curb revenue (USD)"),
-        ("cruising_dwl_total", "Annual cruising deadweight loss (USD)"),
+        ("surplus_plus_revenue_change", "Parkers' surplus + meter revenue, annual change from status quo (USD)"),
         ("mean_price_ccc", "Mean price — Center City Core (USD/hr)"),
         ("mean_price_cca", "Mean price — Center City Area (USD/hr)"),
     ]
@@ -63,9 +64,20 @@ def main() -> None:
         with cols[i % 2]:
             st.pyplot(_bar_chart(df, m, label))
 
+    st.subheader("Search cost")
+    cfg = load_search_cost_config()
+    st.caption(
+        f"Annual search cost of parkers under the project's one cruising model "
+        f"(welfare/search_cost.py), scored at {cfg.minutes_at_full_block:g} minutes per arrival at a "
+        f"full block of {cfg.reference_capacity:g} spaces, cap {cfg.occupancy_cap:g}. The level is a "
+        f"stated assumption, not a measurement: read the row on its own, not netted against the "
+        f"surplus row above."
+    )
+    st.pyplot(_bar_chart(df, "search_cost_total", "Annual search cost of parkers (USD)"))
+
     st.subheader("Highlight a metric")
     options = [m for m, _ in metrics] + [
-        "cs_change_total",
+        "search_cost_total",
         "n_zones_at_ceiling",
         "pbd_revenue",
     ]

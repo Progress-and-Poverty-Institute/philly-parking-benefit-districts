@@ -32,21 +32,35 @@ arnott_inci:
   # personal travel ≈ $17.90; bump for downtown trips with higher avg income.
   value_of_time_usd_per_hr: 20.00
 
-# Search cost of the Chatman-Manville sweep's welfare scorer (welfare/targeting_welfare.py).
+# The project's one cruising-cost model (welfare/search_cost.py), used by the scenario
+# table's search-cost row and by the Chatman-Manville sweep's welfare scorer.
 # Shape: a block of K spaces at mean occupancy o is full with probability o^K, and an
-# arriving driver passes p/(1-p) full blocks. Level: minutes_at_reference is the expected
-# search time at reference_occupancy on a block of reference_capacity spaces. Shoup (2006,
-# "Cruising for parking") collects studies reporting 3.5 to 14 minutes of average cruising in
-# congested districts, so the sweep varies the level (config/scenarios.yaml
-# cruising_minutes_at_reference) rather than trusting one figure. Arrivals per hour are the
-# served cars divided by mean_duration_hr (a stated 90-minute mean stay); the value of time
-# is arnott_inci's. No Philadelphia measurement of any of these exists.
+# arriving driver passes p/(1-p) full blocks. A full block is scored at occupancy_cap rather
+# than 1 (turnover frees a space eventually; above the cap drivers give up or park
+# elsewhere), so the cap decides how much more a full block costs than a 95% one: at 0.99 a
+# full 10-space block costs 6.3x the 95% block, at 0.95 the same, at 0.999 67x. The sweep
+# varies the cap (config/scenarios.yaml chatman_manville_sweep.occupancy_cap).
+# Level: minutes_at_full_block is the expected search time of an arrival at a full block of
+# reference_capacity spaces, the quantity that drives the cost on a priced panel. It is
+# stated, not measured. cited_cruising_minutes is the range of the studies Shoup (2006,
+# "Cruising for parking", Transport Policy 13(6), Table 1) collects: the AVERAGE CRUISING
+# TIME OF THE DRIVERS WHO CRUISE, not the expected search time of all arrivals. Under this
+# model cap^K of the arrivals at a full block cruise (0.90 at the default cap on 10 spaces),
+# so the per-arrival figure is cap^K times the per-cruiser one; the level is set at the
+# cited mean, which puts it at the top of what that mean implies per arrival. Arrivals per
+# hour are the served cars divided by mean_duration_hr (a stated 90-minute mean stay); the
+# value of time is arnott_inci's. No Philadelphia measurement of any of these exists.
 search_cost:
-  minutes_at_reference: 5.0
+  minutes_at_full_block: 8.1
   reference_occupancy: 0.95
   reference_capacity: 10
   mean_duration_hr: 1.5
   occupancy_cap: 0.99     # a full block costs a finite search; above this drivers give up
+  cited_cruising_minutes:
+    low: 3.5
+    high: 14.0
+    mean: 8.1
+    source: "Shoup (2006) Table 1: average cruising time of those who cruise, 16 studies 1927-2001"
 
 # No-go bounds applied after every algorithm; never let prices drift outside these.
 global_floor_usd: 0.50

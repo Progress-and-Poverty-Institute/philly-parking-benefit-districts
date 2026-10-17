@@ -121,7 +121,9 @@ reference_price=<posted rates>)` raises without one; `revenue_curve` and
 `_project_occupancy` use the baseline price; `optimal_price_arnott_inci` takes
 `reference_price` (the runner passes the status-quo rate, not the rate in force);
 the Chatman-Manville sweep anchors at its start price; `cs_change` is the exact integral of
-the same law. The hierarchical model still fits log occupancy on log price: that estimate is
+the same law and `cs_change_served` the integral of min(q, capacity), the surplus of the cars
+that get a space (see "Welfare objects" below). The hierarchical model still fits log
+occupancy on log price: that estimate is
 the elasticity at the observed prices, which is what the prior slot means. Do not reintroduce
 `(p_new / p_old) ** e` anywhere.
 
@@ -130,17 +132,18 @@ the elasticity at the observed prices, which is what the prior slot means. Do no
 `phillyparking.pricing.priced_hours` is the only place that decides when a meter is on (per
 zone, weekday / Saturday / Sunday windows; a zone absent from `zones.yaml`, such as the
 fixture's `other`, is never priced). `apply_elasticity` (response), `annual_revenue` and
-`revenue_curve` (revenue), `hourly_cruising_dwl` (DWL scorer), the Arnott-Inci peak and the
-Seattle band statistics all read it. `apply_elasticity` and the DWL functions default to
-`priced_hours_only=True` and need `zone_id` on the panel. The Chatman-Manville sweep prices
-only priced hours too, through its own closed-form demand update.
+`revenue_curve` (revenue), `hourly_search_cost` (the cruising scorer), the Arnott-Inci peak
+and the Seattle band statistics all read it. `apply_elasticity` and the search-cost functions
+default to `priced_hours_only=True` and need `zone_id` on the panel. The Chatman-Manville
+sweep prices only priced hours too, through its own closed-form demand update.
 
 Revenue per zone = zone capacity x the zone's own annual priced hours x capacity-weighted
 priced-hour occupancy (x price); for a full weekly panel that equals 52 x the sum over
 priced rows of occupancy x capacity x price. Full compliance is assumed.
 
-The DWL scorer's threshold is the scenario's `pricing_policy.target_vacancy`, falling back to
-`pricing_rules.yaml` `arnott_inci.target_vacancy`, so pricer and scorer use the same line.
+The Arnott-Inci pricer's target is the scenario's `pricing_policy.target_vacancy`, falling
+back to `pricing_rules.yaml` `arnott_inci.target_vacancy` (`diagnostics["target_vacancy"]`).
+The cruising scorer has no target in it.
 
 ## Seattle rule and convergence
 
@@ -168,36 +171,50 @@ project's own rule; `min_vacancy_peak` / `avg_occupancy` are the original 168-ho
 read only priced hours, and take the rate in force from priced rows (meter-off rows may carry a
 stale price). `scenarios/cm_sweep.py` runs them and builds the summaries.
 
-**Why welfare.** The cruising proxy and revenue are both monotone in price, so on them the
-higher statistic wins by construction (audit finding 4): mean <= q95 over the same window, and
-`ordering_violations` documents that identity. The sweep therefore scores each priced
-block-hour on `welfare/targeting_welfare.py`: consumer surplus change (closed form under the
-same constant-elasticity law, on demand, not clipped occupancy) + revenue - search cost (a
-block of K spaces at occupancy o is full with probability o^K; a driver passes p/(1-p) full
-blocks; level set by `search_cost.minutes_at_reference` in `pricing_rules.yaml`, the minutes
-at 95% on a 10-space block). The search cost's shape and level are stated assumptions; because
-welfare is linear in the level, every row carries `search_cost_per_minute` and `paired_table`
-reports each comparison's `breakeven_minutes`, the level at which the two rules tie. That
-breakeven is the result: below it the lower-priced rule gives more welfare, above it the
-higher-priced one.
+**Why welfare, and what the breakeven is.** Search cost falls in price and revenue rises in
+it (up to the revenue peak), so on either alone the higher statistic wins by construction. The
+sweep therefore scores each priced block-hour on `welfare/targeting_welfare.py`: consumer
+surplus change + revenue - search cost, all three on the cars that park (see "Welfare
+objects"). The search cost is the project's one cruising model (`welfare/search_cost.py`); its
+level is a stated assumption, and welfare is linear in it, so every row carries
+`search_cost_per_full_block_minute` and `paired_table` reports each comparison's breakeven:
+`breakeven_full_block_minutes`, the search time per arrival at a full 10-space block at which
+the two rules tie (the headline; it is the quantity that drives the cost, because full
+block-hours carry most of it), and `breakeven_reference_minutes`, the same level quoted at the
+95% reference block-hour (c* x `reference_minutes_per_full_block_minute`, which depends on the
+cap: 1 at 0.95, 0.16 at 0.99, 0.015 at 0.999, so that column is not comparable across caps).
+For a same-instrument pair (`mean_zone` vs `peak_zone`, `mean_band` vs `peak_band`) the SIGN
+of the breakeven is a property of the design, not a finding: a mean is never above a q95 of
+the same block-hours, so the mean rule prices at or below the peak rule, total surplus
+(surplus + revenue) is higher at the lower price and search cost higher at the higher
+occupancy, in every replication; `ordering_violations` is the test of that identity. The
+sweep's content for such pairs is the SIZE of the breakeven against the cruising times the
+config cites (`search_cost.cited_cruising_minutes`: Shoup 2006, 3.5-14 minutes, per cruiser;
+`cm_breakeven_*.png` shade that range). The sign is not an identity across instruments or for
+`seattle_rule`.
 
 **Axes** (`chatman_manville_sweep:` in `scenarios.yaml`): elasticity; `start_occupancy` m
 (each zone's priced-hour mean at the start price, set by scaling its latent demand; the band
 edges are avoided); `block_dispersion` tau (a lognormal block multiplier, u fixed per block and
 replication); `observation_noise` sigma (what the rule reviews is true occupancy + sigma z,
-redrawn yearly; welfare is scored on the truth, so noise biases a peak statistic upward).
-Demand is latent and unclipped: d = d0 (p / p0)^e in closed form (path independent, the same
-law as `apply_elasticity`); occupancy is min(d, 1). u and z are shared by every rule and cell
-in a replication (paired). The fixture is `fixture` (n=120, seed 42) with the never-priced
-"other" segments dropped; the baseline uses the `synthetic_fixture` anchor set.
+redrawn yearly; welfare is scored on the truth, so noise biases a peak statistic upward);
+`occupancy_cap` (the search cost's cap: the rules never see it, so each rule's price path is
+run once and scored once per cap, and the rows of one path differ across caps only in
+`search_cost`, `search_cost_per_full_block_minute` and `welfare_change`). Demand is latent
+and unclipped: d = d0 x `demand_level(p)` in closed form (path independent, the same law as
+`apply_elasticity`); occupancy is min(d, 1). u and z are shared by every rule and cell in a
+replication (paired). The fixture is `fixture` (n=120, seed 42) with the never-priced "other"
+segments dropped; the baseline uses the `synthetic_fixture` anchor set.
 
 Report per cell, never pooled: `cell_table` (median and range), `paired_table` (each configured
-`comparisons` pair per replication: welfare, surplus, revenue and search-cost differences,
-breakeven minutes, DWL and revenue ratios), `window_dependence` (across cells). The sweep is a
+`comparisons` pair per replication: welfare, surplus, revenue and search-cost differences, the
+two breakeven columns, search-cost and revenue ratios), `window_dependence` (across the cells
+of the other four axes, one row per comparison and cap, so the full-block breakeven's stability
+across caps is visible). The year charts are drawn at the config's default cap. The sweep is a
 mechanism study on a fixture: the within-day shape is the baseline's, the search-cost
 parameters are unmeasured, and the fixture's zones are nothing like Philadelphia's. Provenance
-is in `outputs/tables/cm_sweep.meta.json`. Regenerate with
-`scripts/07_export_report_assets.py --rebuild-cm-sweep` (about an hour at 100 replications).
+(git state captured when the run starts) is in `outputs/tables/cm_sweep.meta.json`. Regenerate
+with `scripts/07_export_report_assets.py --rebuild-cm-sweep` (over an hour at 100 replications).
 
 ## Script 06 synthetic fallback
 
@@ -205,18 +222,43 @@ is in `outputs/tables/cm_sweep.meta.json`. Regenerate with
 computes the baseline panel itself (it is cheap) rather than reading a cache that could belong
 to other segments. Without the fallback the Laffer figure would be skipped.
 
-## `hourly_cruising_dwl` drop-before-merge
+## Welfare objects: one cruising model, one population
 
-`welfare/cruising_dwl.hourly_cruising_dwl` merges `segments[["segment_id", "capacity"]]`
-onto the panel. If the panel already carries `capacity` (e.g., from an earlier merge in
-`chatman_manville_sweep`), the merge produces `capacity_x`/`capacity_y` and
-`df["capacity"]` raises `KeyError`. Always drop conflicting columns first:
+`welfare/search_cost.py` is the project's only cruising cost, used by the scenario runner's
+cruising row (`ScenarioResults.search_cost`, `search_cost.parquet`, `search_cost_total` in the
+comparison table) and by the sweep's scorer. A block of K spaces at mean occupancy o is full
+with probability o^K; an arriving driver passes p/(1-p) full blocks; cost per block-hour =
+served arrivals (occupancy x capacity / `mean_duration_hr`) x minutes x value of time. It is
+convex in occupancy and has no occupancy target in it. The level (`search_cost:` in
+`pricing_rules.yaml`) is `minutes_at_full_block`, the expected search of an arrival at a full
+block of `reference_capacity` spaces, because full block-hours carry most of the cost on a
+priced panel; the per-block constant is minutes_at_full_block / (cap^K / (1 - cap^K)), so the
+`occupancy_cap` decides how much more a full block costs than a 95% one (6.3x at 0.99 on 10
+spaces, 1x at 0.95, 67x at 0.999). `cited_cruising_minutes` is Shoup's range (3.5-14, mean
+8.1): the average cruising time of the drivers who cruise, not the expected search of all
+arrivals, which at a full block is cap^K times it; the level is set at that mean. No
+Philadelphia measurement of any of these exists. There is no second cruising model: the old
+linear proxy (excess over the target x 5 minutes x $20) had the pricing target built into it
+and scored zero below it, so it could only restate the band; do not reintroduce it, and do not
+put a cruising constant in a function default.
 
-```python
-df = occupancy_panel.drop(
-    columns=[c for c in ("capacity", "zone_id") if c in occupancy_panel.columns]
-).merge(segments[["segment_id", "capacity"]], on="segment_id", how="left")
-```
+Every welfare term counts the same population, the cars that park. Consumer surplus is
+`demand.response.cs_change_served`, the exact integral of min(q(x), capacity) (the block is
+rationed to the parkers who value it most); revenue is served cars x price; the search cost
+charges served arrivals. A block-hour whose latent demand exceeds its capacity therefore loses
+exactly capacity x the rise in surplus when its price rises and stays full, and the cars it
+turns away carry neither surplus nor search cost. Both the runner (`_annual_cs_change`) and
+the sweep use the served integral; `cs_change` (latent) remains for the integral's own tests.
+
+The scenario table prints parkers' surplus + meter revenue as one row (both as changes from
+the status quo: `surplus_plus_revenue_change` in `compare.py`, a valid partial object) and the
+search cost labelled with the level it is scored at; it never prints a net of the two, and the
+app follows the same layout. The level is a stated assumption, so the sweep's breakevens, not a
+net at the config level, are what the project reports.
+
+`hourly_search_cost` merges `segments[["segment_id", "capacity", "zone_id"]]` onto the panel
+after dropping the panel's own `capacity` and `zone_id`; keep that drop, or a panel that
+already carries them (the sweep's does) gets `capacity_x` / `capacity_y`.
 
 ## Gini coefficient
 
@@ -330,12 +372,12 @@ rows are $0 and the PBD's claim shows as unfunded: read the allocation as an ord
 not a forecast. The model uses gross meter revenue and no escalator, the statute net revenue
 citywide and an escalated minimum.
 
-`cs_change_total` is annual dollars: over every priced block-hour, the integral of the demand
-law from the posted rate to the scenario's hourly price (`runner._annual_cs_change`, using
-`demand.response.cs_change` with the baseline panel's demand as q_ref), times 52; no
-search-time term. A zone with priced block-hours and no price raises; no default price is
-invented. `welfare/consumer_surplus.py` (nested-logit logsums) is no longer used by the
-pipeline.
+`cs_change_total` is annual dollars: over every priced block-hour, the integral of served
+demand min(q, capacity) from the posted rate to the scenario's hourly price
+(`runner._annual_cs_change`, using `demand.response.cs_change_served` with the baseline
+panel's demand as q_ref), times 52; no search-time term. A zone with priced block-hours and no
+price raises; no default price is invented. `welfare/consumer_surplus.py` (nested-logit
+logsums) is no longer used by the pipeline.
 
 Script 05 also writes `scenario_ranges.csv` and `scenario_runs.csv` (copied to `outputs/tables/`
 by 06): the other two named elasticities at the headline seed, and the central elasticity at
@@ -343,8 +385,9 @@ fixture seeds 0..n-1 (`--n-seeds`, default 20). On segments that are not the syn
 nothing depends on the seed (the panel is deterministic in the covariates and the surplus term
 is an integral), so the seed loop is skipped and only the elasticity range is written.
 `pessimistic` (-0.7) gives the highest revenue because both reforms are net price cuts. A Seattle
-two-cycle pools both phases in each range cell. `incidence_by_decile.png` is a constant
-placeholder, stamped as such in the figure; `Report.tex` still includes it.
+two-cycle pools both phases in each range cell. The ranges carry `search_cost_total`,
+`cs_change_total` and `surplus_plus_revenue_change` like any other row. `incidence_by_decile.png`
+is a constant placeholder, stamped as such in the figure; `Report.tex` still includes it.
 
 ## Streamlit app
 
