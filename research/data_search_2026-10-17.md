@@ -100,8 +100,43 @@ Revenue per space: PPA FY2025 $40.8M / 15,406 = $2,648 (the space count is from 
 
 **Recommendation.** Use the revenue-per-space and fee-line facts as benchmarks; skip placards until RTKL sessions give paid versus unpaid occupancy.
 
+## 5. PPA audited financial statements, FY2025 (added 2026-10-17)
+
+Philadelphia Parking Authority, "Financial Statements, Years Ended March 31, 2025 and 2024" (combined Authority report, CliftonLarsonAllen LLP), https://philapark.org/wp-content/uploads/Signed-Final-Reports-COMBINED-PPA-1.pdf, local copy in `research/sources/data_search_2026-10/ppa_audit_fy2025/`. The management's discussion and analysis (printed pp. 4-12, PDF pp. 7-15) was read in full. It is scanned, with no text layer. The notes and statements (PDF pp. 16-75) were not read.
+
+**What it does not have.** There is no meter revenue, meter count or space count by area or district. The on-street figures are citywide, so the benchmark cannot yet be compared zone to zone.
+
+What it does have, all verified on the page:
+
+| Fact | Value | Page (printed) |
+|---|---|---|
+| Pay-by-plate kiosks citywide, "one kiosk per block" | 1,667 | 6 |
+| Monthly payments through the mobile app | about 786,000 (82%) | 6 |
+| Monthly credit-card payments at kiosks | 172,087 (17%) | 6 |
+| App and card together, as a share of all parking payments | nearly 99% | 6 |
+| Meter revenue collected through mobile payments | 80% of receipts | 6 |
+| Act 9 threshold (the City's first tier) for FY2025 | **$48,966,144** | 6 |
+| Expense to the City of Philadelphia, FY2025 (FY2024) | $108,484,366 ($116,547,269) | 10 |
+| Expense to the School District of Philadelphia, FY2025 (FY2024) | **$0** ($7,174,560) | 10 |
+| Net parking revenue paid to the Department of Aviation, FY2025 | $68,734,019 | 4, 11 |
+| On-Street gross revenue growth, FY2024 to FY2025 | "nearly $12 million" | 10 |
+
+The same pages explain why the City and School District payments fell: higher direct and support expenses of on-street operations (p. 11). Net Revenue is defined on p. 11 as tickets, meters, towing, storage, booting, auctions and other on-street revenue, less direct operating expenses, allocated support costs (excluding depreciation) and capital purchases.
+
+What follows:
+- **The School District received nothing in FY2025.** Net on-street revenue did not exceed the $48.97M threshold.
+  - *Inference:* the line "Expense to the City" appears to include the Department of Aviation's $68.7M, a City department. That would leave about $39.8M of Act 9 net revenue to the City, below the threshold. The statement does not itemise this.
+- **The model's allocation understates the threshold.**
+  - `config/allocation.yaml` uses the statute's starting $35M and does not apply the § 6109(g)(3) escalator. The FY2025 threshold under the escalator is $48.97M.
+  - The PBD share comes only from what the School District would otherwise receive. So the escalated threshold, together with the actual net revenue (gross revenue less on-street expenses), decides whether a PBD could be paid at all.
+  - Net revenue pools tickets, meters and the rest, less all on-street costs. So in FY2025, an additional dollar of meter revenue would have reached the School District only after net revenue first covered the shortfall below the threshold (about $9M, by the inference above).
+  - The fix is a config value, `general_fund_minimum_usd`, with a dated source and a year. Whether the model should allocate net rather than gross revenue is a modelling decision for later.
+- **Transactions.** About 958,000 app and kiosk-card payments a month is about 11.6M a year, counting the remaining 1% at the same rate. At $40.8M of meter revenue that is about $3.50 per transaction (convenience fees are a separate line, section 4b). This is a cross-check for paid occupancy once rates and durations are known.
+- **Spaces per block.** 15,406 metered spaces (Controller, 2020) over 1,667 kiosks (one per block, FY2025) is about 9 spaces per kiosk block. The two counts are five years apart. This is a cross-check for the RTKL inventory, and for the model's 10-space search unit.
+
 ## Ranked shortlist (after the reset, Thursday 2026-10-22)
 
+0. **Act 9 threshold** (section 5): FY2025 $48,966,144 in place of the unescalated $35M in `allocation.yaml`, with a dated source. This is the item that bears most on the PBD and School District rows; it is a model input, so it waits for the user's go-ahead to rerun.
 1. **Benchmark-year rate schedule** (config + one benchmark row, about 20 lines and a test). The only verified item that moves the ratio (about 3.45x to about 2.7-3.0x by the estimate above).
 2. **Nine free holidays** (config entry + small `priced_hours` change, about 10-20 lines). Up to -3% on hours.
 3. **Revenue-per-space row** in `revenue_benchmark.csv`, after RTKL settles spaces; a few lines.
@@ -113,7 +148,8 @@ Revenue per space: PPA FY2025 $40.8M / 15,406 = $2,648 (the space count is from 
 - Any measured Philadelphia curb occupancy.
 - Posted rates for University City, South Philadelphia, Fishtown; any PPA floors or ceilings.
 - Any paid-share, compliance or placard-misuse rate for meters.
-- Meter revenue by area or transaction counts (IS2 statements are divisional totals).
+- Meter revenue by area (IS2 statements and the FY2025 audit report citywide totals only). Payment counts are in the audit's MD&A (section 5).
+- Any special ordinance setting meter fees outside Center City and University City (code library search, 2026-10-17: § 12-1005 is the only Philadelphia match). The $1.50 outer-zone rate is unresolved.
 - Violations data after 2017.
 
 ## Unread leads
