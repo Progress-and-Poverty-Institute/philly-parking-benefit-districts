@@ -1,0 +1,53 @@
+
+  c=seg.geometry.centroid
+E-W streets, median latitude within -75.20..-75.13 lon:
+  VINE ST (np.float64(39.9574), 66)
+  RACE ST (np.float64(39.9561), 59)
+  ARCH ST (np.float64(39.9543), 52)
+  MARKET ST (np.float64(39.9531), 70)
+  WALNUT ST (np.float64(39.95), 68)
+  LOCUST ST (np.float64(39.9481), 42)
+  SPRUCE ST (np.float64(39.9469), 59)
+  PINE ST (np.float64(39.9455), 51)
+  LOMBARD ST (np.float64(39.9444), 54)
+  SOUTH ST (np.float64(39.9437), 69)
+  SPRING GARDEN ST (np.float64(39.9626), 134)
+  CALLOWHILL ST (np.float64(39.9586), 44)
+  GIRARD AVE (nan, 0)
+  CHESTNUT ST (np.float64(39.9515), 72)
+  SANSOM ST (np.float64(39.9507), 47)
+N-S streets, median longitude within lat 39.94..39.96:
+  S 4TH ST -75.1486 20
+  S 5TH ST -75.1503 15
+  S 8TH ST -75.1551 24
+  S 12TH ST -75.1613 28
+  S 15TH ST -75.1669 30
+  S BROAD ST -75.1649 36
+  S 18TH ST -75.1714 33
+  S 19TH ST -75.1732 29
+  S 20TH ST -75.1747 39
+  S 22ND ST -75.1784 43
+  S 30TH ST -75.1837 4
+  N 4TH ST -75.1456 26
+  N 20TH ST -75.1719 26
+  S 2ND ST -75.1452 18
+
+ccc priced extents: lon -75.17 -75.1401 lat 39.945 39.96
+ccc box: lon -75.170..-75.140 lat 39.945..39.960
+Priced ccc segments by street (top 15 by capacity):
+street_name
+VINE ST          360
+CHESTNUT ST      272
+ARCH ST          271
+MARKET ST        266
+RACE ST          257
+WALNUT ST        212
+SANSOM ST        199
+S BROAD ST       181
+N BROAD ST       160
+CALLOWHILL ST    154
+CHERRY ST        134
+N 4TH ST         127
+FILBERT ST       125
+WOOD ST          124
+LOCUST ST        117

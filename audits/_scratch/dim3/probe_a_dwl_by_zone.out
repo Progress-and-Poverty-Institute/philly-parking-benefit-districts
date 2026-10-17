@@ -1,0 +1,13 @@
+              status_quo    seattle   full_pbd  floor  p_seattle  p_full_pbd
+zone_id                                                                     
+cca              45004.0  1816574.0  1816574.0    1.0        1.0         1.0
+ccc             155656.0  1372812.0  1187917.0    1.0        2.0         3.0
+fishtown             0.0   337510.0   337510.0    0.0        0.0         0.0
+south_philly       492.0   222304.0   222304.0    0.0        0.0         0.0
+ucity             3552.0   285663.0   285663.0    1.0        1.0         1.0
+
+totals: {'status_quo': 204705.0, 'seattle': 4034864.0, 'full_pbd': 3849969.0}
+seattle: zones at floor ['cca', 'fishtown', 'south_philly', 'ucity']; DWL share from floored zones 0.660; CCC share 0.340; CCC DWL $1,372,812
+full_pbd: zones at floor ['cca', 'fishtown', 'south_philly', 'ucity']; DWL share from floored zones 0.691; CCC share 0.309; CCC DWL $1,187,917
+seattle ccc: busiest priced zone-hour 0.8665; share of priced block-hours > 0.85: 0.326; share at 1.0: 0.078
+full_pbd ccc: busiest priced zone-hour 0.8499; share of priced block-hours > 0.85: 0.307; share at 1.0: 0.047

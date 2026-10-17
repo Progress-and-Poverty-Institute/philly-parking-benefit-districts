@@ -1,0 +1,20 @@
+SearchCostConfig(minutes_at_reference=5.0, reference_occupancy=0.95, reference_capacity=10.0, mean_duration_hr=1.5, occupancy_cap=0.99, value_of_time_usd_per_hr=20.0)
+minutes at (0.95,K=10): [5.] (config 5.0)
+o=0.500 K=10 minutes hand   0.0033 code   0.0033 | $/block-hr hand   0.0036 code   0.0036
+o=0.700 K=10 minutes hand   0.0974 code   0.0974 | $/block-hr hand   0.1515 code   0.1515
+o=0.850 K=10 minutes hand   0.8214 code   0.8214 | $/block-hr hand   1.5516 code   1.5516
+o=0.900 K=10 minutes hand   1.7939 code   1.7939 | $/block-hr hand   3.5878 code   3.5878
+o=0.950 K=10 minutes hand   5.0000 code   5.0000 | $/block-hr hand  10.5556 code  10.5556
+o=0.990 K=10 minutes hand  31.6939 code  31.6939 | $/block-hr hand  69.7266 code  69.7266
+o=0.999 K=10 minutes hand  31.6939 code  31.6939 | $/block-hr hand  70.3605 code  70.3605
+o=1.000 K=10 minutes hand  31.6939 code  31.6939 | $/block-hr hand  70.4309 code  70.4309
+K= 1 minutes at o=0.7:  7.8188  o=0.85: 18.9885  o=0.95: 63.6673
+K= 2 minutes at o=0.7:  3.2195  o=0.85:  8.7244  o=0.95: 31.0174
+K= 5 minutes at o=0.7:  0.6770  o=0.85:  2.6727  o=0.95: 11.4618
+K=10 minutes at o=0.7:  0.0974  o=0.85:  0.8214  o=0.95:  5.0000
+K=20 minutes at o=0.7:  0.0027  o=0.85:  0.1351  o=0.95:  1.8725
+level 1 cost at (0.9,10): 0.7175509840817105
+level 5 cost at (0.9,10): 3.5877549204085524
+level 50 cost at (0.9,10): 35.877549204085526
+share of the 0.99-capped value to uncapped at o=1: 70.43090199890534
+fixture capacity dist: {'count': 120.0, 'mean': 8.9, 'std': 3.5, 'min': 4.0, '25%': 6.0, '50%': 8.0, '75%': 12.2, 'max': 15.0}

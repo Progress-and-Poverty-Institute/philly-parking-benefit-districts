@@ -1,0 +1,85 @@
+..............................F..s...................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+........................................................................ [ 85%]
+..........................................F.....                         [100%]
+================================== FAILURES ===================================
+__ test_ordering_check_fails_when_the_comparator_statistic_exceeds_the_peak ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FBC1249810>
+
+    def test_ordering_check_fails_when_the_comparator_statistic_exceeds_the_peak(monkeypatch):
+        """Defect injection: an 'average' that is really the max can raise what the peak rule holds."""
+        real = tr._zone_statistic
+    
+        def broken(panel, rule, cfg):
+            if rule == "avg_occupancy":
+                return panel["occupancy"].groupby(panel["zone_id"].to_numpy()).max().to_dict()
+            return real(panel, rule, cfg)
+    
+        monkeypatch.setattr(tr, "_zone_statistic", broken)
+        # A start level low enough that the q95 rule holds or cuts while the max raises.
+        bad = chatman_manville_sweep(segments=SEGS, elasticity_values=[-0.4], start_occupancy=[0.4],
+                                     block_dispersion=[0.0], observation_noise=[0.0], n_replications=1,
+                                     rolls_forward_years=2, rules=["min_vacancy_peak", "avg_occupancy"])
+>       assert not ordering_violations(bad).empty
+E       assert not True
+E        +  where True = Empty DataFrame\nColumns: [elasticity, start_occupancy, block_dispersion, observation_noise, replication, year, cruising_dwl_cmp, cruising_dwl_ref, revenue_cmp, revenue_ref]\nIndex: [].empty
+E        +    where Empty DataFrame\nColumns: [elasticity, start_occupancy, block_dispersion, observation_noise, replication, year, cruising_dwl_cmp, cruising_dwl_ref, revenue_cmp, revenue_ref]\nIndex: [] = ordering_violations(   elasticity  start_occupancy  ...  share_block_hours_below_low  mean_price\n0        -0.4              0.4  ...      ....000000         1.5\n3        -0.4              0.4  ...                     0.892058         1.0\n\n[4 rows x 16 columns])
+
+tests\test_cm_sweep.py:286: AssertionError
+------------------------------ Captured log call ------------------------------
+WARNING  phillyparking.scenarios.cm_sweep:cm_sweep.py:157 peak_zone is not among the rules; the default comparisons have no reference
+_ test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixture _
+
+script05 = (<module '05_run_scenarios.py' from 'C:\\projects\\philly-parking-benefit-districts\\.claude\\worktrees\\audit-2026-10...ios.py'>, WindowsPath('C:/Users/druss/AppData/Local/Temp/pytest-of-druss/pytest-1449/test_script_05_outputs_change_0'))
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FBC430D7F0>
+
+    def test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixture(script05, monkeypatch):
+        mod, root = script05
+    
+        monkeypatch.setattr(mod, "load_priced_segments", _no_named_zones)
+        a1 = _run_05(mod, root, 1)
+        a2 = _run_05(mod, root, 2)
+        for row in ("total_revenue", "cruising_dwl_total", "cs_change_total"):
+>           assert a1.loc[row, "status_quo"] != a2.loc[row, "status_quo"] or row == "cs_change_total", row
+E           AssertionError: cruising_dwl_total
+E           assert (np.float64(0.0) != np.float64(0.0) or 'cruising_dwl_total' == 'cs_change_total'
+E             
+E             - cs_change_total
+E             + cruising_dwl_total)
+
+tests\test_uncertainty_allocation_cs.py:268: AssertionError
+------------------------------ Captured log call ------------------------------
+WARNING  05_run_scenarios.py:05_run_scenarios.py:63 Loaded segments have only 0 in named zones; falling back to in-package synthetic distribution across all named zones for a meaningful demo.
+WARNING  phillyparking.scenarios.runner:runner.py:339 status_quo: 9 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 seattle: 9 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 full_pbd: 9 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  05_run_scenarios.py:05_run_scenarios.py:63 Loaded segments have only 0 in named zones; falling back to in-package synthetic distribution across all named zones for a meaningful demo.
+WARNING  phillyparking.scenarios.runner:runner.py:339 status_quo: 11 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 seattle: 11 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 full_pbd: 11 segments in zones absent from zones.yaml (['other']) earn no revenue
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_cm_sweep.py::test_ordering_check_fails_when_the_comparator_statistic_exceeds_the_peak
+FAILED tests/test_uncertainty_allocation_cs.py::test_script_05_outputs_change_with_the_seed_when_it_falls_back_to_the_fixture
+2 failed, 333 passed, 1 skipped, 1 deselected, 8 warnings in 59.70s
+done g9_peak_target exit 1

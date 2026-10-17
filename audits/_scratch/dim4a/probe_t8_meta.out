@@ -1,0 +1,12 @@
+status_quo top keys ['name', 'elasticity_scenario', 'cs_change_total', 'allocation', 'diagnostics', 'provenance']
+  provenance keys ['created_utc', 'seed', 'segment_source', 'config_sha256', 'git', 'elasticity']
+  segment_source: {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet", "filter": "zone_id priced in config/zones.yaml", "n_in_file": 58966, "n_kept": 3145, "priced_curb_rule": "no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5", "anchor_set": "philadelphia", "panel": {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\demand_panel.parquet", "cache_key": "f1027dbb9a5d5daa65227f6b5cf030b72a2b915c0c206f9977cf232004af2227"}, "n_segments": 3145}
+  commit None dirty None ts None
+seattle top keys ['name', 'elasticity_scenario', 'cs_change_total', 'allocation', 'diagnostics', 'provenance']
+  provenance keys ['created_utc', 'seed', 'segment_source', 'config_sha256', 'git', 'elasticity']
+  segment_source: {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet", "filter": "zone_id priced in config/zones.yaml", "n_in_file": 58966, "n_kept": 3145, "priced_curb_rule": "no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5", "anchor_set": "philadelphia", "panel": {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\demand_panel.parquet", "cache_key": "f1027dbb9a5d5daa65227f6b5cf030b72a2b915c0c206f9977cf232004af2227"}, "n_segments": 3145}
+  commit None dirty None ts None
+full_pbd top keys ['name', 'elasticity_scenario', 'cs_change_total', 'allocation', 'diagnostics', 'provenance']
+  provenance keys ['created_utc', 'seed', 'segment_source', 'config_sha256', 'git', 'elasticity']
+  segment_source: {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet", "filter": "zone_id priced in config/zones.yaml", "n_in_file": 58966, "n_kept": 3145, "priced_curb_rule": "no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5", "anchor_set": "philadelphia", "panel": {"kind": "file", "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\demand_panel.parquet", "cache_key": "f1027dbb9a5d5daa65227f6b5cf030b72a2b915c0c206f9977cf232004af2227"}, "n_segments": 3145}
+  commit None dirty None ts None

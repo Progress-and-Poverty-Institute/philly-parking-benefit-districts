@@ -1,0 +1,10 @@
+24: 25-segment subset vs same segments inside full set: max abs diff 0.0
+24: a single segment alone peak 0.7189 in full set 0.7189
+24: after setting one segment's jobs to 1e9, segments whose panel changed: 1 (only itself expected)
+17: NaN covariate raises: baseline_occupancy: 1 segments have NaN pop_density
+17: check_panel raises: ValueError p has 1 NaN occupancy values of 528360
+key changes with a covariate: True | with seed: True | with zone_id relabel: True (unchanged = panel does not depend on it)
+key changes when the OFFICE KERNEL (code) is replaced: False | panel changes: True
+19: pois_retail>0 share (priced): 0.674 ; pois_restaurant>0: 0.679 ; pois_office>0: 0.323
+19: jobs_within_200m distinct values (all): 2993 std 1786.1
+19: neighborhood column present, NaN in priced: 0

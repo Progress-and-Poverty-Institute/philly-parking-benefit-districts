@@ -1,0 +1,154 @@
+FF....FF.........................s...............F...................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+......................F...............F................................. [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+_________________________ test_apply_elasticity_basic _________________________
+
+    def test_apply_elasticity_basic():
+        base = pd.DataFrame({
+            "segment_id": ["s1"],
+            "zone_id": ["ccc"],
+            "hour_of_week": [12],
+            "occupancy": [0.6],
+            "price": [2.0],
+        })
+        new = pd.DataFrame({
+            "segment_id": ["s1"],
+            "hour_of_week": [12],
+            "price": [4.0],
+        })
+        out = apply_elasticity(base, new, elasticity=-0.5, reference_price=2.0)
+        expected = 0.6 * float(demand_factor(4.0, 2.0, -0.5, 2.0))
+        assert float(out["occupancy"].iloc[0]) == pytest.approx(expected, abs=1e-9)
+>       assert expected == pytest.approx(0.6 * np.exp(-0.5))   # the exponential form at p_ref = 2
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0.4242640687119285 == 0.36391839582758007 ± 3.6e-07
+E         
+E         comparison failed
+E         Obtained: 0.4242640687119285
+E         Expected: 0.36391839582758007 ± 3.6e-07
+
+tests\test_apply_elasticity.py:32: AssertionError
+____ test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone ____
+
+    def test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone():
+        base = pd.DataFrame({"segment_id": ["s1", "s2"], "zone_id": ["ccc", "cca"], "hour_of_week": [12, 12],
+                             "occupancy": [0.6, 0.6], "price_usd_per_hr": [4.0, 3.5]})
+        new = pd.DataFrame({"zone_id": ["ccc", "cca"], "price_usd_per_hr": [5.0, 4.5]})
+>       with pytest.raises(ValueError, match="reference_price"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests\test_apply_elasticity.py:39: Failed
+__________________ test_optimal_price_inverts_the_demand_law __________________
+
+    def test_optimal_price_inverts_the_demand_law():
+        p = optimal_price_arnott_inci(
+            base_demand=10, base_price=2, capacity=10, elasticity=-0.5, target_vacancy=0.15
+        )
+        assert math.isclose(demand_function(10, 2, -0.5)(p), 8.5, abs_tol=1e-9)
+        # Exponential form at p_ref = 2: p = 2 + 2 ln(0.85) / -0.5
+>       assert math.isclose(p, 2 + 2 * math.log(0.85) / -0.5, abs_tol=1e-9)
+E       assert False
+E        +  where False = <built-in function isclose>(2.768166089965398, (2 + ((2 * -0.16251892949777494) / -0.5)), abs_tol=1e-09)
+E        +    where <built-in function isclose> = math.isclose
+E        +    and   -0.16251892949777494 = <built-in function log>(0.85)
+E        +      where <built-in function log> = math.log
+
+tests\test_arnott_inci.py:19: AssertionError
+_______ test_demand_function_matches_anchor_and_takes_a_reference_price _______
+
+    def test_demand_function_matches_anchor_and_takes_a_reference_price():
+        D = demand_function(10, 2, -0.5)
+        assert math.isclose(D(2), 10, abs_tol=1e-9)
+        # With the elasticity anchored at $4, the same $2 -> $3 move is less elastic.
+>       assert demand_function(10, 2, -0.5, reference_price=4.0)(3) > D(3)
+E       assert 8.164965809277259 > 8.16496580927726
+E        +  where 8.164965809277259 = <function demand_function.<locals>.D at 0x0000023AB58E42C0>(3)
+E        +    where <function demand_function.<locals>.D at 0x0000023AB58E42C0> = demand_function(10, 2, -0.5, reference_price=4.0)
+E        +  and   8.16496580927726 = <function demand_function.<locals>.D at 0x0000023AB58E4180>(3)
+
+tests\test_arnott_inci.py:29: AssertionError
+________ test_config_names_a_known_form_and_the_default_is_exponential ________
+
+    def test_config_names_a_known_form_and_the_default_is_exponential():
+        assert dr.load_demand_form() in FORMS
+>       assert load_config("elasticity_priors")["demand_form"] == "exponential"
+E       AssertionError: assert 'constant_elasticity' == 'exponential'
+E         
+E         - exponential
+E         + constant_elasticity
+
+tests\test_demand_response.py:17: AssertionError
+_______________ test_scenario_projection_follows_the_demand_law _______________
+
+    def test_scenario_projection_follows_the_demand_law():
+        # baseline: occ=0.6, p=2 -> new p=3, eps=-0.5 at p_ref = p_old under the exponential form
+        from phillyparking.demand.response import demand_factor
+        occ_old = np.array([0.6] * 100)
+        p_old = np.array([2.0] * 100)
+        p_new = np.array([3.0] * 100)
+        occ_new = _project_occupancy(occ_old, p_old, p_new, -0.5)
+        expected_occ = 0.6 * float(demand_factor(3.0, 2.0, -0.5, 2.0))
+>       assert math.isclose(expected_occ, 0.6 * math.exp(-0.25), rel_tol=1e-12)
+E       assert False
+E        +  where False = <built-in function isclose>(0.4898979485566356, (0.6 * 0.7788007830714049), rel_tol=1e-12)
+E        +    where <built-in function isclose> = math.isclose
+E        +    and   0.7788007830714049 = <built-in function exp>(-0.25)
+E        +      where <built-in function exp> = math.exp
+
+tests\test_revenue_forecast.py:103: AssertionError
+_________ test_seattle_two_cycle_is_detected_and_both_phases_reported _________
+
+    def test_seattle_two_cycle_is_detected_and_both_phases_reported():
+        # Fishtown: $1.50 -> one cut to $1.00 leaves occupancy under the band, the next cut to
+        # its $0.50 floor lifts it over the band, so it alternates. A $0.50 step moves demand by
+        # exp(|e| 0.5 / 1.5) under the exponential form, which clears the band's 0.85 / 0.70
+        # ratio only for the pessimistic elasticity (-0.7); at -0.4 the rule settles.
+        from phillyparking.demand.response import demand_level
+        from phillyparking.scenarios.compare import comparison_table
+        eps = _raw("elasticity_priors")["scenarios"]["pessimistic"]
+        occ_at_1 = 0.69
+        occ_at_1_5 = occ_at_1 / float(demand_level(1.0, eps, 1.5))
+        assert occ_at_1 < 0.70 < 0.85 < occ_at_1 * float(demand_level(0.5, eps, 1.5) / demand_level(1.0, eps, 1.5))
+        segs, panel = _one_zone("fishtown", occ_at_1_5, 0.2)
+        r = run_scenario("seattle", segments=segs, baseline_panel=panel, elasticity_scenario="pessimistic")
+        d = r.diagnostics
+>       assert not d["converged"] and d["cycle_period"] == 2
+                                      ^^^^^^^^^^^^^^^^^
+E       KeyError: 'cycle_period'
+
+tests\test_scenario_hours.py:214: KeyError
+------------------------------ Captured log call ------------------------------
+WARNING  phillyparking.scenarios.runner:runner.py:392 seattle: prices still moving after 20 reviews
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_apply_elasticity.py::test_apply_elasticity_basic - assert 0...
+FAILED tests/test_apply_elasticity.py::test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone
+FAILED tests/test_arnott_inci.py::test_optimal_price_inverts_the_demand_law
+FAILED tests/test_arnott_inci.py::test_demand_function_matches_anchor_and_takes_a_reference_price
+FAILED tests/test_demand_response.py::test_config_names_a_known_form_and_the_default_is_exponential
+FAILED tests/test_revenue_forecast.py::test_scenario_projection_follows_the_demand_law
+FAILED tests/test_scenario_hours.py::test_seattle_two_cycle_is_detected_and_both_phases_reported
+7 failed, 328 passed, 1 skipped, 1 deselected, 8 warnings in 59.55s
+done g5_const_elast exit 1

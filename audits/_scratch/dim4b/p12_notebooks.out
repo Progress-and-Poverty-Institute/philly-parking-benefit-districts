@@ -1,0 +1,3 @@
+imports that fail: ['opendataphilly', 'census', 'lodes', 'osm_loader', 'gtfs_loader', 'ppa_stub']
+calls that bind: 12 | calls that do not bind to the current signature: 1
+   ('revenue_curve', "zone='CCC', multipliers=np.linspace(0.4, 2.5, 25)", "got an unexpected keyword argument 'zone'")

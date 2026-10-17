@@ -1,0 +1,18 @@
+form in config: exponential
+apply_elasticity: [0.58091712 0.92946739] hand q_ref*exp(e(p-p_ref)/p_ref): [0.58091712 0.92946739] maxdiff 0.0
+with p_old=3,p_ref=4: [0.52563555 0.84101688] hand [0.52563555 0.84101688] 0.0
+cs_change exponential          p_ref=4.0 p=2.5 e=-0.4: closed    16.183424 quad    16.183424 diff 1.07e-14
+cs_change exponential          p_ref=4.0 p=6.0 e=-0.7: closed   -16.874966 quad   -16.874966 diff 0.00e+00
+cs_change exponential          p_ref=2.0 p=0.5 e=-0.2: closed    16.183424 quad    16.183424 diff 1.07e-14
+cs_change exponential          p_ref=3.5 p=1.0 e=-1.0: closed    36.495447 quad    36.495447 diff 0.00e+00
+cs_change linear               p_ref=4.0 p=2.5 e=-0.4: closed    16.125000 quad    16.125000 diff 0.00e+00
+cs_change linear               p_ref=4.0 p=6.0 e=-0.7: closed   -16.500000 quad   -16.500000 diff 3.55e-15
+cs_change linear               p_ref=2.0 p=0.5 e=-0.2: closed    16.125000 quad    16.125000 diff 0.00e+00
+cs_change linear               p_ref=3.5 p=1.0 e=-1.0: closed    33.928571 quad    33.928571 diff 0.00e+00
+cs_change constant_elasticity  p_ref=4.0 p=2.5 e=-0.4: closed    16.381864 quad    16.381864 diff 3.55e-15
+cs_change constant_elasticity  p_ref=4.0 p=6.0 e=-0.7: closed   -17.246258 quad   -17.246258 diff 3.55e-15
+cs_change constant_elasticity  p_ref=2.0 p=0.5 e=-0.2: closed    16.753076 quad    16.753076 diff 3.55e-15
+cs_change constant_elasticity  p_ref=3.5 p=1.0 e=-1.0: closed    43.846704 quad    43.846704 diff 0.00e+00
+revenue_curve exponential         : argmax price 10.000; analytic peak 10.0
+revenue_curve linear              : argmax price 7.000; analytic peak 6.999999999999999
+revenue_curve constant_elasticity : argmax price 16.000; analytic peak None

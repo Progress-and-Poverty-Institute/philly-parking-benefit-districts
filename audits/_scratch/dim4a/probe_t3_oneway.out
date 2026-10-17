@@ -1,0 +1,11 @@
+  bt=p[p.street_name.str.contains(r"\b(BRG|TUNL)\b",regex=True)] if p.street_name.notna().any() else p.iloc[:0]
+oneway {'B': 22205, 'FT': 9847, 'TF': 9196, ' ': 4}
+multi_rep {0.0: 39420, 1.0: 504, 2.0: 481, 3.0: 235, 8.0: 218, 4.0: 212, nan: 182}
+class {4: 15496, 5: 15261, 3: 4506, 2: 4491, 12: 426, 1: 420, 14: 167, 10: 163, 9: 116, 6: 94, 13: 92, 15: 11}
+st_type {'ST': 26939, 'AVE': 8257, 'RD': 2132, 'LN': 718, 'BLVD': 674, 'DR': 639, 'PL': 418, 'RAMP': 287, 'EXPY': 162, 'WAY': 135, 'TER': 127, 'CT': 105}
+responsibl {'CITY': 28950, 'STATE': 5465, 'FAM': 4948, 'PRIVATE': 937, 'FAIRMOUNT PARK': 373, 'TOWNSHIP': 198, 'PHA': 155, 'PIDC': 109, 'DRPA': 71, 'AIRPORT': 29, 'STRICKEN': 10, 'BCBC': 4}
+priced segments matched to an unsplit parent (idx 0): 2516 of 3145 (split pieces keep idx>0 hashes; matched only for single-piece parents)
+ oneway among matched priced: {'FT': 872, 'TF': 844, 'B': 800}
+ multi_rep among matched priced: {0.0: 2332, 1.0: 89, 2.0: 84, nan: 7, 8.0: 2, 3.0: 2}
+priced rows whose street_name contains BRG/TUNL: 13
+priced segments on BRG/TUNL street types: 13 spaces 116 ; names: ['COMMERCE ST TUNL', 'BENJAMIN FRANKLIN BRG', 'N 5TH TUNL']

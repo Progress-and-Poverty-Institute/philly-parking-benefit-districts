@@ -1,0 +1,12 @@
+flat m=0.60 sigma=0.00 e=-0.4: year-8 price mean_zone 1.00 peak_zone 1.00 | true occ 0.733 / 0.733 | welfare mean-peak 0 $/yr | cs_diff 0 rev_diff 0 sc_diff 0 | breakeven nan min
+flat m=0.60 sigma=0.10 e=-0.4: year-8 price mean_zone 1.00 peak_zone 2.00 | true occ 0.733 / 0.600 | welfare mean-peak 571,616 $/yr | cs_diff 2,376,133 rev_diff -1,671,209 sc_diff 133,308 | breakeven 26.44 min
+    peak_zone year 1 reviewed q95 0.763 vs reviewed mean 0.601 (true 0.600)
+flat m=0.75 sigma=0.00 e=-0.4: year-8 price mean_zone 2.00 peak_zone 2.00 | true occ 0.750 / 0.750 | welfare mean-peak 0 $/yr | cs_diff 0 rev_diff 0 sc_diff 0 | breakeven nan min
+flat m=0.75 sigma=0.10 e=-0.4: year-8 price mean_zone 2.00 peak_zone 2.79 | true occ 0.750 / 0.641 | welfare mean-peak 802,555 $/yr | cs_diff 1,956,654 rev_diff -1,009,787 sc_diff 144,312 | breakeven 32.81 min
+    peak_zone year 1 reviewed q95 0.913 vs reviewed mean 0.750 (true 0.750)
+flat m=0.80 sigma=0.00 e=-0.4: year-8 price mean_zone 2.00 peak_zone 2.00 | true occ 0.800 / 0.800 | welfare mean-peak 0 $/yr | cs_diff 0 rev_diff 0 sc_diff 0 | breakeven nan min
+flat m=0.80 sigma=0.10 e=-0.4: year-8 price mean_zone 2.00 peak_zone 3.00 | true occ 0.800 / 0.655 | welfare mean-peak 971,757 $/yr | cs_diff 2,593,885 rev_diff -1,305,583 sc_diff 316,545 | breakeven 20.35 min
+    peak_zone year 1 reviewed q95 0.963 vs reviewed mean 0.800 (true 0.800)
+flat m=0.90 sigma=0.00 e=-0.4: year-8 price mean_zone 2.50 peak_zone 2.50 | true occ 0.814 / 0.814 | welfare mean-peak 0 $/yr | cs_diff 0 rev_diff 0 sc_diff 0 | breakeven nan min
+flat m=0.90 sigma=0.10 e=-0.4: year-8 price mean_zone 2.50 peak_zone 3.50 | true occ 0.814 / 0.667 | welfare mean-peak 1,191,193 $/yr | cs_diff 2,640,424 rev_diff -1,064,965 sc_diff 384,267 | breakeven 20.50 min
+    peak_zone year 1 reviewed q95 1.000 vs reviewed mean 0.892 (true 0.900)

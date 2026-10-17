@@ -1,0 +1,55 @@
+.................................s...................................... [ 21%]
+................................F....................................... [ 42%]
+........................................................................ [ 64%]
+........................................................................ [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+___________ test_comparison_table_allocation_rows_conserve_revenue ____________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+
+    def test_comparison_table_allocation_rows_conserve_revenue(results):
+        table = comparison_table(results)
+        share = _raw("scenarios")["scenarios"]["full_pbd"]["rpp_policy"]["revenue_share_to_pbd"]
+        assert share > 0
+        for col in table.columns:
+            parts = table.loc[["pbd_revenue", "sdp_revenue", "gf_to_general_fund"], col].sum()
+            assert parts == pytest.approx(table.loc["total_revenue", col])
+        # The PBD's claim is its share of revenue; what is paid plus what the General Fund minimum
+        # leaves unpaid adds back to it.
+        paid_plus_unpaid = table.loc["pbd_revenue", "full_pbd"] + table.loc["pbd_unfunded", "full_pbd"]
+>       assert paid_plus_unpaid == pytest.approx(share * table.loc["total_revenue", "full_pbd"])
+E       assert np.float64(749073.3648983238) == 374536.6824491619 ± 0.374537
+E         
+E         comparison failed
+E         Obtained: 749073.3648983238
+E         Expected: 374536.6824491619 ± 0.374537
+
+tests\test_guards_provenance.py:94: AssertionError
+----------------------------- Captured log setup ------------------------------
+WARNING  phillyparking.scenarios.runner:runner.py:339 status_quo: 3 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 seattle: 3 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 full_pbd: 3 segments in zones absent from zones.yaml (['other']) earn no revenue
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_guards_provenance.py::test_comparison_table_allocation_rows_conserve_revenue
+1 failed, 334 passed, 1 skipped, 1 deselected, 8 warnings in 56.03s
+done g14_pbd_share exit 1

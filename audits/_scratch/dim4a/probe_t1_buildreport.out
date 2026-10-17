@@ -1,0 +1,3 @@
+join_acs: 125 of 59091 segments touch no block group: ['Sa5f58b155237', 'S74066eb1f51a', 'Se71ee8f45f0e', 'S0680e98affd9', 'Sf92a1f819c42']; dropped
+after build_segments attrs keys: ['build_report']
+after join_acs attrs keys: [] rows 59091 -> 58966

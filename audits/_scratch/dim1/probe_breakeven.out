@@ -1,0 +1,36 @@
+(1728, 33) [1 2 3 4 5 6 7 8]
+rule          reference
+mean_band     peak_band    54
+mean_zone     peak_zone    54
+peak_band     peak_zone    54
+seattle_rule  peak_band    54
+dtype: int64
+mean_band peak_band n cells 54 breakeven med/min/max 1.23649 2.02148 6.94007 NaN 0 neg 0 comparator_searches_more share mean 1.0 cs+rev diff>0 cells 54 welfare_diff<0 (=comparator worse at 5min) 52
+mean_zone peak_zone n cells 54 breakeven med/min/max 1.09309 2.05753 7.33159 NaN 0 neg 0 comparator_searches_more share mean 1.0 cs+rev diff>0 cells 54 welfare_diff<0 (=comparator worse at 5min) 52
+peak_band peak_zone n cells 54 breakeven med/min/max -3958.41 13.40325 160.955 NaN 10 neg 3 comparator_searches_more share mean 0.4077777777777778 cs+rev diff>0 cells 27 welfare_diff<0 (=comparator worse at 5min) 5
+seattle_rule peak_band n cells 54 breakeven med/min/max 1.26573 2.0245249999999997 6.98147 NaN 0 neg 0 comparator_searches_more share mean 1.0 cs+rev diff>0 cells 54 welfare_diff<0 (=comparator worse at 5min) 52
+mean_zone vs peak_zone: cells where peak better at 5 min (welfare_diff<0): 52 of 54
+mean_band vs peak_band: peak better at 5 min: 52 of 54
+both instruments peak better at 5: 104 of 108
+count    108.000000
+mean       2.335203
+std        1.137664
+min        1.093090
+25%        1.598183
+50%        2.024670
+75%        2.700440
+max        7.331590
+Name: breakeven_minutes_median, dtype: float64
+      elasticity  start_occupancy  ...       rule  reference
+1111        -0.4             0.90  ...  peak_band  peak_zone
+1143        -0.4             0.90  ...  peak_band  peak_zone
+1495        -0.2             0.75  ...  peak_band  peak_zone
+1527        -0.2             0.75  ...  peak_band  peak_zone
+1559        -0.2             0.90  ...  peak_band  peak_zone
+1591        -0.2             0.90  ...  peak_band  peak_zone
+1623        -0.2             0.90  ...  peak_band  peak_zone
+1655        -0.2             0.90  ...  peak_band  peak_zone
+1687        -0.2             0.90  ...  peak_band  peak_zone
+1719        -0.2             0.90  ...  peak_band  peak_zone
+
+[10 rows x 6 columns]

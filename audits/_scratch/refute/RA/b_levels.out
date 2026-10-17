@@ -1,0 +1,207 @@
+baseline_occupancy: 25% of segments at the peak cap and 25% at the floor; anchor set 'philadelphia' in config/demand_baseline.yaml does not suit these covariates
+baseline_occupancy: 40% of segments at the peak cap and 40% at the floor; anchor set 'philadelphia' in config/demand_baseline.yaml does not suit these covariates
+=== 1. Level grid (philadelphia anchors; offpeak_floor 0.20). Columns: busiest priced zone-hour, priced-hour mean, Arnott direction, band means, Seattle directions (8-12,12-16,16-20)
+
+low_demand_peak=0.62 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.621  0.524    cut  0.489  0.552  0.532     ---
+ccc            0.758    0.6    cut   0.58  0.668  0.552     ---
+fishtown       0.593  0.475    cut  0.419  0.475   0.53     ---
+south_philly   0.538  0.453    cut  0.427  0.467  0.477     ---
+ucity          0.641  0.526    cut    0.5  0.569  0.507     ---
+
+low_demand_peak=0.62 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.648  0.544    cut  0.506  0.575  0.551     ---
+ccc            0.802  0.629    cut  0.607  0.704  0.577     -0-
+fishtown       0.612  0.488    cut  0.429  0.489  0.546     ---
+south_philly   0.552  0.463    cut  0.436  0.478  0.488     ---
+ucity          0.667  0.543    cut  0.516   0.59  0.523     ---
+
+low_demand_peak=0.7 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.644  0.543    cut  0.505  0.572  0.553     ---
+ccc            0.777  0.614    cut  0.593  0.684  0.564     ---
+fishtown       0.627  0.497    cut  0.437  0.497  0.558     ---
+south_philly   0.573  0.478    cut   0.45  0.494  0.505     ---
+ucity          0.674   0.55    cut  0.523  0.596  0.531     ---
+
+low_demand_peak=0.7 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.672  0.563    cut  0.523  0.595  0.572     ---
+ccc            0.821  0.643    cut   0.62   0.72  0.589     -0-
+fishtown       0.647  0.511    cut  0.447  0.511  0.575     ---
+south_philly   0.587  0.489    cut  0.458  0.505  0.516     ---
+ucity          0.699  0.568    cut  0.539  0.617  0.547     ---
+
+low_demand_peak=0.75 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.659  0.555    cut  0.516  0.584  0.566     ---
+ccc            0.789  0.622    cut  0.601  0.694  0.572     ---
+fishtown       0.649  0.512    cut  0.448  0.511  0.576     ---
+south_philly   0.595  0.494    cut  0.464   0.51  0.522     ---
+ucity          0.694  0.565    cut  0.537  0.613  0.546     ---
+
+low_demand_peak=0.75 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.687  0.575    cut  0.533  0.607  0.586     ---
+ccc            0.833  0.652    cut  0.628   0.73  0.597     -0-
+fishtown       0.669  0.525    cut  0.458  0.525  0.592     ---
+south_philly   0.609  0.504    cut  0.473  0.522  0.534     ---
+ucity           0.72  0.583    cut  0.553  0.634  0.562     ---
+
+low_demand_peak=0.8 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.674  0.567    cut  0.526  0.596   0.58     ---
+ccc            0.801  0.631    cut  0.609  0.704   0.58     -0-
+fishtown       0.671  0.526    cut  0.459  0.524  0.594     ---
+south_philly   0.617   0.51    cut  0.478  0.527   0.54     ---
+ucity          0.715  0.581    cut  0.551   0.63  0.561     ---
+
+low_demand_peak=0.8 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.702  0.587    cut  0.543  0.619  0.599     ---
+ccc            0.845   0.66    cut  0.637   0.74  0.604     -0-
+fishtown       0.691  0.539    cut  0.469  0.538   0.61     ---
+south_philly   0.631   0.52    cut  0.487  0.538  0.551     ---
+ucity          0.741  0.598    cut  0.567  0.651  0.577     ---
+
+low_demand_peak=0.85 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.689  0.579    cut  0.536  0.609  0.593     ---
+ccc            0.813  0.639    cut  0.617  0.714  0.587     -0-
+fishtown       0.693   0.54    cut   0.47  0.538  0.612     ---
+south_philly   0.638  0.526    cut  0.492  0.544  0.557     ---
+ucity          0.735  0.596    cut  0.565  0.647  0.576     ---
+
+low_demand_peak=0.85 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.717  0.599    cut  0.554  0.631  0.612     ---
+ccc            0.857  0.669  RAISE  0.645   0.75  0.612     -0-
+fishtown       0.712  0.554    cut   0.48  0.552  0.628     ---
+south_philly   0.653  0.536    cut  0.501  0.555  0.568     ---
+ucity          0.761  0.614    cut  0.581  0.668  0.592     ---
+
+low_demand_peak=0.9 peak_target=0.92
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.704  0.591    cut  0.547  0.621  0.606     ---
+ccc            0.825  0.648    cut  0.626  0.724  0.595     -0-
+fishtown       0.714  0.554    cut  0.482  0.552   0.63     ---
+south_philly    0.66  0.542    cut  0.506   0.56  0.575     ---
+ucity          0.756  0.611    cut  0.579  0.664  0.591     ---
+
+low_demand_peak=0.9 peak_target=0.99
+             busiest   mean arnott  b8-12 b12-16 b16-20 seattle
+cca            0.731  0.611    cut  0.564  0.644  0.626     ---
+ccc            0.869  0.677  RAISE  0.653  0.759   0.62     -0-
+fishtown       0.734  0.568    cut  0.492  0.566  0.646     ---
+south_philly   0.674  0.552    cut  0.515  0.571  0.586     ---
+ucity          0.782  0.629    cut  0.595  0.685  0.607     ---
+
+=== 2. Percentile anchors (levels 0.62/0.92): intensity bounds at other percentiles of the priced set's own lambda
+
+percentiles 1/99: bounds -1.87/1.53; share at cap 0.010
+             busiest   mean arnott seattle
+cca            0.631  0.535    cut     ---
+ccc            0.759  0.602    cut     ---
+fishtown       0.613  0.491    cut     ---
+south_philly   0.559   0.47    cut     ---
+ucity          0.655  0.539    cut     ---
+
+percentiles 5/95: bounds -1.21/1.26; share at cap 0.050
+             busiest   mean arnott seattle
+cca            0.621  0.524    cut     ---
+ccc            0.758    0.6    cut     ---
+fishtown       0.593  0.475    cut     ---
+south_philly   0.538  0.453    cut     ---
+ucity          0.641  0.526    cut     ---
+
+percentiles 10/90: bounds -0.93/1.03; share at cap 0.100
+             busiest   mean arnott seattle
+cca            0.619  0.522    cut     ---
+ccc            0.763  0.604    cut     ---
+fishtown       0.584  0.468    cut     ---
+south_philly    0.53  0.447    cut     ---
+ucity           0.64  0.524    cut     ---
+
+percentiles 25/75: bounds -0.50/0.49; share at cap 0.250
+             busiest   mean arnott seattle
+cca            0.631  0.531    cut     ---
+ccc             0.78  0.616    cut     ---
+fishtown       0.579  0.464    cut     ---
+south_philly   0.528  0.447    cut     ---
+ucity          0.654  0.534    cut     ---
+
+percentiles 40/60: bounds -0.17/0.20; share at cap 0.400
+             busiest   mean arnott seattle
+cca            0.629  0.528    cut     ---
+ccc            0.782  0.618    cut     ---
+fishtown        0.57  0.457    cut     ---
+south_philly   0.529  0.448    cut     ---
+ucity          0.659  0.538    cut     ---
+
+=== 3. (g) Stand-in subsets under the tracked panel: zone statistics if only these blocks were metered
+
+all priced (tracked): n=3145 capacity=22653
+             busiest   mean arnott seattle
+cca            0.621  0.524    cut     ---
+ccc            0.758    0.6    cut     ---
+fishtown       0.593  0.475    cut     ---
+south_philly   0.538  0.453    cut     ---
+ucity          0.641  0.526    cut     ---
+
+frontage share >= 0.75: n=2352 capacity=17161
+             busiest   mean arnott seattle
+cca            0.657  0.543    cut     ---
+ccc            0.762  0.602    cut     ---
+fishtown       0.623  0.498    cut     ---
+south_philly   0.552  0.472    cut     ---
+ucity          0.682  0.548    cut     ---
+
+frontage share >= 0.9: n=2131 capacity=15699
+             busiest   mean arnott seattle
+cca            0.671   0.55    cut     ---
+ccc            0.767  0.605    cut     ---
+fishtown       0.627  0.502    cut     ---
+south_philly   0.567  0.479    cut     ---
+ucity          0.692  0.553    cut     ---
+
+class 2-3 (arterials) only: n=1566 capacity=11738
+             busiest   mean arnott seattle
+cca             0.66  0.545    cut     ---
+ccc            0.771  0.605    cut     ---
+fishtown       0.628  0.501    cut     ---
+south_philly    0.55   0.47    cut     ---
+ucity          0.625  0.514    cut     ---
+
+class 2-4 (no locals): n=2267 capacity=16150
+             busiest   mean arnott seattle
+cca             0.61  0.519    cut     ---
+ccc            0.772  0.606    cut     ---
+fishtown        0.59  0.465    cut     ---
+south_philly   0.537  0.451    cut     ---
+ucity          0.637  0.523    cut     ---
+
+class 5 (locals) only: n=878 capacity=6503
+             busiest   mean arnott seattle
+cca            0.646  0.538    cut     ---
+ccc            0.725  0.586    cut     ---
+fishtown       0.598  0.496    cut     ---
+south_philly   0.542  0.461    cut     ---
+ucity          0.649   0.53    cut     ---
+
+top half of lambda within zone: n=1571 capacity=11594
+             busiest   mean arnott seattle
+cca            0.763  0.608    cut     ---
+ccc            0.887  0.679  RAISE     -0-
+fishtown       0.688  0.558    cut     ---
+south_philly   0.609  0.506    cut     ---
+ucity          0.785  0.613    cut     ---
+
+capacity-weighted top half of lambda within zone: n=1529 capacity=11312
+             busiest   mean arnott seattle
+cca            0.769  0.611    cut     ---
+ccc            0.888   0.68  RAISE     -0-
+fishtown       0.691  0.561    cut     ---
+south_philly   0.607  0.504    cut     ---
+ucity           0.79  0.616    cut     ---

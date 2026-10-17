@@ -1,0 +1,23 @@
+total issues: 21
+00_setup_check.ipynb | MISSING NAME | phillyparking.pricing.targeting_rules.RULE_NAMES
+00_setup_check.ipynb | IMPORT tests.fixtures | make_synthetic_segments
+01_data_acquisition.ipynb | MISSING FUNC | phillyparking.io.opendataphilly.load_meters
+01_data_acquisition.ipynb | MISSING FUNC | phillyparking.io.opendataphilly.load_streets
+01_data_acquisition.ipynb | MISSING FUNC | phillyparking.io.census.load_acs
+01_data_acquisition.ipynb | MISSING FUNC | phillyparking.io.lodes.load_lodes
+01_data_acquisition.ipynb | MISSING FUNC | phillyparking.io.gtfs_loader.load_stops
+02_spatial_panel_construction.ipynb | MISSING REQUIRED ARG | join_acs('segments', 'acs_bg', 'buffer_m', 'uncovered') called with 1 positional []; missing ['acs_bg']
+02_spatial_panel_construction.ipynb | MISSING REQUIRED ARG | join_lodes('segments', 'wac', 'rac', 'blocks', 'buffer_m', 'max_unlocated_share') called with 1 positional []; missing ['wac', 'rac', 'blocks']
+02_spatial_panel_construction.ipynb | MISSING REQUIRED ARG | join_transit('segments', 'stop_freq', 'buffer_m') called with 1 positional []; missing ['stop_freq']
+02_spatial_panel_construction.ipynb | MISSING REQUIRED ARG | join_pois('segments', 'pois', 'buffer_m') called with 1 positional []; missing ['pois']
+05_seattle_pricing_simulation.ipynb | IMPORT tests.fixtures | make_synthetic_segments
+05_seattle_pricing_simulation.ipynb | MISSING REQUIRED ARG | adjust_zone_prices('occupancy', 'current_prices', 'bands', 'capacity_weighted', 'config') called with 2 positional []; missing ['bands']
+05_seattle_pricing_simulation.ipynb | MISSING REQUIRED ARG | annual_revenue('segments', 'occupancy_panel', 'prices', 'hours') called with 2 positional []; missing ['prices']
+06_revenue_scenarios.ipynb | BAD KWARG | phillyparking.revenue.forecast.revenue_curve(zone=...) ; accepts ['segments', 'baseline_panel', 'baseline_prices', 'elasticity', 'price_multiplier_grid', 'hours']
+06_revenue_scenarios.ipynb | BAD KWARG | phillyparking.revenue.forecast.revenue_curve(multipliers=...) ; accepts ['segments', 'baseline_panel', 'baseline_prices', 'elasticity', 'price_multiplier_grid', 'hours']
+06_revenue_scenarios.ipynb | BAD KWARG | phillyparking.revenue.forecast.revenue_under_scenarios(n_boot=...) ; accepts ['segments', 'baseline_panel', 'baseline_prices', 'new_prices', 'scenario_names', 'n_bootstrap', 'seed']
+06_revenue_scenarios.ipynb | BAD KWARG | phillyparking.revenue.forecast.revenue_under_scenarios(ci=...) ; accepts ['segments', 'baseline_panel', 'baseline_prices', 'new_prices', 'scenario_names', 'n_bootstrap', 'seed']
+06_revenue_scenarios.ipynb | MISSING REQUIRED ARG | revenue_curve('segments', 'baseline_panel', 'baseline_prices', 'elasticity', 'price_multiplier_grid', 'hours') called with 0 positional ['multipliers', 'zone']; missing ['segments', 'baseline_panel', 'baseline_prices', 'elasticity']
+06_revenue_scenarios.ipynb | MISSING REQUIRED ARG | revenue_under_scenarios('segments', 'baseline_panel', 'baseline_prices', 'new_prices', 'scenario_names', 'n_bootstrap', 'seed') called with 0 positional ['ci', 'n_boot']; missing ['segments', 'baseline_panel', 'baseline_prices', 'new_prices']
+07_welfare_incidence.ipynb | MISSING REQUIRED ARG | incidence_summary('trips_with_decile', 'cs_change_per_trip', 'revenue_by_decile') called with 1 positional []; missing ['cs_change_per_trip']
+Counter({'06_revenue_scenarios.ipynb': 6, '01_data_acquisition.ipynb': 5, '02_spatial_panel_construction.ipynb': 4, '05_seattle_pricing_simulation.ipynb': 3, '00_setup_check.ipynb': 2, '07_welfare_incidence.ipynb': 1})

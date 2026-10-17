@@ -1,0 +1,58 @@
+  b=seg[inbox].groupby("zone_box").apply(lambda d: pd.Series({"all":len(d),"cls2_5":int(d.street_class.isin(cls).sum()),"priced":int(d.priced_curb.sum()),"cap_all":int(d.capacity.sum()),"cap_priced":int(d.loc[d.priced_curb,'capacity'].sum())}))
+street_class counts:
+ street_class
+2      7492
+3      6410
+4     20282
+5     24613
+13      159
+18       10
+zone_box counts:
+ zone_box
+other           46828
+cca              4592
+south_philly     3372
+fishtown         1901
+ccc              1399
+ucity             874
+
+== PR #10 threshold sensitivity (recomputed from stored commercial_frontage_share, street_class 2-5, in a box)
+  min_commercial_share=0.1: priced segments 5360, capacity 38380
+  min_commercial_share=0.25: priced segments 4237, capacity 30572
+  min_commercial_share=0.5: priced segments 3145, capacity 22653
+  min_commercial_share=0.75: priced segments 2352, capacity 17161
+  threshold 0.45: segments 3487, capacity 25103
+  threshold 0.49: segments 3222, capacity 23220
+  threshold 0.51: segments 3065, capacity 22070
+  threshold 0.55: segments 2803, capacity 20180
+
+== priced curb at 0.5 by zone (stored zone_id)
+                 n   cap  length_km  mean_share  share_of_segments  share_of_capacity
+zone_id                                                                              
+cca           1115  7777     68.337       0.865              0.355              0.343
+ccc            993  7328     64.018       0.954              0.316              0.323
+fishtown       376  2655     23.345       0.813              0.120              0.117
+south_philly   407  2728     24.155       0.814              0.129              0.120
+ucity          254  2165     18.894       0.867              0.081              0.096
+total 3145 22653
+stored priced_curb == recomputed? True
+zone_id != other iff priced: True
+
+== per box: all segs, class 2-5 segs, priced, priced share of class 2-5
+               all  cls2_5  priced  cap_all  cap_priced  priced/cls2_5
+zone_box                                                              
+cca           4592    4591    1115    32431        7777          0.243
+ccc           1399    1399     993    10051        7328          0.710
+fishtown      1901    1841     376    13937        2655          0.204
+south_philly  3372    3372     407    23056        2728          0.121
+ucity          874     874     254     7201        2165          0.291
+
+priced by class:
+ street_class
+2    800
+3    766
+4    701
+5    878
+
+frontage share histogram (class 2-5 in box): [5118, 1599, 1123, 1092, 793, 221, 2131] bins [0,.001,.1,.25,.5,.75,.9,1]
+share exactly 0: 5086 exactly 1: 1901 within 0.01 of 0.5: 157

@@ -1,0 +1,385 @@
+FF.F...............F.............s........F....FF....................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+F....F....................FFF....FFF............F....................... [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+_________________________ test_apply_elasticity_basic _________________________
+
+    def test_apply_elasticity_basic():
+        base = pd.DataFrame({
+            "segment_id": ["s1"],
+            "zone_id": ["ccc"],
+            "hour_of_week": [12],
+            "occupancy": [0.6],
+            "price": [2.0],
+        })
+        new = pd.DataFrame({
+            "segment_id": ["s1"],
+            "hour_of_week": [12],
+            "price": [4.0],
+        })
+        out = apply_elasticity(base, new, elasticity=-0.5, reference_price=2.0)
+        expected = 0.6 * float(demand_factor(4.0, 2.0, -0.5, 2.0))
+>       assert float(out["occupancy"].iloc[0]) == pytest.approx(expected, abs=1e-9)
+E       assert 0.6 == 0.36391839582758007 ± 1.0e-09
+E         
+E         comparison failed
+E         Obtained: 0.6
+E         Expected: 0.36391839582758007 ± 1.0e-09
+
+tests\test_apply_elasticity.py:31: AssertionError
+____ test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone ____
+
+    def test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone():
+        base = pd.DataFrame({"segment_id": ["s1", "s2"], "zone_id": ["ccc", "cca"], "hour_of_week": [12, 12],
+                             "occupancy": [0.6, 0.6], "price_usd_per_hr": [4.0, 3.5]})
+        new = pd.DataFrame({"zone_id": ["ccc", "cca"], "price_usd_per_hr": [5.0, 4.5]})
+        with pytest.raises(ValueError, match="reference_price"):
+            apply_elasticity(base, new, elasticity=-0.4)
+        ref = pd.DataFrame({"zone_id": ["ccc", "cca"], "price_usd_per_hr": [4.0, 3.5]})
+        out = apply_elasticity(base, new, elasticity=-0.4, reference_price=ref)
+>       assert out["occupancy"].tolist() == pytest.approx([0.6 * np.exp(-0.4 * 1.0 / 4.0), 0.6 * np.exp(-0.4 * 1.0 / 3.5)])
+E       assert [0.6, 0.5352018368718566] == approx([0.542...66 ± 5.4e-07])
+E         
+E         comparison failed. Mismatched elements: 1 / 2:
+E         Max absolute difference: 0.057097549178424245
+E         Max relative difference: 0.09516258196404041
+E         Index | Obtained | Expected                    
+E         0     | 0.6      | 0.5429024508215757 ± 5.4e-07
+
+tests\test_apply_elasticity.py:43: AssertionError
+_________________ test_apply_elasticity_only_in_priced_hours __________________
+
+    def test_apply_elasticity_only_in_priced_hours():
+        # ccc: Monday 03:00 and Sunday noon are unpriced, Monday noon and Saturday noon priced.
+        hours = [3, 6 * 24 + 12, 12, 5 * 24 + 12]
+        base = pd.DataFrame({
+            "segment_id": "s1", "zone_id": "ccc", "hour_of_week": hours,
+            "occupancy": 0.6, "price_usd_per_hr": 2.0,
+        })
+        new = pd.DataFrame({"zone_id": ["ccc"], "price_usd_per_hr": [4.0]})
+        out = apply_elasticity(base, new, elasticity=-0.5, reference_price=2.0)
+        moved = 0.6 * float(demand_factor(4.0, 2.0, -0.5, 2.0))
+>       assert out["occupancy"].tolist() == pytest.approx([0.6, 0.6, moved, moved])
+E       assert [0.6, 0.6, 0....1839582758007] == approx([0.6 ±...07 ± 3.6e-07])
+E         
+E         comparison failed. Mismatched elements: 1 / 4:
+E         Max absolute difference: 0.2360816041724199
+E         Max relative difference: 0.3934693402873665
+E         Index | Obtained | Expected                     
+E         2     | 0.6      | 0.36391839582758007 ± 3.6e-07
+
+tests\test_apply_elasticity.py:74: AssertionError
+_____________ test_band_rules_move_each_band_on_its_own_statistic _____________
+
+    def test_band_rules_move_each_band_on_its_own_statistic():
+        # Midday band 12-16 hot at the top (q95 > 0.85, mean < 0.85), morning band 8-12 cold.
+        priced = frame_priced_mask(_panel(lambda h: 0.0))
+    
+        def occ(h):
+            if not priced[h]:
+                return 0.1
+            hod = h % 24
+            if 12 <= hod < 16:
+                return 0.95 if (h // 24) == 0 else 0.75   # Monday hot, other days inside the band
+            return 0.40
+        panel = _panel(occ)
+        peak = tr.review("peak_band", panel)
+        mean = tr.review("mean_band", panel)
+        assert set(peak["hour_of_week"]) <= set(np.flatnonzero(priced))
+>       assert _band_price(peak, 12, 16) == 2.5 and _band_price(mean, 12, 16) == 2.0
+E       assert (2.0 == 2.5)
+E        +  where 2.0 = _band_price(   zone_id  hour_of_week  price_usd_per_hr\n0      ccc             8               1.5\n1      ccc             9        ...c           137               1.5\n30     ccc           138               1.5\n31     ccc           139               1.5, 12, 16)
+
+tests\test_cm_sweep.py:114: AssertionError
+__________________________ test_one_segment_one_hour __________________________
+
+    def test_one_segment_one_hour():
+        segments, panel = _one(1.0, MON_NOON)
+        out = hourly_cruising_dwl(panel, segments, target_vacancy=0.15,
+                                  avg_cruising_minutes=5.0, value_of_time_usd_per_hr=20.0)
+        assert len(out) == 1
+>       assert abs(out["demand_excess"].iloc[0] - 1.5) < 1e-9
+E       assert np.float64(1.5) < 1e-09
+E        +  where np.float64(1.5) = abs((np.float64(0.0) - 1.5))
+
+tests\test_cruising_dwl.py:25: AssertionError
+____________________ test_threshold_follows_target_vacancy ____________________
+
+    def test_threshold_follows_target_vacancy():
+        segments, panel = _one(0.82, MON_NOON)
+        assert hourly_cruising_dwl(panel, segments, target_vacancy=0.15)["dwl_usd"].iloc[0] == 0.0
+>       assert hourly_cruising_dwl(panel, segments, target_vacancy=0.20)["demand_excess"].iloc[0] == pytest.approx(0.2)
+E       assert np.float64(0.0) == 0.2 ± 2.0e-07
+E         
+E         comparison failed
+E         Obtained: 0.0
+E         Expected: 0.2 ± 2.0e-07
+
+tests\test_cruising_dwl.py:50: AssertionError
+_____________________________ test_annual_scaling _____________________________
+
+    def test_annual_scaling():
+        segments, panel = _one(1.0, MON_NOON)
+        out = annual_cruising_dwl(panel, segments, priced_weeks=52)
+>       assert abs(out["annual_dwl_usd"].iloc[0] - 2.50 * 52) < 1e-6
+E       assert np.float64(130.0) < 1e-06
+E        +  where np.float64(130.0) = abs((np.float64(0.0) - (2.5 * 52)))
+
+tests\test_cruising_dwl.py:56: AssertionError
+______________ test_mask_matches_config_every_hour_of_week[ccc] _______________
+
+zone = {'bbox': {'east': -75.14, 'north': 39.96, 'south': 39.945, 'west': -75.17}, 'ceiling': 8.0, 'current_rate_usd_per_hr': 4.0, 'description': 'Arch–Locust × 4th–20th', ...}
+
+    @pytest.mark.parametrize("zone", ZONES, ids=[z["id"] for z in ZONES])
+    def test_mask_matches_config_every_hour_of_week(zone):
+        hours = np.arange(168)
+        got = priced_mask(np.full(168, zone["id"], dtype=object), hours)
+        expected = np.array([_expected_priced(zone, DAY_NAMES[h // 24], h % 24) for h in hours])
+>       assert (got == expected).all(), np.flatnonzero(got != expected)
+E       AssertionError: array([ 12,  13,  14,  15,  16,  17,  18,  19,  36,  37,  38,  39,  40,
+E                 41,  42,  43,  60,  61,  62,  63,  64,  65,  66,  67,  84,  85,
+E                 86,  87,  88,  89,  90,  91, 108, 109, 110, 111, 112, 113, 114,
+E                115])
+E       assert np.False_
+E        +  where np.False_ = <built-in method all of numpy.ndarray object at 0x0000018D40D592F0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x0000018D40D592F0> = array([False,...False, False]) == array([False,...False, False])
+E             
+E             Use -v to get more diff.all
+
+tests\test_priced_hours.py:42: AssertionError
+_______________ test_weekly_and_annual_hours_match_config[ccc] ________________
+
+zone = {'bbox': {'east': -75.14, 'north': 39.96, 'south': 39.945, 'west': -75.17}, 'ceiling': 8.0, 'current_rate_usd_per_hr': 4.0, 'description': 'Arch–Locust × 4th–20th', ...}
+
+    @pytest.mark.parametrize("zone", ZONES, ids=[z["id"] for z in ZONES])
+    def test_weekly_and_annual_hours_match_config(zone):
+        expected = sum(
+            _expected_priced(zone, DAY_NAMES[d], h) for d in range(7) for h in range(24)
+        )
+>       assert weekly_priced_hours(zone["id"]) == expected
+E       AssertionError: assert 32 == 72
+E        +  where 32 = weekly_priced_hours('ccc')
+
+tests\test_priced_hours.py:50: AssertionError
+_____________ test_revenue_is_52_weeks_of_priced_rows[status_quo] _____________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'status_quo'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_revenue_is_52_weeks_of_priced_rows(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        df = _with_zone(r, segs)
+        priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+        p = df.loc[priced]
+        expected = 52 * float((p["occupancy"] * p["capacity"] * _row_price(p, r.prices)).sum())
+>       assert float(r.revenue["annual_revenue_usd"].sum()) == pytest.approx(expected, rel=1e-9)
+E       assert 2344841.8694639695 == 3170550.537658287 ± 0.00317055
+E         
+E         comparison failed
+E         Obtained: 2344841.8694639695
+E         Expected: 3170550.537658287 ± 0.00317055
+
+tests\test_scenario_hours.py:79: AssertionError
+----------------------------- Captured log setup ------------------------------
+WARNING  phillyparking.scenarios.runner:runner.py:339 status_quo: 4 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 seattle: 4 segments in zones absent from zones.yaml (['other']) earn no revenue
+WARNING  phillyparking.scenarios.runner:runner.py:339 full_pbd: 4 segments in zones absent from zones.yaml (['other']) earn no revenue
+______________ test_revenue_is_52_weeks_of_priced_rows[seattle] _______________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'seattle'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_revenue_is_52_weeks_of_priced_rows(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        df = _with_zone(r, segs)
+        priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+        p = df.loc[priced]
+        expected = 52 * float((p["occupancy"] * p["capacity"] * _row_price(p, r.prices)).sum())
+>       assert float(r.revenue["annual_revenue_usd"].sum()) == pytest.approx(expected, rel=1e-9)
+E       assert 1282453.2480901117 == 1488880.415138691 ± 0.00148888
+E         
+E         comparison failed
+E         Obtained: 1282453.2480901117
+E         Expected: 1488880.415138691 ± 0.00148888
+
+tests\test_scenario_hours.py:79: AssertionError
+______________ test_revenue_is_52_weeks_of_priced_rows[full_pbd] ______________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'full_pbd'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_revenue_is_52_weeks_of_priced_rows(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        df = _with_zone(r, segs)
+        priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
+        p = df.loc[priced]
+        expected = 52 * float((p["occupancy"] * p["capacity"] * _row_price(p, r.prices)).sum())
+>       assert float(r.revenue["annual_revenue_usd"].sum()) == pytest.approx(expected, rel=1e-9)
+E       assert 1324351.213102913 == 2040706.97783...2 ± 0.00204071
+E         
+E         comparison failed
+E         Obtained: 1324351.213102913
+E         Expected: 2040706.9778341732 ± 0.00204071
+
+tests\test_scenario_hours.py:79: AssertionError
+_____ test_dwl_scored_over_priced_hours_at_default_threshold[status_quo] ______
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'status_quo'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+        tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+        assert r.diagnostics["dwl_target_vacancy"] == tv
+>       assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, tv), rel=1e-9)
+E       assert 96.4040212076682 == 1641.5949361544897 ± 1.6e-06
+E         
+E         comparison failed
+E         Obtained: 96.4040212076682
+E         Expected: 1641.5949361544897 ± 1.6e-06
+
+tests\test_scenario_hours.py:151: AssertionError
+_______ test_dwl_scored_over_priced_hours_at_default_threshold[seattle] _______
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'seattle'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+        tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+        assert r.diagnostics["dwl_target_vacancy"] == tv
+>       assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, tv), rel=1e-9)
+E       assert 63342.856522822934 == 64888.047437769754 ± 6.5e-05
+E         
+E         comparison failed
+E         Obtained: 63342.856522822934
+E         Expected: 64888.047437769754 ± 6.5e-05
+
+tests\test_scenario_hours.py:151: AssertionError
+______ test_dwl_scored_over_priced_hours_at_default_threshold[full_pbd] _______
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'full_pbd'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+        tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+        assert r.diagnostics["dwl_target_vacancy"] == tv
+>       assert float(r.cruising_dwl["annual_dwl_usd"].sum()) == pytest.approx(_expected_dwl(r, segs, tv), rel=1e-9)
+E       assert 63950.85635775549 == 65496.04727270231 ± 6.5e-05
+E         
+E         comparison failed
+E         Obtained: 63950.85635775549
+E         Expected: 65496.04727270231 ± 6.5e-05
+
+tests\test_scenario_hours.py:151: AssertionError
+__________ test_band_statistic_uses_priced_hours_including_saturday ___________
+
+    def test_band_statistic_uses_priced_hours_including_saturday():
+        # Weekdays 0.60, Saturday 0.90, everything else 1.0. ccc is priced Mon-Sat 8-20, so
+        # each band averages 5 weekdays at 0.60 and Saturday at 0.90; unpriced hours are ignored.
+        panel = _panel("ccc", lambda d, h: 0.60 if d < 5 else 0.90 if d == 5 else 1.0)
+        stats = zone_band_occupancy(panel, BANDS)
+        assert len(stats) == 3
+>       assert stats["band_occ"].tolist() == pytest.approx([(5 * 0.60 + 0.90) / 6] * 3)
+E       assert [0.65, 0.9, 0.9] == approx([0.65 ...65 ± 6.5e-07])
+E         
+E         comparison failed. Mismatched elements: 2 / 3:
+E         Max absolute difference: 0.25
+E         Max relative difference: 0.2777777777777778
+E         Index | Obtained | Expected      
+E         1     | 0.9      | 0.65 ± 6.5e-07
+E         2     | 0.9      | 0.65 ± 6.5e-07
+
+tests\test_seattle_rule.py:65: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_apply_elasticity.py::test_apply_elasticity_basic - assert 0...
+FAILED tests/test_apply_elasticity.py::test_apply_elasticity_needs_the_reference_price_and_reads_it_per_zone
+FAILED tests/test_apply_elasticity.py::test_apply_elasticity_only_in_priced_hours
+FAILED tests/test_cm_sweep.py::test_band_rules_move_each_band_on_its_own_statistic
+FAILED tests/test_cruising_dwl.py::test_one_segment_one_hour - assert np.floa...
+FAILED tests/test_cruising_dwl.py::test_threshold_follows_target_vacancy - as...
+FAILED tests/test_cruising_dwl.py::test_annual_scaling - assert np.float64(13...
+FAILED tests/test_priced_hours.py::test_mask_matches_config_every_hour_of_week[ccc]
+FAILED tests/test_priced_hours.py::test_weekly_and_annual_hours_match_config[ccc]
+FAILED tests/test_scenario_hours.py::test_revenue_is_52_weeks_of_priced_rows[status_quo]
+FAILED tests/test_scenario_hours.py::test_revenue_is_52_weeks_of_priced_rows[seattle]
+FAILED tests/test_scenario_hours.py::test_revenue_is_52_weeks_of_priced_rows[full_pbd]
+FAILED tests/test_scenario_hours.py::test_dwl_scored_over_priced_hours_at_default_threshold[status_quo]
+FAILED tests/test_scenario_hours.py::test_dwl_scored_over_priced_hours_at_default_threshold[seattle]
+FAILED tests/test_scenario_hours.py::test_dwl_scored_over_priced_hours_at_default_threshold[full_pbd]
+FAILED tests/test_seattle_rule.py::test_band_statistic_uses_priced_hours_including_saturday
+16 failed, 319 passed, 1 skipped, 1 deselected, 8 warnings in 57.14s
+done g13_ccc_hours exit 1

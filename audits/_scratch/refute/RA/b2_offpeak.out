@@ -1,0 +1,84 @@
+C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim2\probe_b2_offpeak.py:27: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  print(m.groupby("zone").apply(lambda g: pd.Series({c: round(float(np.average(g[c], weights=g.cap)), 3) for c in ("office", "retail", "residential")})).to_string())
+C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim2\probe_b2_offpeak.py:35: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  print(pk.groupby("zone_id").apply(lambda g: round(float(np.average(g.occupancy, weights=g.capacity)), 3)).to_string())
+
+offpeak_floor=0.2 low_demand_peak=0.62 peak_target=0.92
+              busiest   mean arnott
+zone_id                            
+cca             0.621  0.524    cut
+ccc             0.758  0.600    cut
+fishtown        0.593  0.475    cut
+south_philly    0.538  0.453    cut
+ucity           0.641  0.526    cut
+
+offpeak_floor=0.2 low_demand_peak=0.85 peak_target=0.99
+              busiest   mean arnott
+zone_id                            
+cca             0.717  0.599    cut
+ccc             0.857  0.669  RAISE
+fishtown        0.712  0.554    cut
+south_philly    0.653  0.536    cut
+ucity           0.761  0.614    cut
+
+offpeak_floor=0.4 low_demand_peak=0.62 peak_target=0.92
+              busiest   mean arnott
+zone_id                            
+cca             0.682  0.620    cut
+ccc             0.785  0.682    cut
+fishtown        0.649  0.579    cut
+south_philly    0.610  0.560    cut
+ucity           0.685  0.614    cut
+
+offpeak_floor=0.4 low_demand_peak=0.85 peak_target=0.99
+              busiest   mean arnott
+zone_id                            
+cca             0.778  0.695    cut
+ccc             0.883  0.751  RAISE
+fishtown        0.769  0.658    cut
+south_philly    0.725  0.643    cut
+ucity           0.806  0.702    cut
+
+offpeak_floor=0.6 low_demand_peak=0.62 peak_target=0.92
+              busiest   mean arnott
+zone_id                            
+cca             0.743  0.716    cut
+ccc             0.811  0.764    cut
+fishtown        0.706  0.684    cut
+south_philly    0.682  0.668    cut
+ucity           0.730  0.703    cut
+
+offpeak_floor=0.6 low_demand_peak=0.85 peak_target=0.99
+              busiest   mean arnott
+zone_id                            
+cca             0.839  0.791    cut
+ccc             0.910  0.832  RAISE
+fishtown        0.826  0.763    cut
+south_philly    0.797  0.751    cut
+ucity           0.850  0.791    cut
+
+Capacity-weighted land-use mix by zone (office / retail / residential):
+              office  retail  residential
+zone                                     
+cca            0.298   0.277        0.426
+ccc            0.558   0.241        0.202
+fishtown       0.076   0.373        0.551
+south_philly   0.187   0.303        0.509
+ucity          0.416   0.243        0.341
+
+Share of each zone's priced capacity whose own weekly peak falls in each hour-of-day (weekday rows):
+hod             8     13    17
+zone_id                       
+cca           0.32  0.63  0.05
+ccc           0.13  0.85  0.02
+fishtown      0.48  0.47  0.05
+south_philly  0.43  0.56  0.01
+ucity         0.22  0.75  0.03
+
+Mean segment own-peak (capacity-weighted) vs zone busiest hour:
+zone_id
+cca             0.713
+ccc             0.800
+fishtown        0.653
+south_philly    0.645
+ucity           0.708

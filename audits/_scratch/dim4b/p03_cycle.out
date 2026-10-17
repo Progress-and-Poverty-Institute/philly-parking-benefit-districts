@@ -1,0 +1,5 @@
+seattle pessimistic converged True converged_year 5 years_run 5 cycle_period None phases None
+seattle optimistic converged True converged_year 6 years_run 6 cycle_period None phases None
+full_pbd pessimistic converged True converged_year 6 years_run 6 cycle_period None phases None
+full_pbd optimistic converged True converged_year 6 years_run 6 cycle_period None phases None
+_same_prices tol: 1.0 vs 1.0005: True | 1.0 vs 1.002: False

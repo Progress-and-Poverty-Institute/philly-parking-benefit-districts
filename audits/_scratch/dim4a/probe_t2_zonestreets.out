@@ -1,0 +1,53 @@
+
+
+== ucity: 254 priced segs, 2165 spaces; top streets by capacity
+                    sum  count
+street_name                   
+MARKET ST           163     20
+CHESTNUT ST         158     18
+LUDLOW ST           144     16
+LANCASTER AVE       130     17
+FILBERT ST          109     14
+SANSOM ST            82     10
+WALNUT ST            80      9
+WARREN ST            66      8
+HEALTH SCIENCES DR   63      7
+CIVIC CENTER BLVD    59      7
+
+== south_philly: 407 priced segs, 2728 spaces; top streets by capacity
+                             sum  count
+street_name                            
+S BROAD ST                   247     31
+OREGON AVE                   182     31
+S CHRISTOPHER COLUMBUS BLVD  180     21
+SNYDER AVE                   148     23
+E PASSYUNK AVE               134     19
+S WATER ST                   128     16
+S 7TH ST                     118     24
+REED ST                      102     14
+S SWANSON ST                  82      9
+WASHINGTON AVE                75      8
+
+== fishtown: 376 priced segs, 2655 spaces; top streets by capacity
+                sum  count
+street_name               
+FRANKFORD AVE   271     36
+N FRONT ST      237     25
+E GIRARD AVE    131     18
+ARAMINGO AVE    124     15
+N 2ND ST        106     12
+W GIRARD AVE    104     18
+GERMANTOWN AVE   95     13
+BEACH ST         63     11
+N HANCOCK ST     60      9
+HOPE ST          59      7
+
+priced share of in-box class-2-5 length (km) by zone:
+               all_km  priced_km  share
+cca           284.433     68.337  0.240
+ccc            88.011     64.018  0.727
+fishtown      119.490     23.345  0.195
+south_philly  203.157     24.155  0.119
+ucity          62.969     18.894  0.300
+
+WALNUT ST in ucity longitudes: 27 priced: 9 ; frontage share quantiles [0.0, 0.0, 1.0]

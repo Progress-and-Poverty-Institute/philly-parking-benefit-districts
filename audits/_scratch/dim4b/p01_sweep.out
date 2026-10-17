@@ -1,0 +1,13 @@
+elapsed 59.59825396537781 (2430, 16)
+tracked shape (216000, 16) years [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5), np.int64(6), np.int64(7), np.int64(8)] reps 100
+matched rows 2430 of 2430 new and 2430 tracked subset
+welfare_change                      max abs diff 0.000e+00  max rel 0.000e+00
+cs_change                           max abs diff 0.000e+00  max rel 0.000e+00
+revenue                             max abs diff 0.000e+00  max rel 0.000e+00
+search_cost                         max abs diff 0.000e+00  max rel 0.000e+00
+search_cost_per_minute              max abs diff 0.000e+00  max rel 0.000e+00
+cruising_dwl                        max abs diff 0.000e+00  max rel 0.000e+00
+share_block_hours_above_high        max abs diff 0.000e+00  max rel 0.000e+00
+share_block_hours_below_low         max abs diff 0.000e+00  max rel 0.000e+00
+mean_price                          max abs diff 0.000e+00  max rel 0.000e+00
+exit 0

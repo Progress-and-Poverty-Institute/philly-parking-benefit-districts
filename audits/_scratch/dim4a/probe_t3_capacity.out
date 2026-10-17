@@ -1,0 +1,47 @@
+capacity == floor(length_m/7*0.85) for all rows: True ; n mismatches 0
+length_m vs UTM geometry length max abs diff: 3.771248202610877e-09
+
+length_m (priced) quantiles:
+ count    3145.00
+mean       63.19
+std        21.23
+min         2.28
+1%         12.19
+5%         26.61
+25%        47.64
+50%        67.89
+75%        74.84
+95%        98.02
+99%       113.72
+max       119.48
+
+capacity (priced) distribution:
+ capacity
+0      12
+1      53
+2      68
+3     124
+4     268
+5     355
+6     238
+7     306
+8     896
+9     255
+10    295
+11    127
+12     82
+13     43
+14     23
+zero capacity among priced: 12 NaN: 0 NaN length 0
+zero capacity among ALL: 126
+
+priced capacity: sum floor 22653, sum exact 24134, floor loses 1481 (6.1%)
+segments with length <8.24 m (floor to 0): 126
+piece length quantiles all: {0.01: 15.5, 0.05: 35.5, 0.5: 74.0, 0.95: 98.9, 0.99: 115.2}
+
+columns: ['segment_id', 'geometry', 'length_m', 'street_name', 'street_class', 'capacity', 'has_meter', 'n_meters', 'zone_id', 'neighborhood', 'rpp_zone', 'acs_coverage', 'pop_density', 'median_hh_income', 'pct_renter', 'pct_white', 'vehicles_per_hh', 'jobs_within_200m', 'workers_within_200m', 'jobs_retail_share', 'jobs_food_accommodation_share', 'jobs_office_share', 'pois_count', 'pois_restaurant', 'pois_retail', 'pois_office', 'nearest_stop_distance_m', 'transit_trips_per_hr', 'commercial_frontage_share', 'zone_box', 'priced_curb']
+duplicate geometries (WKB) among all: 6 ; among priced: 0
+priced segments sharing both endpoints with another priced segment: 0
+
+spaces per km priced by class: {2: 115.0, 3: 113.9, 4: 112.5, 5: 114.1}
+implied total curb length priced km: 198.7 ; spaces/km overall 114.0 (one curb: 1000/7*0.85 = 121.4)

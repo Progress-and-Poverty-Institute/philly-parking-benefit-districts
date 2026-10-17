@@ -1,0 +1,63 @@
+rows 216000 reps 100 years [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5), np.int64(6), np.int64(7), np.int64(8)] rules ['peak_zone', 'mean_zone', 'peak_band', 'mean_band', 'seattle_rule']
+
+== B1(i): replication-year level, same-instrument pairs
+  mean_zone    vs peak_zone: rep-years 43200; mean_price comp<=ref 43200; comp<ref strictly 39831; gain>0 39831; gain<=0 3369; scd>0 39831; scd==0 3369; revenue_diff>0 (lower-priced rule earns MORE) 12
+      breakeven over rep-years: min 0.118 median 0.357 max 7.339; NaN 3369; <=0 0
+      where revenue_diff>0: elasticities [-0.7], gain min 3,757,903
+  mean_band    vs peak_band: rep-years 43200; mean_price comp<=ref 43200; comp<ref strictly 42981; gain>0 42981; gain<=0 219; scd>0 42981; scd==0 219; revenue_diff>0 (lower-priced rule earns MORE) 12
+      breakeven over rep-years: min 0.122 median 0.350 max 6.729; NaN 219; <=0 0
+      where revenue_diff>0: elasticities [-0.7], gain min 4,528,407
+  seattle_rule vs peak_band: rep-years 43200; mean_price comp<=ref 43074; comp<ref strictly 42988; gain>0 42936; gain<=0 264; scd>0 42959; scd==0 80; revenue_diff>0 (lower-priced rule earns MORE) 186
+      breakeven over rep-years: min -63.184 median 0.357 max 42.073; NaN 80; <=0 63
+      where revenue_diff>0: elasticities [-0.7, -0.4, -0.2], gain min -278,321
+
+== B1(iv): peak-rule rep-years with mean priced-hour price above the exponential revenue peak p0/|e| (necessary condition only; mean over zones)
+  e=-0.7 rev-max $2.86: peak_zone share rep-years mean_price > rev-max 0.773; mean_price median 3.38 max 5.29; year-8 median 4.12
+  e=-0.7 rev-max $2.86: peak_band share rep-years mean_price > rev-max 0.768; mean_price median 3.36 max 5.29; year-8 median 4.03
+  e=-0.7 rev-max $2.86: mean_zone share rep-years mean_price > rev-max 0.052; mean_price median 2.00 max 3.07; year-8 median 2.00
+  e=-0.4 rev-max $5.00: peak_zone share rep-years mean_price > rev-max 0.057; mean_price median 3.57 max 5.29; year-8 median 4.95
+  e=-0.4 rev-max $5.00: peak_band share rep-years mean_price > rev-max 0.053; mean_price median 3.52 max 5.29; year-8 median 4.89
+  e=-0.4 rev-max $5.00: mean_zone share rep-years mean_price > rev-max 0.000; mean_price median 2.00 max 3.58; year-8 median 2.00
+  e=-0.2 rev-max $10.00: peak_zone share rep-years mean_price > rev-max 0.000; mean_price median 4.00 max 5.29; year-8 median 5.29
+  e=-0.2 rev-max $10.00: peak_band share rep-years mean_price > rev-max 0.000; mean_price median 4.00 max 5.29; year-8 median 5.29
+  e=-0.2 rev-max $10.00: mean_zone share rep-years mean_price > rev-max 0.000; mean_price median 2.00 max 4.54; year-8 median 2.00
+
+== B2: per year, same-instrument pairs, across the 54 cells: max/median of the cell-median breakeven and cells_welfare_better
+  year 1: mean_band/peak_band med 1.54 max 8.84 meanbetter 1; mean_zone/peak_zone med 1.54 max 4.65 meanbetter 0; seattle_rule/peak_band med 1.56 max 33.68 meanbetter 2
+  year 2: mean_band/peak_band med 1.52 max 8.15 meanbetter 2; mean_zone/peak_zone med 1.47 max 4.15 meanbetter 0; seattle_rule/peak_band med 1.52 max 7.96 meanbetter 2
+  year 3: mean_band/peak_band med 1.59 max 7.78 meanbetter 2; mean_zone/peak_zone med 1.60 max 7.64 meanbetter 1; seattle_rule/peak_band med 1.60 max 7.85 meanbetter 2
+  year 4: mean_band/peak_band med 1.70 max 7.50 meanbetter 2; mean_zone/peak_zone med 1.78 max 8.24 meanbetter 1; seattle_rule/peak_band med 1.74 max 7.86 meanbetter 2
+  year 5: mean_band/peak_band med 1.74 max 7.43 meanbetter 2; mean_zone/peak_zone med 1.83 max 8.01 meanbetter 1; seattle_rule/peak_band med 1.78 max 7.54 meanbetter 2
+  year 6: mean_band/peak_band med 1.86 max 7.35 meanbetter 2; mean_zone/peak_zone med 1.89 max 7.69 meanbetter 2; seattle_rule/peak_band med 1.88 max 7.45 meanbetter 2
+  year 7: mean_band/peak_band med 1.91 max 7.30 meanbetter 2; mean_zone/peak_zone med 1.96 max 7.59 meanbetter 2; seattle_rule/peak_band med 1.92 max 7.17 meanbetter 2
+  year 8: mean_band/peak_band med 2.02 max 6.94 meanbetter 2; mean_zone/peak_zone med 2.06 max 7.33 meanbetter 2; seattle_rule/peak_band med 2.02 max 6.98 meanbetter 2
+  year 8 same-instrument: cells with breakeven_minutes_max (over reps) >= 15: 1 ; max over reps overall 15.79
+  year 8 mean_zone/peak_zone breakeven median by start x tau (median over e x sigma):
+block_dispersion   0.0   0.3   0.6
+start_occupancy                   
+0.60              1.55  1.71  2.66
+0.75              1.65  2.09  3.03
+0.90              1.34  1.96  3.63
+  by elasticity x sigma:
+observation_noise   0.0   0.1
+elasticity                   
+-0.7               1.93  1.89
+-0.4               1.98  1.94
+-0.2               2.19  2.52
+  mean-rule-better cells (welfare_diff_median>0) at year 8:
+      elasticity  start_occupancy  block_dispersion  observation_noise       rule  breakeven_minutes_median
+1671        -0.2              0.9               0.6                0.0  mean_band                  6.367038
+1679        -0.2              0.9               0.6                0.0  mean_zone                  6.570479
+1703        -0.2              0.9               0.6                0.1  mean_band                  6.940069
+1711        -0.2              0.9               0.6                0.1  mean_zone                  7.331591
+  of the 'peak better' cells at year 8 per pair, how many are sigma=0.1 cells: {'mean_band': '26 of 52', 'mean_zone': '26 of 52'}
+
+== B4: ordering_violations on the tracked sweep
+  mean_zone vs peak_zone: 12 violating rep-years of 43200
+kind     elasticity  start_occupancy  block_dispersion  observation_noise
+revenue  -0.7        0.9              0.3               0.0                  12
+    mean_price ref (peak) in violating rows: min 4.44 max 5.02; cmp (mean rule): min 2.71 max 3.00; rev-max at e=-0.7 is $2.86
+  mean_band vs peak_band: 12 violating rep-years of 43200
+kind     elasticity  start_occupancy  block_dispersion  observation_noise
+revenue  -0.7        0.9              0.3               0.0                  12
+    mean_price ref (peak) in violating rows: min 4.63 max 4.90; cmp (mean rule): min 2.76 max 2.88; rev-max at e=-0.7 is $2.86

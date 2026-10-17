@@ -1,0 +1,68 @@
+# Reading the Parking Authority's Right-to-Know release into the occupancy panel
+# (phillyparking.ingest.ppa, scripts/03b_ingest_ppa.py).
+#
+# The export's schema is unknown until it arrives. Map it here; no code change is needed.
+# Under each `columns:` the key is the canonical name the code uses and the value is the
+# export's column name (null = the export does not have it). A required column the mapping
+# leaves null, or a mapped column the file lacks, raises with the file's actual columns.
+#
+# The values below match the stub export written by ppa_stub.make_known_answer_export (and
+# `scripts/03b_ingest_ppa.py --stub`), so the stage can be run end to end before real data
+# exists. Replace them with the real export's names.
+
+sessions:
+  path: data/raw/ppa/sessions.csv     # relative to the project root, or absolute
+  columns:
+    start_time: SessionStart          # required
+    end_time: SessionEnd              # end_time or duration_minutes is required
+    duration_minutes: null
+    location_id: MeterNumber          # required: meter, pay station or meterUP zone id
+    amount_paid_usd: AmountPaid
+    posted_rate_usd_per_hr: RateApplied   # optional; checked against the rate schedule
+    channel: PaymentChannel
+  datetime_format: "%m/%d/%Y %H:%M"   # strftime format of the time columns; null = ISO 8601
+  # Session times are local wall-clock time. If the export carries a UTC offset, the times
+  # are converted to this zone and the offset dropped.
+  timezone: America/New_York
+  max_session_hours: 12               # a longer session is a data error and raises
+
+inventory:
+  path: data/raw/ppa/inventory.csv
+  columns:
+    location_id: MeterNumber          # required; must match sessions.location_id
+    spaces: Spaces                    # required: spaces the meter / pay station serves
+    zone_label: RateArea              # required: the rate area, mapped by zone_map below
+    segment_id: BlockFace             # optional: block face; null = each location is a segment
+    lon: Longitude
+    lat: Latitude
+  # Export rate-area label -> zones.yaml id. A label not listed here raises.
+  zone_map:
+    Center City Core: ccc
+    Center City Area: cca
+    University City: ucity
+    South Philadelphia: south_philly
+    Fishtown: fishtown
+
+rates:
+  path: data/raw/ppa/rates.csv
+  columns:
+    zone_label: RateArea              # mapped by inventory.zone_map
+    effective_from: EffectiveDate     # date the rate took effect
+    rate_usd_per_hr: HourlyRate
+  date_format: "%Y-%m-%d"
+
+# Paid sessions measure paid occupancy. Permit holders, placard users and non-payers occupy
+# spaces without a session. occupancy = paid occupancy / (1 - unpaid_share), per zone.
+# NOT MEASURED for Philadelphia: 0.0 makes the panel paid occupancy, a lower bound on true
+# occupancy. The Authority's occupancy studies (Request B item 3) or citation rates (Request A
+# item 3) could measure it; record the source here when they do.
+unpaid_use:
+  unpaid_share:
+    default: 0.0
+  source: "assumption (not measured): paid sessions only"
+
+checks:
+  max_unmatched_session_share: 0.01   # sessions whose location is not in the inventory
+  max_rate_mismatch_share: 0.01       # sessions whose posted rate differs from the schedule
+  over_capacity_tolerance: 1.05       # paid occupancy above this in a cell counts as over
+  max_over_capacity_share: 0.0        # share of cells allowed over; above it raises

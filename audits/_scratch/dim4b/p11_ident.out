@@ -1,0 +1,21 @@
+elasticity not identified by the data for zones ['ucity']; their posteriors come from the prior and the hierarchy only
+elasticity not identified by the data for zones ['ucity']; their posteriors come from the prior and the hierarchy only
+(a) one period, 3 zones, one price each 
+    {'cca': {'n_prices': 1, 'identified': False}, 'ccc': {'n_prices': 1, 'identified': False}, 'ucity': {'n_prices': 1, 'identified': False}} 
+    check_identification: RAISES: no zone's price elasticity is identified: cca (1 price), ccc
+(b) two periods, two zones both change, no control 
+    {'cca': {'n_prices': 2, 'identified': False}, 'ccc': {'n_prices': 2, 'identified': False}} 
+    check_identification: RAISES: no zone's price elasticity is identified: cca (2 prices), cc
+(b2) two periods, two zones change by same ratio 
+    {'cca': {'n_prices': 2, 'identified': False}, 'ccc': {'n_prices': 2, 'identified': False}} 
+    check_identification: RAISES: no zone's price elasticity is identified: cca (2 prices), cc
+(c) two periods, one changed, one control 
+    {'ccc': {'n_prices': 2, 'identified': True}, 'ucity': {'n_prices': 1, 'identified': False}} 
+    check_identification: passes (>=1 zone identified)
+(c2) the stub-like: ccc and cca change, ucity control 
+    {'cca': {'n_prices': 2, 'identified': True}, 'ccc': {'n_prices': 2, 'identified': True}, 'ucity': {'n_prices': 1, 'identified': False}} 
+    check_identification: passes (>=1 zone identified)
+(d) three periods, two zones changing differently, no control 
+    {'cca': {'n_prices': 3, 'identified': True}, 'ccc': {'n_prices': 3, 'identified': True}} 
+    check_identification: passes (>=1 zone identified)
+(e) no period col: [False, False, False]

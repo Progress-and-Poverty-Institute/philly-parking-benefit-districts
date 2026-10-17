@@ -1,0 +1,44 @@
+.................................s...................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+........................................................................ [ 85%]
+....F...........................................                         [100%]
+================================== FAILURES ===================================
+_________ test_search_cost_is_arrivals_times_time_times_value_of_time _________
+
+    def test_search_cost_is_arrivals_times_time_times_value_of_time():
+        cfg = load_search_cost_config()
+        occ, cap = np.array([0.95]), np.array([10.0])
+        arrivals = 0.95 * 10.0 / cfg.mean_duration_hr
+        expected = arrivals * (cfg.minutes_at_reference / 60.0) * cfg.value_of_time_usd_per_hr
+>       assert search_cost_usd(occ, cap, cfg)[0] == pytest.approx(expected)
+E       assert np.float64(28.185260462325985) == 10.555555555555554 ± 1.1e-05
+E         
+E         comparison failed
+E         Obtained: 28.185260462325985
+E         Expected: 10.555555555555554 ± 1.1e-05
+
+tests\test_targeting_welfare.py:40: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_targeting_welfare.py::test_search_cost_is_arrivals_times_time_times_value_of_time
+1 failed, 334 passed, 1 skipped, 1 deselected, 8 warnings in 61.16s (0:01:01)
+done g11_ref_cap exit 1

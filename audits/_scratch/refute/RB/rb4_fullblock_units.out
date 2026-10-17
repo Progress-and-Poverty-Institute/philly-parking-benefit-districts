@@ -1,0 +1,16 @@
+== mean_zone_vs_peak_zone, year 8, rep 0, 54 cells: breakeven in minutes AT THE 95% REFERENCE (as reported) vs AT A FULL BLOCK (c* x full-block multiplier)
+  c_tracked  cap-implied full-block cost   31.7 min per 5 ref-min | c* at reference: med  1.90 min  1.04 max  4.46 | at a full block: med  12.1 min   6.6 max  28.3
+  c_cap095   cap-implied full-block cost    5.0 min per 5 ref-min | c* at reference: med  9.51 min  4.29 max 28.75 | at a full block: med   9.5 min   4.3 max  28.8
+  c_cap0999  cap-implied full-block cost  333.3 min per 5 ref-min | c* at reference: med  0.21 min  0.10 max  0.41 | at a full block: med  13.8 min   6.7 max  27.7
+  config level 5 min at 95% on 10 spaces => 31.7 min expected search at a full block (cap 0.99); Shoup's collected 3.5-14 min averages are quoted in pricing_rules.yaml:38-40
+  if a full block cost  3.5 min (level 0.55 min at 95%): peak rule better in 0 of 54 cells
+  if a full block cost  8.0 min (level 1.26 min at 95%): peak rule better in 6 of 54 cells
+  if a full block cost 14.0 min (level 2.21 min at 95%): peak rule better in 39 of 54 cells
+== mean_band_vs_peak_band, year 8, rep 0, 54 cells: breakeven in minutes AT THE 95% REFERENCE (as reported) vs AT A FULL BLOCK (c* x full-block multiplier)
+  c_tracked  cap-implied full-block cost   31.7 min per 5 ref-min | c* at reference: med  1.82 min  1.24 max  4.05 | at a full block: med  11.6 min   7.8 max  25.7
+  c_cap095   cap-implied full-block cost    5.0 min per 5 ref-min | c* at reference: med  9.33 min  4.59 max 27.30 | at a full block: med   9.3 min   4.6 max  27.3
+  c_cap0999  cap-implied full-block cost  333.3 min per 5 ref-min | c* at reference: med  0.20 min  0.12 max  0.47 | at a full block: med  13.1 min   8.2 max  31.6
+  config level 5 min at 95% on 10 spaces => 31.7 min expected search at a full block (cap 0.99); Shoup's collected 3.5-14 min averages are quoted in pricing_rules.yaml:38-40
+  if a full block cost  3.5 min (level 0.55 min at 95%): peak rule better in 0 of 54 cells
+  if a full block cost  8.0 min (level 1.26 min at 95%): peak rule better in 1 of 54 cells
+  if a full block cost 14.0 min (level 2.21 min at 95%): peak rule better in 39 of 54 cells

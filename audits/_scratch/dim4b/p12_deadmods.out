@@ -1,0 +1,95 @@
+phillyparking.welfare.consumer_surplus
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_consumer_surplus.py']
+phillyparking.pricing.optimizer
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_optimizer.py']
+phillyparking.validation.calibration
+   src: ['src/phillyparking/validation/crossval.py']
+   scripts: []
+   app: []
+   tests: ['test_calibration.py']
+phillyparking.validation.crossval
+   src: []
+   scripts: []
+   app: []
+   tests: []
+phillyparking.validation.manual_counts
+   src: []
+   scripts: []
+   app: []
+   tests: []
+phillyparking.demand.ml_occupancy
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_ml_occupancy.py']
+phillyparking.demand.occupancy_estimator
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_occupancy_estimator.py']
+phillyparking.demand.features
+   src: ['src/phillyparking/demand/ml_occupancy.py']
+   scripts: []
+   app: []
+   tests: ['test_features.py']
+phillyparking.io.ppa_stub
+   src: ['src/phillyparking/demand/occupancy_estimator.py']
+   scripts: ['scripts/03b_ingest_ppa.py']
+   app: []
+   tests: ['test_loaders_provenance.py', 'test_ppa_ingest.py', 'test_ppa_stub.py']
+phillyparking.elasticity.scenarios
+   src: ['src/phillyparking/scenarios/runner.py']
+   scripts: ['scripts/05_run_scenarios.py']
+   app: ['app/pages/3_Revenue_Forecast.py']
+   tests: ['test_apply_elasticity.py', 'test_cm_sweep.py']
+phillyparking.viz.maps
+   src: []
+   scripts: []
+   app: ['app/pages/1_Map.py']
+   tests: []
+phillyparking.viz.charts
+   src: []
+   scripts: ['scripts/06_export_paper_figures.py']
+   app: ['app/pages/3_Revenue_Forecast.py', 'app/pages/4_Equity_Analysis.py']
+   tests: ['test_uncertainty_allocation_cs.py']
+phillyparking.viz.tables
+   src: []
+   scripts: ['scripts/07_export_report_assets.py']
+   app: []
+   tests: ['test_guards_provenance.py']
+phillyparking.viz.report_figures
+   src: []
+   scripts: ['scripts/07_export_report_assets.py']
+   app: []
+   tests: ['test_guards_provenance.py']
+phillyparking.welfare.incidence
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_incidence.py']
+phillyparking.revenue.forecast
+   src: ['src/phillyparking/scenarios/runner.py']
+   scripts: ['scripts/06_export_paper_figures.py']
+   app: ['app/pages/3_Revenue_Forecast.py']
+   tests: ['test_revenue_forecast.py', 'test_uncertainty_allocation_cs.py']
+phillyparking.elasticity.priors
+   src: []
+   scripts: []
+   app: []
+   tests: ['test_elasticity_priors.py']
+phillyparking.elasticity.hierarchical_bayes
+   src: []
+   scripts: ['scripts/04_fit_elasticity.py']
+   app: []
+   tests: ['test_hierarchical_bayes.py', 'test_identification_anchors.py']
+phillyparking.pricing.arnott_inci
+   src: ['src/phillyparking/pricing/optimizer.py', 'src/phillyparking/scenarios/runner.py']
+   scripts: []
+   app: []
+   tests: ['test_arnott_inci.py']

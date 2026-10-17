@@ -1,0 +1,53 @@
+# Pricing-rule parameters. See phillyparking.pricing.* for consumers.
+
+seattle_rule:
+  # One price per zone x time-of-day band (bands: scenarios.yaml time_of_day_bands).
+  # Statistic: the band's average capacity-weighted zone occupancy over the zone's
+  # priced hours, as in SDOT's 2024 Paid Parking report. [occ_low, occ_high] is the
+  # dead band in which the rate holds.
+  step_usd: 0.50
+  occ_high: 0.85          # if band_occ > occ_high → +step
+  occ_low: 0.70           # if band_occ < occ_low → −step
+  # Optional second tier: if band_occ >= occ_very_high, raise by 2*step.
+  occ_very_high: 0.95
+  # Max number of step increments per adjustment cycle.
+  max_step_per_cycle: 2
+
+chatman_manville:
+  # The targeting rules of the Chatman-Manville sweep (pricing/targeting_rules.py). Every
+  # rule steps +-step_usd on its own statistic against the same band: above occ_high raise,
+  # below occ_low cut, inside hold. The rules differ only in the statistic and its window.
+  # min_vacancy_peak raises when the peak_quantile of occupancy exceeds occ_high, i.e. when
+  # fewer than 1 - occ_high of spaces are vacant at the busiest hours. A guard test keeps
+  # this band equal to seattle_rule's.
+  occ_low: 0.70
+  occ_high: 0.85
+  step_usd: 0.50
+  peak_quantile: 0.95
+
+arnott_inci:
+  # Target vacancy at which cruising is just eliminated.
+  target_vacancy: 0.30
+  # Value of time for cruising drivers (USD/hour). 2024 USDOT default for local
+  # personal travel ≈ $17.90; bump for downtown trips with higher avg income.
+  value_of_time_usd_per_hr: 20.00
+
+# Search cost of the Chatman-Manville sweep's welfare scorer (welfare/targeting_welfare.py).
+# Shape: a block of K spaces at mean occupancy o is full with probability o^K, and an
+# arriving driver passes p/(1-p) full blocks. Level: minutes_at_reference is the expected
+# search time at reference_occupancy on a block of reference_capacity spaces. Shoup (2006,
+# "Cruising for parking") collects studies reporting 3.5 to 14 minutes of average cruising in
+# congested districts, so the sweep varies the level (config/scenarios.yaml
+# cruising_minutes_at_reference) rather than trusting one figure. Arrivals per hour are the
+# served cars divided by mean_duration_hr (a stated 90-minute mean stay); the value of time
+# is arnott_inci's. No Philadelphia measurement of any of these exists.
+search_cost:
+  minutes_at_reference: 5.0
+  reference_occupancy: 0.95
+  reference_capacity: 10
+  mean_duration_hr: 1.5
+  occupancy_cap: 0.99     # a full block costs a finite search; above this drivers give up
+
+# No-go bounds applied after every algorithm; never let prices drift outside these.
+global_floor_usd: 0.50
+global_ceiling_usd: 10.00

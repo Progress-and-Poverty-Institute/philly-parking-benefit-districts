@@ -1,0 +1,89 @@
+# Pricing zones for Philadelphia.
+# Mirrors the post-July-2025 PPA rate structure (research doc §4.3) and adds
+# pilot expansion zones. Geometries are resolved at build time via
+# phillyparking.spatial.zones.resolve_zones() against the segment table.
+
+zones:
+  - id: ccc
+    name: Center City Core
+    description: Arch–Locust × 4th–20th
+    current_rate_usd_per_hr: 4.00
+    long_term_meter_rate_usd_per_hr: 2.50
+    floor: 1.00
+    ceiling: 8.00
+    priced_hours: { weekday: [8, 12], saturday: [8, 20], sunday: null }
+    bbox: { west: -75.170, south: 39.945, east: -75.140, north: 39.960 }
+    role: primary
+
+  - id: cca
+    name: Center City Area
+    description: Spring Garden–Bainbridge × Schuylkill–Delaware (excl. Core)
+    current_rate_usd_per_hr: 3.50
+    long_term_meter_rate_usd_per_hr: 2.50
+    floor: 1.00
+    ceiling: 7.00
+    priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
+    bbox: { west: -75.190, south: 39.935, east: -75.130, north: 39.975 }
+    role: primary
+
+  - id: ucity
+    name: University City
+    description: Around UPenn / Drexel
+    current_rate_usd_per_hr: 2.00
+    floor: 1.00
+    ceiling: 6.00
+    priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
+    bbox: { west: -75.205, south: 39.945, east: -75.180, north: 39.965 }
+    role: primary
+
+  - id: south_philly
+    name: South Philadelphia commercial corridors
+    current_rate_usd_per_hr: 1.50
+    floor: 0.50
+    ceiling: 4.00
+    priced_hours: { weekday: [8, 18], saturday: [8, 18], sunday: null }
+    bbox: { west: -75.180, south: 39.910, east: -75.140, north: 39.935 }
+    role: secondary
+
+  - id: fishtown
+    name: Fishtown / Northern Liberties commercial corridors
+    current_rate_usd_per_hr: 1.50
+    floor: 0.50
+    ceiling: 4.00
+    priced_hours: { weekday: [8, 20], saturday: [8, 20], sunday: null }
+    bbox: { west: -75.145, south: 39.965, east: -75.115, north: 39.985 }
+    role: secondary
+
+# Which street segments a zone prices (spatial/segments.assign_priced_curb). A segment's zone
+# box is only its location; a zone prices the segments that are priced curb.
+priced_curb:
+  # City Street Centerline CLASS codes (metadata, PASDA copy of the City layer, read
+  # 2026-10-16): 1 expressway, 2 major arterial, 3 minor arterial, 4 collector, 5 local,
+  # 6 driveway, 9 low-speed ramp, 10 high-speed ramp, 12 non-travelable, 14 city boundary,
+  # 15 walking connector. 0 (Navy Yard), 13 and 18 are kept but never priced.
+  no_curb_classes: [1, 6, 9, 10, 12, 14, 15]   # dropped from the segment table
+  street_classes: [2, 3, 4, 5]                 # classes that can be priced
+  # STAND-IN until the Parking Authority's meter inventory is ingested (scripts/02 --meters):
+  # there is no public record of which blocks are metered, so a block counts as metered when
+  # at least min_commercial_share (half) of the zoned land within frontage_buffer_m is in the
+  # Commercial/Commercial Mixed-Use zoning group. An assumption, not a measurement.
+  frontage_buffer_m: 25
+  min_commercial_share: 0.5
+
+# Residential Permit Parking — current flat-rate regime (Bill #240335, eff. 2024-09-01).
+rpp:
+  base_annual_fee_usd: 75.00
+  motorcycle_annual_fee_usd: 50.00
+  household_cap: 3
+  low_income_first_vehicle_waiver: true
+  temp_15_day_usd: 75.00
+  temp_30_day_usd: 150.00
+  # For the Full PBD scenario, market-clearing residential permit price targets
+  # by zone class. Source: research doc §7 estimate ($500-$2,500 range).
+  market_pricing_targets_usd_per_year:
+    ccc: 2500
+    cca: 1800
+    ucity: 1500
+    south_philly: 800
+    fishtown: 800
+    other: 500

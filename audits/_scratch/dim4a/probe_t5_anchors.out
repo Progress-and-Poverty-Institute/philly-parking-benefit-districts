@@ -1,0 +1,46 @@
+  res=pm.groupby("zone_id").apply(lambda d: pd.Series({"priced_hr_mean_capw":w(d),"unweighted":d.occupancy.mean(),"min":d.occupancy.min(),"max":d.occupancy.max()}))
+  bz=pm.groupby(["zone_id","hour_of_week"]).apply(w).groupby("zone_id").max().round(3)
+== (D2) recompute anchors, independent of derive script (numpy, ddof=0, by hand)
+  jobs_within_200m: mean 6.9538 -> cfg center 6.95 ; sd 1.5619 -> cfg scale 1.56 ; match=True
+  pois_count: mean 1.4816 -> cfg center 1.48 ; sd 0.9463 -> cfg scale 0.95 ; match=True
+  pop_density: mean 8.6520 -> cfg center 8.65 ; sd 1.9010 -> cfg scale 1.9 ; match=True
+  transit_trips_per_hr: mean 5.3605 -> cfg center 5.36 ; sd 0.6739 -> cfg scale 0.67 ; match=True
+  lambda p5/p95 (using rounded cfg centers/scales): -1.2116 1.2587 cfg -1.21 1.26
+  ddof=1 scales would be: {'jobs_within_200m': 1.562, 'pois_count': 0.946, 'pop_density': 1.901, 'transit_trips_per_hr': 0.674}
+  n priced: 3145 ; reference text: priced curb of data/processed/segments.parquet, n=3145; no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5
+  share lam<=low: 0.0502  share lam>=high: 0.0499
+  lambda quantiles: {0: -3.78, 1: -1.87, 5: -1.21, 25: -0.5, 50: 0.0, 75: 0.49, 95: 1.26, 99: 1.53, 100: 1.79}
+  pop_density: sd(log1p) all 1.901; excluding zeros 0.802; share zero 0.038; share <100/km2: 0.040
+
+  lambda by zone (mean, share at cap, share at floor):
+               mean    cap  floor     n
+zone_id                                
+cca          -0.025  0.031  0.034  1115
+ccc           0.475  0.123  0.017   993
+fishtown     -0.406  0.000  0.066   376
+south_philly -0.527  0.000  0.120   407
+ucity        -0.276  0.000  0.114   254
+
+== source -> anchor set
+  kind from load_priced_segments: file -> set philadelphia
+  raises without segment_source attrs: baseline anchors: segments have source kind None, which has no anchor set in config/demand ...
+  attrs after pd.concat: {'segment_source': {'kind': 'file', 'path': 'C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet', 'filter': 'zone_id priced in config/zones.yaml', 'n_in_file': 58966, 'n_kept': 3145}}
+  concat: NO RAISE
+  kind mapping: {'synthetic_fixture': 'synthetic_fixture', 'file': 'philadelphia', 'ppa_inventory': 'philadelphia'}
+
+== real demand_panel: priced-hour mean occupancy by zone (capacity-weighted) and cap/floor shares
+              priced_hr_mean_capw  unweighted  min    max
+zone_id                                                  
+cca                         0.524       0.512  0.2  0.920
+ccc                         0.600       0.596  0.2  0.920
+fishtown                    0.475       0.469  0.2  0.849
+south_philly                0.453       0.440  0.2  0.871
+ucity                       0.526       0.516  0.2  0.903
+
+  busiest priced zone-hour (capacity-weighted): {'cca': 0.621, 'ccc': 0.758, 'fishtown': 0.593, 'south_philly': 0.538, 'ucity': 0.641}
+  cap of occupancy over entire panel: max 0.92 min 0.2
+  calibration attr from fresh run: {'anchor_set': 'philadelphia', 'share_at_cap': 0.04992050874403815, 'share_at_floor': 0.05023847376788553}
+
+  segment weekly peak share >=0.85 by zone: {'cca': 0.118, 'ccc': 0.445, 'fishtown': 0.0, 'south_philly': 0.015, 'ucity': 0.063}
+  segment weekly peak share <0.70 by zone: {'cca': 0.185, 'ccc': 0.084, 'fishtown': 0.319, 'south_philly': 0.536, 'ucity': 0.362}
+  zone mean of segment peaks: {'cca': 0.765, 'ccc': 0.823, 'fishtown': 0.725, 'south_philly': 0.709, 'ucity': 0.74}

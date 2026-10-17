@@ -1,0 +1,16 @@
+real rows 58966 priced 3145 cap priced 22653
+real columns ['segment_id', 'geometry', 'length_m', 'street_name', 'street_class', 'capacity', 'has_meter', 'n_meters', 'zone_id', 'neighborhood', 'rpp_zone', 'acs_coverage', 'pop_density', 'median_hh_income', 'pct_renter', 'pct_white', 'vehicles_per_hh', 'jobs_within_200m', 'workers_within_200m', 'jobs_retail_share', 'jobs_food_accommodation_share', 'jobs_office_share', 'pois_count', 'pois_restaurant', 'pois_retail', 'pois_office', 'nearest_stop_distance_m', 'transit_trips_per_hr', 'commercial_frontage_share', 'zone_box', 'priced_curb']
+
+== runA rows 58966 priced 3145 cap priced 22653
+columns equal: True dtypes equal: True
+segment_id order equal: True
+  geometry: exact-geom-equal True
+  all non-geom columns exactly equal check done
+  new build_report in meta: None
+
+== runB rows 58966 priced 3145 cap priced 22653
+columns equal: True dtypes equal: True
+segment_id order equal: True
+  geometry: exact-geom-equal True
+  all non-geom columns exactly equal check done
+  new build_report in meta: None

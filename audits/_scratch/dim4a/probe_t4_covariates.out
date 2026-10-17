@@ -1,0 +1,126 @@
+
+  c=seg.geometry.centroid
+NaN counts in priced for all columns >0:
+ rpp_zone                         3071
+median_hh_income                  228
+pct_renter                        125
+pct_white                         121
+vehicles_per_hh                   465
+jobs_retail_share                   6
+jobs_food_accommodation_share       6
+jobs_office_share                   6
+NaN counts in ALL segments >0:
+ neighborhood                       254
+rpp_zone                         58007
+median_hh_income                  6967
+pct_renter                        2745
+pct_white                         2671
+vehicles_per_hh                  11443
+jobs_retail_share                 3661
+jobs_food_accommodation_share     3661
+jobs_office_share                 3661
+
+== jobs_within_200m: priced by zone (n, zero share, min, p25, median, p75, max)
+                 n  zero   min      p25     med       p75      max
+zone_id                                                           
+cca           1115  0.00   0.0   370.50   722.0   1981.00  38607.0
+ccc            993  0.00  28.0  1266.00  3327.0  10260.00  48588.0
+fishtown       376  0.01   0.0   203.75   314.0    579.25   1775.0
+south_philly   407  0.00   3.0   192.00   374.0    666.50   2268.0
+ucity          254  0.00  55.0   274.75   994.0   2636.25  27581.0
+   all priced: zero share 0.0019 ; all segments zero share 0.0621
+
+== pois_count: priced by zone (n, zero share, min, p25, median, p75, max)
+                 n  zero  min  p25  med   p75  max
+zone_id                                           
+cca           1115  0.12    0  1.5  4.0   7.0   39
+ccc            993  0.10    0  2.0  5.0  13.0   72
+fishtown       376  0.17    0  1.0  3.0   5.0   20
+south_philly   407  0.25    0  1.0  2.0   4.0   17
+ucity          254  0.25    0  1.0  3.0   5.0   23
+   all priced: zero share 0.1466 ; all segments zero share 0.7226
+
+== pop_density: priced by zone (n, zero share, min, p25, median, p75, max)
+                 n  zero  min      p25       med       p75       max
+zone_id                                                             
+cca           1115  0.00  0.0  6222.64   9993.55  13289.25  47055.54
+ccc            993  0.02  0.0  4831.85   9366.30  13910.89  47974.64
+fishtown       376  0.03  0.0  5536.36   7427.42   8631.26  19995.61
+south_philly   407  0.13  0.0  4881.43  11718.64  14261.44  22425.97
+ucity          254  0.12  0.0  5442.54   8526.38  12080.75  24727.83
+   all priced: zero share 0.0385 ; all segments zero share 0.0453
+
+== transit_trips_per_hr: priced by zone (n, zero share, min, p25, median, p75, max)
+                 n  zero   min     p25    med     p75    max
+zone_id                                                     
+cca           1115   0.0  12.0  159.50  203.0  277.25  765.0
+ccc            993   0.0  28.0  173.50  322.0  567.00  966.0
+fishtown       376   0.0   7.0   90.00  126.0  156.62  200.0
+south_philly   407   0.0  47.5  133.25  156.5  185.00  287.5
+ucity          254   0.0  53.5  174.12  228.0  326.12  562.0
+   all priced: zero share 0.0 ; all segments zero share 0.042
+
+log1p stats (priced): mean, sd, skew
+  jobs_within_200m: mean 6.954 sd 1.562 skew 0.10
+  pois_count: mean 1.482 sd 0.946 skew 0.19
+  pop_density: mean 8.652 sd 1.901 skew -3.66
+  transit_trips_per_hr: mean 5.360 sd 0.674 skew -0.11
+
+correlation of log1p covariates (priced):
+                       jobs_within_200m  pois_count  pop_density  transit_trips_per_hr
+jobs_within_200m                  1.00        0.46         0.11                  0.75
+pois_count                        0.46        1.00         0.26                  0.46
+pop_density                       0.11        0.26         1.00                  0.18
+transit_trips_per_hr              0.75        0.46         0.18                  1.00
+
+acs_coverage priced quantiles: {0.0: 1.0, 0.01: 1.0, 0.05: 1.0, 0.5: 1.0} ; segments with coverage<0.99: 0
+pop_density priced quantiles (per km2): {0.0: 0.0, 0.05: 1056.0, 0.5: 9356.0, 0.95: 21775.0, 1.0: 47975.0}
+jobs priced quantiles: {0.0: 0.0, 0.05: 104.0, 0.5: 868.0, 0.95: 17252.0, 1.0: 48588.0}
+transit priced quantiles: {0.0: 7.0, 0.05: 77.5, 0.5: 192.5, 0.95: 706.2, 1.0: 966.0} nearest_stop_distance_m median 48.99347462312939
+
+neighborhood unmatched total: 254 priced: 0
+
+--- WALNUT ST (12 segs in window)
+          segment_id street_name  street_class zone_id  priced_curb  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr  median_hh_income  acs_coverage     lon    lat
+15597  S2417d67b227b   WALNUT ST             2     ccc         True         8                        1.0            9087.0          30    17331.349                 657.5        114260.109           1.0 -75.168  39.95
+15598  S68355c082882   WALNUT ST             2     ccc         True         8                        1.0            9156.0          38    18283.097                 575.0        113838.784           1.0 -75.169  39.95
+15599  Sb8431d684654   WALNUT ST             2     ccc         True         8                        1.0           12539.0          32    20785.361                 638.0        123510.733           1.0 -75.167  39.95
+
+--- S 9TH ST (13 segs in window)
+         segment_id street_name  street_class zone_id  priced_curb  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr  median_hh_income  acs_coverage     lon     lat
+9631  S4ddc5f24cd9b    S 9TH ST             4     cca         True        10                      0.978             630.0          10    14853.036                 169.5          122188.0           1.0 -75.158  39.939
+9632  S5d9248f8e39d    S 9TH ST             4     cca         True         1                      0.830             624.0          14     5902.055                 148.0               NaN           1.0 -75.158  39.938
+9633  S59700cb4c976    S 9TH ST             4     cca         True         1                      1.000             644.0          15     5902.055                 148.0               NaN           1.0 -75.158  39.938
+
+--- S BROAD ST (0 segs in window)
+Empty DataFrame
+Columns: [segment_id, street_name, street_class, zone_id, priced_curb, capacity, commercial_frontage_share, jobs_within_200m, pois_count, pop_density, transit_trips_per_hr, median_hh_income, acs_coverage, lon, lat]
+Index: []
+
+--- OREGON AVE (89 segs in window)
+         segment_id street_name  street_class       zone_id  priced_curb  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr  median_hh_income  acs_coverage     lon     lat
+1499  S2f76640dbc71  OREGON AVE             2  south_philly         True        10                      0.697             386.0           0     1396.967                 282.0         75585.000           1.0 -75.179  39.918
+1500  Sd89b29db0dfa  OREGON AVE             2         other        False         6                      0.181             398.0           0     2872.050                 293.0         78116.663           1.0 -75.178  39.918
+1501  S4fbb03674a78  OREGON AVE             2         other        False         5                      0.000             186.0           0     9906.093                 279.5         89634.948           1.0 -75.177  39.918
+
+--- MOLE ST (0 segs in window)
+Empty DataFrame
+Columns: [segment_id, street_name, street_class, zone_id, priced_curb, capacity, commercial_frontage_share, jobs_within_200m, pois_count, pop_density, transit_trips_per_hr, median_hh_income, acs_coverage, lon, lat]
+Index: []
+
+Top 5 priced by jobs:
+                street_name zone_id  jobs_within_200m  pois_count   pop_density
+15779            MARKET ST     ccc           48588.0          10  12606.570093
+15780            MARKET ST     ccc           48588.0           9  12447.187565
+15807            N 17TH ST     ccc           43926.0          10  13430.290258
+15814  JOHN F KENNEDY BLVD     ccc           43636.0           6  13289.249831
+15798            MARKET ST     ccc           41196.0          12  13560.722072
+
+Priced in south_philly sample 6:
+                        street_name  street_class  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr
+11607                    TASKER ST             3        11                       1.00             526.0           3        87.75                 152.0
+3227                     PORTER ST             4         6                       0.64             565.0           0     16606.53                 178.5
+11314                 S SWANSON ST             5        10                       1.00             667.0           3         0.00                 207.5
+6172                     MORRIS ST             3         4                       0.54             210.0           3     19992.05                 144.0
+8175                    S BROAD ST             2         8                       0.73            2018.0           2     13354.17                 162.0
+11443  S CHRISTOPHER COLUMBUS BLVD             2         8                       1.00             394.0           2      1180.49                 114.5

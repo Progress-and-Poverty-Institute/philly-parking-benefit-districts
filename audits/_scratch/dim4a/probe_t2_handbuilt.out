@@ -1,0 +1,35 @@
+cfg {'no_curb_classes': [1, 6, 9, 10, 12, 14, 15], 'street_classes': [2, 3, 4, 5], 'frontage_buffer_m': 25, 'min_commercial_share': 0.5}
+kept classes [0.0, 2.0, 3.0, 4.0, 5.0, 7.0, 13.0, 18.0] NaN class rows 1
+PASS kept classes = 0,2,3,4,5,7,13,18 (+NaN row) got [0.0, 2.0, 3.0, 4.0, 5.0, 7.0, 13.0, 18.0] want [0, 2, 3, 4, 5, 7, 13, 18]
+PASS no_curb_dropped got 7 want 7
+PASS priced classes only 2-5 got [2.0, 3.0, 4.0, 5.0] want [2, 3, 4, 5]
+NaN-class row priced? False
+PASS N comm / S res (10m offset) = 0.5 got 0.500000000015522 want 0.5
+PASS N 15m deep comm, S 5m deep res = 0.75 got 0.7500000000465661 want 0.75
+PASS lots 30 m away => 0 got 0.0 want 0.0
+PASS lot past the segment end (flat cap) => 0 got 0.0 want 0.0
+PASS end-overlap area counted only inside flat buffer, residential rest =>  got 0.012658227854582359 want 0.012658227848101266
+PASS zoning covering the street itself got 0.0 want 0.0
+1 m2 commercial sliver, rest unzoned => share 1.0
+identical overlapping C and R polygons => share 0.5 (0.5 = double counted area)
+PASS industrial lot only => 0 got 0.0 want 0.0
+PASS diagonal inside all-commercial => 1 got 1.0 want 1.0
+ccc area 0.0004500000000000341
+cca area 0.0024000000000000397
+ucity area 0.0004999999999999076
+south_philly area 0.0010000000000003836
+fishtown area 0.0005999999999999033
+PASS ccc point (Rittenhouse-ish -75.16,39.95) got ccc want ccc
+PASS point in cca only (-75.185,39.97) got cca want cca
+PASS point in cca & ucity (-75.185,39.955) -> ucity (smaller) got ucity want ucity
+PASS point in cca & fishtown (-75.135,39.97) -> fishtown got fishtown want fishtown
+PASS point in cca & south_philly shared edge lat 39.935 -> south_philly (smaller) got south_philly want south_philly
+PASS outside (-75.30,40.0) -> other got other want other
+overlap ccc cca w 0.03 h 0.015 area 0.0004500000000000341
+overlap cca ucity w 0.01 h 0.02 area 0.00019999999999984936
+overlap cca south_philly w 0.04 h 0.0 area 0.0
+overlap cca fishtown w 0.015 h 0.01 area 0.00014999999999997584
+PASS threshold >= 0.5 inclusive, 0.4999 excluded, class 13 excluded, other-box excluded got [True, False, False, False] want [True, False, False, False]
+PASS zone_id = box only if priced got ['ccc', 'other', 'other', 'other'] want ['ccc', 'other', 'other', 'other']
+PASS zone_box preserved got ['ccc', 'ccc', 'ccc', 'other'] want ['ccc', 'ccc', 'ccc', 'other']
+ALL PASS

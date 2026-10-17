@@ -1,0 +1,34 @@
+config dir: C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim2\cfg_nofloor
+floors in force: {'ccc': 0.01, 'cca': 0.01, 'ucity': 0.01, 'south_philly': 0.01, 'fishtown': 0.01}
+{
+ "seattle": {
+  "total_revenue": 59968373.937822886,
+  "cs_change_total": 105034237.92014581,
+  "cruising_dwl_total": 5078970.0444420455,
+  "mean_price": {
+   "cca": 0.67,
+   "ccc": 2.333,
+   "fishtown": 0.01,
+   "south_philly": 0.01,
+   "ucity": 0.173
+  },
+  "years_run": 7,
+  "converged": true,
+  "cycle": null
+ },
+ "full_pbd": {
+  "total_revenue": 53173077.622229844,
+  "cs_change_total": 111839642.26862201,
+  "cruising_dwl_total": 5432415.571565893,
+  "mean_price": {
+   "cca": 0.083,
+   "ccc": 2.75,
+   "fishtown": 0.01,
+   "south_philly": 0.01,
+   "ucity": 0.01
+  },
+  "years_run": 8,
+  "converged": true,
+  "cycle": null
+ }
+}

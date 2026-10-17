@@ -1,0 +1,14 @@
+baseline done exit 0
+msh09 done exit 1
+nocurb done exit 1
+peak099 done exit 0
+ctr1 done exit 0
+classes23 done exit 1
+buf50 done exit 0
+temp5 done exit 0
+lowpeak50 done exit 0
+ihigh done exit 0
+w_jobs done exit 0
+ccc6 done exit 1
+hrs done exit 1
+ALLDONE

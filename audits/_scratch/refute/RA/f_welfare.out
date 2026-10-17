@@ -1,0 +1,30 @@
+priced block-hours per week: 221556  capacity: 22653
+                             status_quo     seattle    full_pbd
+revenue                     140,663,330  75,720,703  81,959,676
+cs                                0.000  87,928,556  80,614,911
+cs_transfer                       0.000  77,279,761  71,557,440
+cs_triangle                       0.000  10,648,796   9,057,471
+proxy_dwl                       204,705   4,034,864   3,849,969
+search_oK                     4,238,265 107,846,798 100,587,860
+search_oK_cap95               4,238,265  30,284,469  28,929,140
+search_oK_latent_arrivals     4,238,265 112,565,543 104,682,507
+share_bh_occ_ge_0p99              0.000       0.102       0.093
+share_bh_latent_gt_1              0.000       0.091       0.081
+unserved_car_hours_per_year       0.000     505,544     439,139
+share_bh_above_0p85               0.042       0.276       0.270
+
+seattle: dCS 87.9M = transfer 77.3M + triangle 10.6M; dRev -64.9M
+   dCS + dRev - d(proxy_dwl                 ) =     19.2M   (d search = 3.8M)
+   dCS + dRev - d(search_oK                 ) =    -80.6M   (d search = 103.6M)
+   dCS + dRev - d(search_oK_cap95           ) =     -3.1M   (d search = 26.0M)
+   dCS + dRev - d(search_oK_latent_arrivals ) =    -85.3M   (d search = 108.3M)
+
+full_pbd: dCS 80.6M = transfer 71.6M + triangle 9.1M; dRev -58.7M
+   dCS + dRev - d(proxy_dwl                 ) =     18.3M   (d search = 3.6M)
+   dCS + dRev - d(search_oK                 ) =    -74.4M   (d search = 96.3M)
+   dCS + dRev - d(search_oK_cap95           ) =     -2.8M   (d search = 24.7M)
+   dCS + dRev - d(search_oK_latent_arrivals ) =    -78.5M   (d search = 100.4M)
+
+Search minutes per arrival under the sweep's shape (K=10):  {0.7: 0.1, 0.85: 0.82, 0.9: 1.79, 0.95: 5.0, 0.99: 31.69, 1.0: 31.69}
+Search minutes per arrival, K=5 / K=15 at 0.95: 11.46 2.89
+Priced-segment capacity distribution (real): {'count': 3145.0, 'mean': 7.2, 'std': 2.6, 'min': 0.0, '25%': 5.0, '50%': 8.0, '75%': 9.0, 'max': 14.0}

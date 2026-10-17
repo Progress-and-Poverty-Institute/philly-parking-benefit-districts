@@ -1,0 +1,106 @@
+.....F...........................s...................................... [ 21%]
+...........F........................F................................... [ 42%]
+........................................................................ [ 64%]
+.....................................F.................................. [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+__________________________ test_get_scenario_and_all __________________________
+
+    def test_get_scenario_and_all():
+>       assert get_scenario("central").elasticity == pytest.approx(-0.40)
+E       assert -0.1 == -0.4 ± 4.0e-07
+E         
+E         comparison failed
+E         Obtained: -0.1
+E         Expected: -0.4 ± 4.0e-07
+
+tests\test_apply_elasticity.py:87: AssertionError
+____________________________ test_named_scenarios _____________________________
+
+    def test_named_scenarios():
+        assert named_scenario("pessimistic") == pytest.approx(-0.70)
+>       assert named_scenario("central") == pytest.approx(-0.40)
+E       assert -0.1 == -0.4 ± 4.0e-07
+E         
+E         comparison failed
+E         Obtained: -0.1
+E         Expected: -0.4 ± 4.0e-07
+
+tests\test_elasticity_priors.py:44: AssertionError
+________ test_provenance_records_segments_config_commit_and_elasticity ________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.1, 'sd': 0.15}})}
+tmp_path = WindowsPath('C:/Users/druss/AppData/Local/Temp/pytest-of-druss/pytest-1443/test_provenance_records_segmen0')
+
+    def test_provenance_records_segments_config_commit_and_elasticity(results, tmp_path):
+        r = results["full_pbd"]
+        r.save(tmp_path / "full_pbd")
+        prov = ScenarioResults.load(tmp_path / "full_pbd").provenance
+    
+        assert prov["segment_source"]["kind"] == "synthetic_fixture"
+        assert prov["segment_source"]["n"] == 40 and prov["segment_source"]["seed"] == 3
+        assert prov["segment_source"]["n_segments"] == 40
+        assert prov["seed"] == 3
+    
+        on_disk = {p.stem: hashlib.sha256(p.read_bytes()).hexdigest() for p in config_dir().glob("*.yaml")}
+        assert prov["config_sha256"] == on_disk
+        assert set(on_disk) >= {"zones", "scenarios", "pricing_rules", "elasticity_priors"}
+    
+        central = _raw("elasticity_priors")["scenarios"][r.elasticity_scenario]
+        assert prov["elasticity"]["scenario"] == r.elasticity_scenario
+>       assert prov["elasticity"]["central"] == pytest.approx(central)
+E       assert -0.1 == -0.4 ± 4.0e-07
+E         
+E         comparison failed
+E         Obtained: -0.1
+E         Expected: -0.4 ± 4.0e-07
+
+tests\test_guards_provenance.py:152: AssertionError
+__________________ test_arnott_ignores_busier_unpriced_hours __________________
+
+    def test_arnott_ignores_busier_unpriced_hours():
+        # Overnight (unpriced) occupancy 0.95 must not set the rate; the priced peak 0.70 does.
+        segs, panel = _one_zone("ccc", 0.70, 0.95)
+        r = run_scenario("full_pbd", segments=segs, baseline_panel=panel)
+        z = _raw("zones")["zones"][0]
+        assert z["id"] == "ccc"
+        eps = _raw("elasticity_priors")["scenarios"]["central"]
+        target = 1.0 - _raw("scenarios")["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+        from phillyparking.demand.response import price_for_demand_ratio
+        rate = z["current_rate_usd_per_hr"]
+        expected = float(price_for_demand_ratio(target / 0.70, rate, eps, rate))
+        expected = min(max(expected, z["floor"]), z["ceiling"])
+>       assert float(r.prices["price_usd_per_hr"].iloc[0]) == pytest.approx(expected, rel=1e-6)
+E       assert 1.0 == 2.058439855590424 ± 2.1e-06
+E         
+E         comparison failed
+E         Obtained: 1.0
+E         Expected: 2.058439855590424 ± 2.1e-06
+
+tests\test_scenario_hours.py:197: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_apply_elasticity.py::test_get_scenario_and_all - assert -0....
+FAILED tests/test_elasticity_priors.py::test_named_scenarios - assert -0.1 ==...
+FAILED tests/test_guards_provenance.py::test_provenance_records_segments_config_commit_and_elasticity
+FAILED tests/test_scenario_hours.py::test_arnott_ignores_busier_unpriced_hours
+4 failed, 331 passed, 1 skipped, 1 deselected, 8 warnings in 56.09s
+done g4_central_scn exit 1

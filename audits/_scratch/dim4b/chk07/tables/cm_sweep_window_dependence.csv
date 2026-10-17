@@ -1,0 +1,5 @@
+rule,reference,year,n_cells,welfare_diff_median_cells_median,welfare_diff_median_cells_min,welfare_diff_median_cells_max,breakeven_minutes_median_cells_median,breakeven_minutes_median_cells_min,breakeven_minutes_median_cells_max,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,cells_welfare_better,cells_dwl_better,cells_revenue_better
+mean_band,peak_band,8,54,-4.29043e+06,-8.5639e+06,1.15776e+06,2.02148,1.23649,6.94007,7.24413,1.11533,40438,0.702784,0.215242,0.998856,2,0,0
+mean_zone,peak_zone,8,54,-4.35755e+06,-1.1344e+07,1.39607e+06,2.05753,1.09309,7.33159,7.07878,1.1016,57643.9,0.68941,0.215195,0.994682,2,0,0
+peak_band,peak_zone,8,54,19362.1,-89718.8,187034,13.4033,-3958.41,160.955,1,0.551195,4.26839,1,0.97663,1.00721,29,9,11
+seattle_rule,peak_band,8,54,-4.18192e+06,-8.31366e+06,1.13052e+06,2.02452,1.26573,6.98147,7.06168,1.1114,35828.8,0.709596,0.215531,0.990005,2,0,0

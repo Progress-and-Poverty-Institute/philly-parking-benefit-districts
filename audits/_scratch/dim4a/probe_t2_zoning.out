@@ -1,0 +1,31 @@
+zoning rows 29206 cols ['cartodb_id', 'code', 'citycor', 'long_code', 'zoninggroup', 'pending', 'pendingbill', 'pendingbillurl', 'sunset_date', 'sunsetbillnum', 'sunsetbilllink', 'gdb_geomattr_data']
+zoninggroup
+Residential/Multi-Family/Residential Mixed-Use    17839
+Commercial/Commercial Mixed-Use                    9021
+Industrial/Industrial Mixed-Use                    1406
+Special Purpose                                     940
+sum polygon area 279,837,234 m2, union area 279,834,732 m2, overlap double count 2,502 m2 (0.0009%)
+
+zoned coverage of the 25 m flat buffer, priced segments: quantiles
+0.00    0.000
+0.01    0.053
+0.05    0.193
+0.10    0.241
+0.25    0.359
+0.50    0.521
+0.75    0.612
+0.90    0.717
+1.00    1.000
+  priced segments with zoned coverage < 0.1: 73 (capacity 483); share>=0.5 decided on that little land
+  priced segments with zoned coverage < 0.25: 357 (capacity 2376); share>=0.5 decided on that little land
+  priced segments with zoned coverage < 0.5: 1394 (capacity 9691); share>=0.5 decided on that little land
+
+example low-coverage priced segments:
+                       street_name  street_class   zone_id  zoned_cov  commercial_frontage_share  capacity
+16863                      VINE ST             2       ccc   0.000070                        1.0         8
+19940  N CHRISTOPHER COLUMBUS BLVD             2       ccc   0.000413                        1.0         9
+20127                    N 12TH ST             3       cca   0.000748                        1.0         2
+19163                   N BROAD ST             2       cca   0.000895                        1.0         2
+19970               E COLUMBIA AVE             5  fishtown   0.000976                        1.0         2
+
+recomputed share equals stored (max abs diff): 2.220446049250313e-16

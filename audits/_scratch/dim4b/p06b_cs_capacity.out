@@ -1,0 +1,6 @@
+C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\p06b_cs_capacity.py:22: RuntimeWarning: divide by zero encountered in log
+  qref=np.where(qref>0,qref,1e-12); xs=pref+np.log(cap/qref)/a
+C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\p06b_cs_capacity.py:22: RuntimeWarning: divide by zero encountered in log
+  qref=np.where(qref>0,qref,1e-12); xs=pref+np.log(cap/qref)/a
+seattle full-law CS $87.93M | CS if only capacity-feasible demand counts $87.72M | share of reported CS that is surplus of unservable demand: 0.2%
+full_pbd full-law CS $80.61M | CS if only capacity-feasible demand counts $80.43M | share of reported CS that is surplus of unservable demand: 0.2%

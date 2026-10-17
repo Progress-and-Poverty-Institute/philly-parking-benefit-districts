@@ -1,0 +1,24 @@
+=== Sweep: every zone anchored at $2; peak rules reach ~$4.80 (dim4b). What the law says there:
+   e  price  elasticity_at_price  q_ratio_exp  q_ratio_const  q_ratio_lin  rev_ratio_exp  rev_peak_price
+-0.2    2.5                -0.25        0.951          0.956        0.950          1.189           10.00
+-0.2    3.0                -0.30        0.905          0.922        0.900          1.357           10.00
+-0.2    4.0                -0.40        0.819          0.871        0.800          1.637           10.00
+-0.2    4.8                -0.48        0.756          0.839        0.720          1.814           10.00
+-0.4    2.5                -0.50        0.905          0.915        0.900          1.131            5.00
+-0.4    3.0                -0.60        0.819          0.850        0.800          1.228            5.00
+-0.4    4.0                -0.80        0.670          0.758        0.600          1.341            5.00
+-0.4    4.8                -0.96        0.571          0.705        0.440          1.371            5.00
+-0.7    2.5                -0.88        0.839          0.855        0.825          1.049            2.86
+-0.7    3.0                -1.05        0.705          0.753        0.650          1.057            2.86
+-0.7    4.0                -1.40        0.497          0.616        0.300          0.993            2.86
+-0.7    4.8                -1.68        0.375          0.542        0.020          0.901            2.86
+
+=== Scenario pipeline: the same e = -0.4 is the elasticity at every zone's posted rate (zones.yaml), while the form says elasticity rises in proportion to price.
+ccc           posted 4.00: config elasticity at posted rate -0.40; a single exponential law anchored at $1.50 would give -1.07; q(0)/q(posted) = 1.49; q($0.50)/q(posted) = 1.42
+cca           posted 3.50: config elasticity at posted rate -0.40; a single exponential law anchored at $1.50 would give -0.93; q(0)/q(posted) = 1.49; q($0.50)/q(posted) = 1.41
+ucity         posted 2.00: config elasticity at posted rate -0.40; a single exponential law anchored at $1.50 would give -0.53; q(0)/q(posted) = 1.49; q($0.50)/q(posted) = 1.35
+south_philly  posted 1.50: config elasticity at posted rate -0.40; a single exponential law anchored at $1.50 would give -0.40; q(0)/q(posted) = 1.49; q($0.50)/q(posted) = 1.31
+fishtown      posted 1.50: config elasticity at posted rate -0.40; a single exponential law anchored at $1.50 would give -0.40; q(0)/q(posted) = 1.49; q($0.50)/q(posted) = 1.31
+
+=== Semi-log justification: logit with utility linear in price gives elasticity beta p (1 - s); the pure exponential is the s -> 0 limit. At share s the elasticity rises slower than e p / p_ref by the factor (1 - s)/(1 - s_ref).
+research note 5.6 premise: 'Central (E = -0.4): revenue rises monotonically through plausible price ranges' -- under the configured form revenue peaks at p_ref/|e|: ccc $10.00, sweep $5.00 (e=-0.4) / $2.86 (e=-0.7).

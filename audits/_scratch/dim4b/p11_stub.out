@@ -1,0 +1,11 @@
+panel shape (1344, 11) periods ['2025-06-02' '2025-07-01'] segments ['BF-CCA-1' 'BF-CCA-2' 'BF-CCC-1' 'BF-UC-1']
+cells compared 1344 ; expected nonzero cells 78 ; max |ingested paid_occupancy - expected| 0.0
+nonzero ingested cells: 78
+segment_id  period    
+BF-CCA-2    2025-06-02    15
+            2025-07-01    15
+BF-CCC-1    2025-06-02    20
+            2025-07-01    20
+BF-UC-1     2025-06-02     4
+            2025-07-01     4
+dtype: int64
