@@ -293,9 +293,13 @@ that multiple of e, and at e = -0.7 the
 exponential revenue peak ($2.86) is below that price, so most peak-rule rule-years there sit
 beyond the point where the law's own revenue falls (the beyond-peak file has the share; the
 mean and Seattle rules stay below the peak). The cells at -0.7 are statements about a law
-extrapolated past its revenue peak; the -0.2 and -0.4 cells sit mostly below it. Constant
-elasticity has no peak at |e| < 1 and the linear form has a choke price, so a statement
-about the sweep is a statement about its form until the form-sensitivity rows agree.
+extrapolated past its revenue peak; the -0.2 cells sit below it and the -0.4 cells are split
+(the last-year share beyond the peak is the file's column). Constant elasticity has no peak at
+|e| < 1 and the linear form has a choke price, so a statement about the sweep is a statement
+about its form until the form-sensitivity rows agree. On the same-instrument pairs the breakeven
+is a few minutes lower under constant elasticity than under the exponential and a little higher
+under the linear form, and the welfare-better cell count falls under constant elasticity; read
+the sizes in the file.
 
 ## Script 06 synthetic fallback
 
