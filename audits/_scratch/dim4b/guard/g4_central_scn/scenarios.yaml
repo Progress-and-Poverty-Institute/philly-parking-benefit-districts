@@ -1,0 +1,61 @@
+# Top-level scenario definitions used by phillyparking.scenarios.runner.
+# Each scenario is a (pricing_policy × residential_permit_policy × elasticity) bundle.
+
+scenarios:
+  status_quo:
+    description: "Post-July-2025 PPA rates, frozen; flat $75/yr RPP."
+    pricing_policy:
+      kind: fixed
+    rpp_policy:
+      kind: flat
+      annual_fee_usd: 75.00
+    elasticity_scenario: central
+    rolls_forward_years: 0
+    notes: "Baseline counterfactual."
+
+  seattle:
+    description: "Annual ±$0.50 zone-level adjustment, time-of-day differentiated."
+    pricing_policy:
+      kind: seattle_rule
+      cycle_years: 1
+      time_of_day_bands: [[8, 12], [12, 16], [16, 20]]
+    rpp_policy:
+      kind: flat
+      annual_fee_usd: 75.00
+    elasticity_scenario: central
+    # Maximum annual reviews. The runner stops at a fixed point, or reports both phases
+    # if prices cycle with period 2.
+    rolls_forward_years: 20
+    notes: "Operational benchmark; auditable, transparent, low political risk."
+
+  full_pbd:
+    description: "Market-priced curb + market-priced residential permits + revenue return to PBD."
+    pricing_policy:
+      kind: arnott_inci
+      target_vacancy: 0.15
+      cycle_years: 1
+    rpp_policy:
+      kind: market_clearing
+      revenue_share_to_pbd: 0.30   # Mexico City EcoParq precedent
+    elasticity_scenario: central
+    rolls_forward_years: 10   # maximum reviews; the runner stops at a fixed point
+    notes: "Full Shoupian PBD with Georgist land-rent capture framing."
+
+# The Chatman-Manville sweep (scenarios/cm_sweep.py): targeting rules, paired on the same
+# demand draws, scored on welfare (welfare/targeting_welfare.py). Rules are defined in
+# pricing/targeting_rules.py. `comparisons` are (comparator, reference) pairs for the paired
+# tables; every rule in them must be in `rules`. The grid below is 3 x 3 x 3 x 2 = 54 cells; the
+# cruising cost level (pricing_rules.yaml search_cost) is not an axis: welfare is linear in it
+# and the paired tables report each comparison's breakeven level.
+chatman_manville_sweep:
+  fixture: { n: 120, seed: 42 }          # make_synthetic_segments; "other" segments are dropped
+  elasticity_values: [-0.20, -0.40, -0.70]
+  start_occupancy: [0.60, 0.75, 0.90]    # m: each zone's priced-hour mean occupancy at the start price
+                                         # (below the 0.70-0.85 band, inside it, above it)
+  block_dispersion: [0.0, 0.3, 0.6]      # tau: log-sd of the block demand multiplier
+  observation_noise: [0.0, 0.10]         # sigma: sd of the occupancy the rule reviews, per block-hour
+  rules: [peak_zone, mean_zone, peak_band, mean_band, seattle_rule]
+  comparisons: [[mean_zone, peak_zone], [mean_band, peak_band], [seattle_rule, peak_band], [peak_band, peak_zone]]
+  start_price_usd: 2.00
+  n_replications: 100
+  rolls_forward_years: 8

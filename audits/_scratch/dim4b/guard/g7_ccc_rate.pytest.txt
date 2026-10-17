@@ -1,0 +1,111 @@
+.................................s...................................... [ 21%]
+........................................................................ [ 42%]
+.....................................................F..F............... [ 64%]
+.....................................F.................................. [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+_____________ test_latest_period_runs_through_the_scenario_runner _____________
+
+    def test_latest_period_runs_through_the_scenario_runner():
+        r = _run()
+>       segs, panel = ppa.runner_inputs(r)
+                      ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_ppa_ingest.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+result = IngestResult(panel=     segment_id zone_id      period  ...  n_sessions  n_days  capacity
+0      BF-CCA-1     cca  202...4, 'locations': 5, 'unpaid_share': {'default': 0.0}, 'unpaid_source': 'assumption (not measured): paid sessions only'})
+period = '2025-07-01', check_current_rates = True
+
+    def runner_inputs(result: IngestResult, period: str | None = None,
+                      check_current_rates: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """(segments, typical-week panel) for `run_scenario`, from one calendar period.
+    
+        Default period: the latest. The runner prices the status quo at `zones.yaml`'s
+        `current_rate_usd_per_hr`; if the chosen period's posted rate differs for a zone, the
+        status quo would be priced at a rate the data were not observed under, so this raises.
+        """
+        periods = result.periods["period"].tolist()
+        period = period or periods[-1]
+        if period not in periods:
+            raise PPAIngestError(f"period {period!r} not in {periods}")
+        p = result.panel[result.panel["period"] == period]
+        if check_current_rates:
+            cur = {z["id"]: float(z["current_rate_usd_per_hr"]) for z in load_config("zones")["zones"]}
+            posted = p.groupby("zone_id")["price_usd_per_hr"].first()
+            bad = {z: (r, cur.get(z)) for z, r in posted.items()
+                   if z in cur and abs(r - cur[z]) > 0.005}
+            if bad:
+>               raise PPAIngestError(f"period {period}: posted rate differs from zones.yaml "
+                                     f"current_rate_usd_per_hr (posted, config): {bad}")
+E               phillyparking.ingest.ppa.PPAIngestError: period 2025-07-01: posted rate differs from zones.yaml current_rate_usd_per_hr (posted, config): {'ccc': (4.0, 6.0)}
+
+src\phillyparking\ingest\ppa.py:435: PPAIngestError
+_____________ test_scripts_03b_and_05_run_end_to_end_on_the_stub ______________
+
+tmp_path = WindowsPath('C:/Users/druss/AppData/Local/Temp/pytest-of-druss/pytest-1448/test_scripts_03b_and_05_run_en0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001FDDCF9F570>
+
+    def test_scripts_03b_and_05_run_end_to_end_on_the_stub(tmp_path, monkeypatch):
+        monkeypatch.setenv("PHILLYPARKING_DATA_DIR", str(tmp_path / "data"))
+        monkeypatch.setenv("PHILLYPARKING_OUTPUTS_DIR", str(tmp_path / "outputs"))
+        out = CliRunner().invoke(_script("03b_ingest_ppa.py").main, ["--stub"])
+        assert out.exit_code == 0, out.output
+        ppa_dir = tmp_path / "data" / "processed" / "ppa_stub"
+        assert (ppa_dir / "meta.json").exists() and not (tmp_path / "data" / "processed" / "ppa").exists()
+        out = CliRunner().invoke(_script("05_run_scenarios.py").main,
+                                 ["--ppa", str(ppa_dir), "--n-seeds", "0"])
+>       assert out.exit_code == 0, out.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PPAIngestError("period 2025-07-01: posted rate differs from zones.yaml current_rate_usd_per_hr (posted, config): {'ccc': (4.0, 6.0)}")>.exit_code
+
+tests\test_ppa_ingest.py:208: AssertionError
+__________________ test_arnott_ignores_busier_unpriced_hours __________________
+
+    def test_arnott_ignores_busier_unpriced_hours():
+        # Overnight (unpriced) occupancy 0.95 must not set the rate; the priced peak 0.70 does.
+        segs, panel = _one_zone("ccc", 0.70, 0.95)
+        r = run_scenario("full_pbd", segments=segs, baseline_panel=panel)
+        z = _raw("zones")["zones"][0]
+        assert z["id"] == "ccc"
+        eps = _raw("elasticity_priors")["scenarios"]["central"]
+        target = 1.0 - _raw("scenarios")["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+        from phillyparking.demand.response import price_for_demand_ratio
+        rate = z["current_rate_usd_per_hr"]
+        expected = float(price_for_demand_ratio(target / 0.70, rate, eps, rate))
+        expected = min(max(expected, z["floor"]), z["ceiling"])
+>       assert float(r.prices["price_usd_per_hr"].iloc[0]) == pytest.approx(expected, rel=1e-6)
+E       assert 3.0876597833856367 == 2.058439855590424 ± 2.1e-06
+E         
+E         comparison failed
+E         Obtained: 3.0876597833856367
+E         Expected: 2.058439855590424 ± 2.1e-06
+
+tests\test_scenario_hours.py:197: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ppa_ingest.py::test_latest_period_runs_through_the_scenario_runner
+FAILED tests/test_ppa_ingest.py::test_scripts_03b_and_05_run_end_to_end_on_the_stub
+FAILED tests/test_scenario_hours.py::test_arnott_ignores_busier_unpriced_hours
+3 failed, 332 passed, 1 skipped, 1 deselected, 8 warnings in 62.32s (0:01:02)
+done g7_ccc_rate exit 1

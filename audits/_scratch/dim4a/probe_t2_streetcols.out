@@ -1,0 +1,4 @@
+rows 41252
+columns ['fnode_', 'tnode_', 'lpoly_', 'rpoly_', 'length', 'stcl2_', 'stcl2_id', 'pre_dir', 'st_name', 'st_type', 'suf_dir', 'zip_left', 'zip_right', 'l_f_add', 'l_t_add', 'r_f_add', 'r_t_add', 'st_code', 'l_hundred', 'r_hundred', 'seg_id', 'oneway', 'class', 'responsibl', 'update_', 'newsegdate', 'multi_rep', 'streetlabe', 'stname', 'objectid', 'Shape__Length']
+priced street-name suffix counts: {'ST': 2573, 'AVE': 415, 'BLVD': 80, 'DR': 15, 'PL': 10, 'BRG': 9, 'W': 8, 'ALY': 4, 'TUNL': 4, 'SQ': 4, 'CT': 4, 'CIR': 3, 'LN': 2, 'E': 2, 'RD': 2}
+priced alley/way/court/place-like: 20 spaces 136

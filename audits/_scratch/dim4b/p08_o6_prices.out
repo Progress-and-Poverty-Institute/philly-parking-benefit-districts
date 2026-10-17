@@ -1,0 +1,26 @@
+mean_price at year 8 (start $2.00) by rule:
+                min   50%   max
+rule                          
+mean_band     0.82  1.83  4.47
+mean_zone     0.82  2.00  4.54
+peak_band     2.30  4.80  5.29
+peak_zone     2.37  4.85  5.29
+seattle_rule  0.82  1.83  4.69
+
+share of rep-years (year 8) whose mean price exceeds the revenue-maximising price 2/|e| (exponential law anchored at $2):
+elasticity     -0.7   -0.4  -0.2
+rule                            
+mean_band     0.052  0.000   0.0
+mean_zone     0.059  0.000   0.0
+peak_band     0.881  0.427   0.0
+peak_zone     0.884  0.455   0.0
+seattle_rule  0.055  0.000   0.0
+
+max elasticity |e p/p0| faced at year-8 mean price, by rule & e:
+ elasticity    -0.7  -0.4  -0.2
+rule                          
+mean_band     1.05  0.73  0.45
+mean_zone     1.08  0.72  0.45
+peak_band     1.85  1.06  0.53
+peak_zone     1.85  1.06  0.53
+seattle_rule  1.12  0.76  0.47

@@ -1,0 +1,22 @@
+_annual_cs_change: -234.45523839137707 hand quad (x2 hours x52 weeks): -234.45523839137707 diff 0.0
+baseline demand_panel == status_quo occupancy panel: True
+seattle CS recomputed 87928556.38 saved cs_change_total 87928556.38 diff 0.0
+                  rev_sq     rev_scn       d_rev     cs_gain  cs_gain_per_$_rev_lost
+zone_id                                                                             
+cca           53434881.0  19962450.0 -33472430.0  44178917.0                     1.0
+ccc           65847452.0  44989646.0 -20857806.0  29208068.0                     1.0
+fishtown       7076717.0   3068859.0  -4007857.0   5406703.0                     1.0
+south_philly   5782974.0   2505700.0  -3277273.0   4418267.0                     1.0
+ucity          8521307.0   5194047.0  -3327260.0   4716602.0                     1.0
+totals: d_rev -64942627 cs 87928556 cs+d_rev (net of transfer, ignoring search/cruising) 22985929
+   priced block-hours with latent demand > 1 (clipped in panel): 20132 of 221556  excess cars-hours/yr 505544
+full_pbd CS recomputed 80614910.56 saved cs_change_total 80614910.56 diff 0.0
+                  rev_sq     rev_scn       d_rev     cs_gain  cs_gain_per_$_rev_lost
+zone_id                                                                             
+cca           53434881.0  19962450.0 -33472430.0  44178917.0                     1.0
+ccc           65847452.0  51228619.0 -14618833.0  21894422.0                     1.0
+fishtown       7076717.0   3068859.0  -4007857.0   5406703.0                     1.0
+south_philly   5782974.0   2505700.0  -3277273.0   4418267.0                     1.0
+ucity          8521307.0   5194047.0  -3327260.0   4716602.0                     1.0
+totals: d_rev -58703654 cs 80614911 cs+d_rev (net of transfer, ignoring search/cruising) 21911257
+   priced block-hours with latent demand > 1 (clipped in panel): 17913 of 221556  excess cars-hours/yr 439139

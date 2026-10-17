@@ -1,0 +1,192 @@
+===== zones
+zones.id                                                               nontest=13 tests=9  04_fit_elasticity.py,1_Map.py,3_Revenue_Forecast.py,cm_sweep.py,compare.py,opendataphilly.
+zones.name                                                             nontest=33 tests=10  01_download_public_data.py,02_build_segments.py,03_fit_baseline_demand.py,03b_ingest_ppa.p
+zones.description                                                      nontest=0 tests=0  
+zones.current_rate_usd_per_hr                                          nontest=5 tests=3  1_Map.py,3_Revenue_Forecast.py,ppa.py,runner.py,zones.py
+zones.long_term_meter_rate_usd_per_hr                                  nontest=0 tests=0  
+zones.floor                                                            nontest=5 tests=5  optimizer.py,runner.py,seattle_rule.py,synthetic_baseline.py,targeting_rules.py
+zones.ceiling                                                          nontest=5 tests=2  compare.py,optimizer.py,runner.py,seattle_rule.py,targeting_rules.py
+zones.priced_hours.weekday                                             nontest=6 tests=5  gtfs_loader.py,occupancy_estimator.py,ppa.py,ppa_stub.py,priced_hours.py,seattle_rule.py
+zones.priced_hours.saturday                                            nontest=2 tests=3  ppa_stub.py,priced_hours.py
+zones.priced_hours.sunday                                              nontest=2 tests=3  ppa_stub.py,priced_hours.py
+zones.bbox.west                                                        nontest=4 tests=1  _bbox.py,report_figures.py,synthetic.py,zones.py
+zones.bbox.south                                                       nontest=4 tests=2  _bbox.py,report_figures.py,synthetic.py,zones.py
+zones.bbox.east                                                        nontest=4 tests=1  _bbox.py,report_figures.py,synthetic.py,zones.py
+zones.bbox.north                                                       nontest=4 tests=1  _bbox.py,report_figures.py,synthetic.py,zones.py
+zones.role                                                             nontest=0 tests=0  
+priced_curb.no_curb_classes                                            nontest=1 tests=1  segments.py
+priced_curb.street_classes                                             nontest=1 tests=0  segments.py
+priced_curb.frontage_buffer_m                                          nontest=2 tests=0  02_build_segments.py,segments.py
+priced_curb.min_commercial_share                                       nontest=1 tests=0  segments.py
+rpp.base_annual_fee_usd                                                nontest=1 tests=0  4_Equity_Analysis.py
+rpp.motorcycle_annual_fee_usd                                          nontest=0 tests=0  
+rpp.household_cap                                                      nontest=0 tests=0  
+rpp.low_income_first_vehicle_waiver                                    nontest=0 tests=0  
+rpp.temp_15_day_usd                                                    nontest=0 tests=0  
+rpp.temp_30_day_usd                                                    nontest=0 tests=0  
+rpp.market_pricing_targets_usd_per_year.ccc                            nontest=8 tests=14  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,4_Equity_Analysis.py,c
+rpp.market_pricing_targets_usd_per_year.cca                            nontest=6 tests=4  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,compare.py,features.py
+rpp.market_pricing_targets_usd_per_year.ucity                          nontest=5 tests=3  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,features.py,synthetic.
+rpp.market_pricing_targets_usd_per_year.south_philly                   nontest=5 tests=3  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,features.py,synthetic.
+rpp.market_pricing_targets_usd_per_year.fishtown                       nontest=5 tests=3  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,features.py,synthetic.
+rpp.market_pricing_targets_usd_per_year.other                          nontest=15 tests=9  04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,07_export_report_asset
+===== demand_baseline
+covariates.jobs_within_200m.intensity_weight                           nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+covariates.jobs_within_200m.mix_weight                                 nontest=1 tests=0  synthetic_baseline.py
+covariates.pois_count.intensity_weight                                 nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+covariates.pois_count.mix_weight                                       nontest=1 tests=0  synthetic_baseline.py
+covariates.pop_density.intensity_weight                                nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+covariates.pop_density.mix_weight                                      nontest=1 tests=0  synthetic_baseline.py
+covariates.transit_trips_per_hr.intensity_weight                       nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.reference                                nontest=12 tests=2  06_export_paper_figures.py,07_export_report_assets.py,build_notebooks.py,cm_sweep.py,deriv
+anchor_sets.synthetic_fixture.centers.jobs_within_200m                 nontest=4 tests=4  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.centers.pois_count                       nontest=4 tests=2  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.centers.pop_density                      nontest=4 tests=3  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.centers.transit_trips_per_hr             nontest=3 tests=2  features.py,join.py,synthetic.py
+anchor_sets.synthetic_fixture.scales.jobs_within_200m                  nontest=4 tests=4  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.scales.pois_count                        nontest=4 tests=2  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.scales.pop_density                       nontest=4 tests=3  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.scales.transit_trips_per_hr              nontest=3 tests=2  features.py,join.py,synthetic.py
+anchor_sets.synthetic_fixture.intensity_low                            nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+anchor_sets.synthetic_fixture.intensity_high                           nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+anchor_sets.philadelphia.reference                                     nontest=12 tests=2  06_export_paper_figures.py,07_export_report_assets.py,build_notebooks.py,cm_sweep.py,deriv
+anchor_sets.philadelphia.centers.jobs_within_200m                      nontest=4 tests=4  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.centers.pois_count                            nontest=4 tests=2  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.centers.pop_density                           nontest=4 tests=3  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.centers.transit_trips_per_hr                  nontest=3 tests=2  features.py,join.py,synthetic.py
+anchor_sets.philadelphia.scales.jobs_within_200m                       nontest=4 tests=4  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.scales.pois_count                             nontest=4 tests=2  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.scales.pop_density                            nontest=4 tests=3  features.py,join.py,synthetic.py,synthetic_baseline.py
+anchor_sets.philadelphia.scales.transit_trips_per_hr                   nontest=3 tests=2  features.py,join.py,synthetic.py
+anchor_sets.philadelphia.intensity_low                                 nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+anchor_sets.philadelphia.intensity_high                                nontest=2 tests=1  derive_baseline_anchors.py,synthetic_baseline.py
+source_anchor_sets.synthetic_fixture                                   nontest=3 tests=4  05_run_scenarios.py,cm_sweep.py,synthetic.py
+source_anchor_sets.file                                                nontest=12 tests=3  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,07_export_report_asset
+source_anchor_sets.ppa_inventory                                       nontest=1 tests=1  ppa.py
+peak_target                                                            nontest=1 tests=0  synthetic_baseline.py
+low_demand_peak                                                        nontest=1 tests=0  synthetic_baseline.py
+offpeak_floor                                                          nontest=1 tests=0  synthetic_baseline.py
+offpeak_span                                                           nontest=1 tests=0  synthetic_baseline.py
+mix_temperature                                                        nontest=1 tests=0  synthetic_baseline.py
+max_clipped_share                                                      nontest=1 tests=0  synthetic_baseline.py
+===== pricing_rules
+seattle_rule.step_usd                                                  nontest=2 tests=2  seattle_rule.py,targeting_rules.py
+seattle_rule.occ_high                                                  nontest=3 tests=2  cm_sweep.py,seattle_rule.py,targeting_rules.py
+seattle_rule.occ_low                                                   nontest=3 tests=2  cm_sweep.py,seattle_rule.py,targeting_rules.py
+seattle_rule.occ_very_high                                             nontest=1 tests=1  seattle_rule.py
+seattle_rule.max_step_per_cycle                                        nontest=1 tests=1  seattle_rule.py
+chatman_manville.occ_low                                               nontest=3 tests=2  cm_sweep.py,seattle_rule.py,targeting_rules.py
+chatman_manville.occ_high                                              nontest=3 tests=2  cm_sweep.py,seattle_rule.py,targeting_rules.py
+chatman_manville.step_usd                                              nontest=2 tests=2  seattle_rule.py,targeting_rules.py
+chatman_manville.peak_quantile                                         nontest=1 tests=0  targeting_rules.py
+arnott_inci.target_vacancy                                             nontest=6 tests=4  arnott_inci.py,cm_sweep.py,cruising_dwl.py,optimizer.py,report_figures.py,runner.py
+arnott_inci.value_of_time_usd_per_hr                                   nontest=4 tests=3  arnott_inci.py,cm_sweep.py,cruising_dwl.py,targeting_welfare.py
+search_cost.minutes_at_reference                                       nontest=3 tests=2  cm_sweep.py,report_figures.py,targeting_welfare.py
+search_cost.reference_occupancy                                        nontest=1 tests=1  targeting_welfare.py
+search_cost.reference_capacity                                         nontest=1 tests=1  targeting_welfare.py
+search_cost.mean_duration_hr                                           nontest=1 tests=1  targeting_welfare.py
+search_cost.occupancy_cap                                              nontest=1 tests=1  targeting_welfare.py
+global_floor_usd                                                       nontest=1 tests=0  seattle_rule.py
+global_ceiling_usd                                                     nontest=1 tests=0  seattle_rule.py
+===== allocation
+general_fund_minimum_usd                                               nontest=1 tests=2  allocation.py
+===== elasticity_priors
+central.mean                                                           nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+central.sd                                                             nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+central.distribution                                                   nontest=3 tests=0  05_run_scenarios.py,build_notebooks.py,priors.py
+context_shifts.cbd                                                     nontest=1 tests=1  priors.py
+context_shifts.mixed_use                                               nontest=0 tests=1  
+context_shifts.residential                                             nontest=5 tests=2  4_Equity_Analysis.py,osm_loader.py,priors.py,streamlit_app.py,synthetic_baseline.py
+context_shifts.long_run                                                nontest=0 tests=1  
+dwell_time.mean                                                        nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+dwell_time.sd                                                          nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+cross.curb_to_garage.mean                                              nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+cross.curb_to_garage.sd                                                nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+cross.curb_to_transit.mean                                             nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+cross.curb_to_transit.sd                                               nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+cross.curb_to_rideshare.mean                                           nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+cross.curb_to_rideshare.sd                                             nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+cross.curb_to_forgo.mean                                               nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+cross.curb_to_forgo.sd                                                 nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+demand_form                                                            nontest=2 tests=1  cm_sweep.py,response.py
+scenarios.pessimistic                                                  nontest=2 tests=4  ranges.py,streamlit_app.py
+scenarios.central                                                      nontest=9 tests=5  04_fit_elasticity.py,05_run_scenarios.py,build_notebooks.py,priors.py,provenance.py,ranges
+scenarios.optimistic                                                   nontest=2 tests=3  ranges.py,streamlit_app.py
+hierarchy.city_mu_prior.mean                                           nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+hierarchy.city_mu_prior.sd                                             nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+hierarchy.neighborhood_sd_prior.mean                                   nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+hierarchy.neighborhood_sd_prior.sd                                     nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+hierarchy.zone_sd_prior.mean                                           nontest=25 tests=7  04_fit_elasticity.py,1_Map.py,4_Equity_Analysis.py,build_notebooks.py,calibration.py,chart
+hierarchy.zone_sd_prior.sd                                             nontest=10 tests=2  04_fit_elasticity.py,3_Revenue_Forecast.py,calibration.py,features.py,hierarchical_bayes.p
+===== scenarios
+scenarios.status_quo.description                                       nontest=0 tests=0  
+scenarios.status_quo.pricing_policy.kind                               nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.status_quo.rpp_policy.kind                                   nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.status_quo.rpp_policy.annual_fee_usd                         nontest=1 tests=0  ppa_stub.py
+scenarios.status_quo.elasticity_scenario                               nontest=4 tests=4  05_run_scenarios.py,ranges.py,runner.py,streamlit_app.py
+scenarios.status_quo.rolls_forward_years                               nontest=4 tests=3  06_export_paper_figures.py,build_notebooks.py,cm_sweep.py,runner.py
+scenarios.status_quo.notes                                             nontest=0 tests=0  
+scenarios.seattle.description                                          nontest=0 tests=0  
+scenarios.seattle.pricing_policy.kind                                  nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.seattle.pricing_policy.cycle_years                           nontest=0 tests=0  
+scenarios.seattle.pricing_policy.time_of_day_bands                     nontest=3 tests=0  runner.py,seattle_rule.py,targeting_rules.py
+scenarios.seattle.rpp_policy.kind                                      nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.seattle.rpp_policy.annual_fee_usd                            nontest=1 tests=0  ppa_stub.py
+scenarios.seattle.elasticity_scenario                                  nontest=4 tests=4  05_run_scenarios.py,ranges.py,runner.py,streamlit_app.py
+scenarios.seattle.rolls_forward_years                                  nontest=4 tests=3  06_export_paper_figures.py,build_notebooks.py,cm_sweep.py,runner.py
+scenarios.seattle.notes                                                nontest=0 tests=0  
+scenarios.full_pbd.description                                         nontest=0 tests=0  
+scenarios.full_pbd.pricing_policy.kind                                 nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.full_pbd.pricing_policy.target_vacancy                       nontest=6 tests=4  arnott_inci.py,cm_sweep.py,cruising_dwl.py,optimizer.py,report_figures.py,runner.py
+scenarios.full_pbd.pricing_policy.cycle_years                          nontest=0 tests=0  
+scenarios.full_pbd.rpp_policy.kind                                     nontest=13 tests=5  01_download_public_data.py,02_build_segments.py,05_run_scenarios.py,gtfs_loader.py,lodes.p
+scenarios.full_pbd.rpp_policy.revenue_share_to_pbd                     nontest=1 tests=1  runner.py
+scenarios.full_pbd.elasticity_scenario                                 nontest=4 tests=4  05_run_scenarios.py,ranges.py,runner.py,streamlit_app.py
+scenarios.full_pbd.rolls_forward_years                                 nontest=4 tests=3  06_export_paper_figures.py,build_notebooks.py,cm_sweep.py,runner.py
+scenarios.full_pbd.notes                                               nontest=0 tests=0  
+chatman_manville_sweep.fixture.n                                       nontest=26 tests=13  02_build_segments.py,04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures.py,0
+chatman_manville_sweep.fixture.seed                                    nontest=19 tests=13  03_fit_baseline_demand.py,04_fit_elasticity.py,05_run_scenarios.py,06_export_paper_figures
+chatman_manville_sweep.elasticity_values                               nontest=1 tests=1  cm_sweep.py
+chatman_manville_sweep.start_occupancy                                 nontest=4 tests=2  build_notebooks.py,charts.py,cm_sweep.py,report_figures.py
+chatman_manville_sweep.block_dispersion                                nontest=3 tests=1  charts.py,cm_sweep.py,report_figures.py
+chatman_manville_sweep.observation_noise                               nontest=2 tests=1  cm_sweep.py,report_figures.py
+chatman_manville_sweep.rules                                           nontest=9 tests=1  build_notebooks.py,cm_sweep.py,opendataphilly.py,priced_hours.py,raw_cache.py,report_figur
+chatman_manville_sweep.comparisons                                     nontest=1 tests=1  cm_sweep.py
+chatman_manville_sweep.start_price_usd                                 nontest=1 tests=0  cm_sweep.py
+chatman_manville_sweep.n_replications                                  nontest=4 tests=1  06_export_paper_figures.py,07_export_report_assets.py,build_notebooks.py,cm_sweep.py
+chatman_manville_sweep.rolls_forward_years                             nontest=4 tests=3  06_export_paper_figures.py,build_notebooks.py,cm_sweep.py,runner.py
+===== ppa_ingest
+sessions.path                                                          nontest=29 tests=9  02_build_segments.py,03b_ingest_ppa.py,04_fit_elasticity.py,05_run_scenarios.py,06_export_
+sessions.columns.start_time                                            nontest=3 tests=2  occupancy_estimator.py,ppa.py,ppa_stub.py
+sessions.columns.end_time                                              nontest=3 tests=1  occupancy_estimator.py,ppa.py,ppa_stub.py
+sessions.columns.duration_minutes                                      nontest=1 tests=0  ppa.py
+sessions.columns.location_id                                           nontest=1 tests=0  ppa.py
+sessions.columns.amount_paid_usd                                       nontest=1 tests=0  ppa.py
+sessions.columns.posted_rate_usd_per_hr                                nontest=1 tests=0  ppa.py
+sessions.columns.channel                                               nontest=0 tests=0  
+sessions.datetime_format                                               nontest=1 tests=0  ppa.py
+sessions.timezone                                                      nontest=4 tests=0  cm_sweep.py,ppa.py,provenance.py,raw_cache.py
+sessions.max_session_hours                                             nontest=1 tests=0  ppa.py
+inventory.path                                                         nontest=29 tests=9  02_build_segments.py,03b_ingest_ppa.py,04_fit_elasticity.py,05_run_scenarios.py,06_export_
+inventory.columns.location_id                                          nontest=1 tests=0  ppa.py
+inventory.columns.spaces                                               nontest=7 tests=0  03b_ingest_ppa.py,forecast.py,ppa.py,ppa_stub.py,report_figures.py,runner.py,targeting_wel
+inventory.columns.zone_label                                           nontest=1 tests=0  ppa.py
+inventory.columns.segment_id                                           nontest=28 tests=16  03b_ingest_ppa.py,04_fit_elasticity.py,06_export_paper_figures.py,1_Map.py,3_Revenue_Forec
+inventory.columns.lon                                                  nontest=2 tests=0  ppa.py,zones.py
+inventory.columns.lat                                                  nontest=2 tests=1  ppa.py,zones.py
+inventory.zone_map.Center City Core                                    nontest=3 tests=1  2_Scenario_Comparison.py,4_Equity_Analysis.py,ppa_stub.py
+inventory.zone_map.Center City Area                                    nontest=3 tests=0  2_Scenario_Comparison.py,ppa_stub.py,zones.py
+inventory.zone_map.University City                                     nontest=5 tests=2  04_fit_elasticity.py,opendataphilly.py,ppa_stub.py,synthetic.py,zones.py
+inventory.zone_map.South Philadelphia                                  nontest=0 tests=0  
+inventory.zone_map.Fishtown                                            nontest=4 tests=1  04_fit_elasticity.py,opendataphilly.py,synthetic.py,zones.py
+rates.path                                                             nontest=29 tests=9  02_build_segments.py,03b_ingest_ppa.py,04_fit_elasticity.py,05_run_scenarios.py,06_export_
+rates.columns.zone_label                                               nontest=1 tests=0  ppa.py
+rates.columns.effective_from                                           nontest=1 tests=0  ppa.py
+rates.columns.rate_usd_per_hr                                          nontest=2 tests=1  ppa.py,ppa_stub.py
+rates.date_format                                                      nontest=1 tests=0  ppa.py
+unpaid_use.unpaid_share.default                                        nontest=19 tests=4  02_build_segments.py,03_fit_baseline_demand.py,03b_ingest_ppa.py,04_fit_elasticity.py,05_r
+unpaid_use.source                                                      nontest=18 tests=2  02_build_segments.py,03b_ingest_ppa.py,04_fit_elasticity.py,05_run_scenarios.py,_config.py
+checks.max_unmatched_session_share                                     nontest=1 tests=0  ppa.py
+checks.max_rate_mismatch_share                                         nontest=1 tests=0  ppa.py
+checks.over_capacity_tolerance                                         nontest=1 tests=0  ppa.py
+checks.max_over_capacity_share                                         nontest=1 tests=0  ppa.py

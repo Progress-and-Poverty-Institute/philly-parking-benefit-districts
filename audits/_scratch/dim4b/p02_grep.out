@@ -1,0 +1,10 @@
+# grep -rnE "\*\* *(e\b|eps\b|float\(elasticity|elasticity|self\.e)|np\.power|\(p_new */ *p_old\)|p_new */ *p_old" src scripts app
+src/phillyparking/demand/response.py:59:        return np.power(p / p_ref, e)
+src/phillyparking/demand/response.py:84:        return p_old * np.power(ratio, 1.0 / e)
+src/phillyparking/demand/response.py:136:        power = -q_ref * p_ref * (np.power(ratio, e1) - 1.0) / safe
+src/phillyparking/pricing/optimizer.py:62:        demand = float(problem.base_demand[i]) * (p_clamped / float(problem.base_price[i])) ** float(elasticity[i])
+src/phillyparking/pricing/optimizer.py:125:        demand = float(problem.base_demand[i]) * (p / float(problem.base_price[i])) ** float(elasticity[i])
+src/phillyparking/welfare/targeting_welfare.py:66:    p_full = np.power(occupancy, capacity)
+---count:
+6
+--- notebooks (build_notebooks.py strings + ipynb/qmd):

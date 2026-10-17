@@ -1,0 +1,14 @@
+year 3, tau=0.3 sigma=0.1, 2 reps, same u/z draws; exponential vs constant_elasticity demand form
+                                                breakeven_minutes_median_exp  breakeven_minutes_median_const  welfare_diff_median_exp  welfare_diff_median_const
+elasticity start_occupancy rule      reference                                                                                                                  
+-0.7       0.60            mean_zone peak_zone                          1.29                            1.03              -7773224.70               -10313378.72
+           0.75            mean_zone peak_zone                          1.67                            1.42              -5466451.20                -5291211.48
+           0.90            mean_zone peak_zone                          1.08                            1.19              -7354829.12                -4715690.64
+-0.4       0.60            mean_zone peak_zone                          1.53                            1.25              -4722218.86                -5876566.19
+           0.75            mean_zone peak_zone                          1.34                            1.28              -4696341.91                -3844928.65
+           0.90            mean_zone peak_zone                          1.48                            2.18              -3225566.46                 -895590.67
+-0.2       0.60            mean_zone peak_zone                          1.64                            1.15              -2422040.00                -3831136.35
+           0.75            mean_zone peak_zone                          1.32                            1.39              -2819234.21                -2151774.42
+           0.90            mean_zone peak_zone                          2.73                            2.73               -463925.60                  -95395.69
+
+max |breakeven exp - const| over these cells (all comparisons): 0.704 ; median breakeven exp 1.48 const 1.3

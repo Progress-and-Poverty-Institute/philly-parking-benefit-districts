@@ -1,0 +1,47 @@
+phillyparking._config                                   nontest=39 tests=13 
+phillyparking.cli                                       nontest=0 tests=0 []
+phillyparking.demand.features                           nontest=1 tests=1 ['src/phillyparking/demand/ml_occupancy.py']
+phillyparking.demand.ml_occupancy                       nontest=0 tests=1 []
+phillyparking.demand.occupancy_estimator                nontest=0 tests=1 []
+phillyparking.demand.response                           nontest=6 tests=7 
+phillyparking.demand.synthetic_baseline                 nontest=6 tests=6 
+phillyparking.elasticity.hierarchical_bayes             nontest=1 tests=2 ['scripts/04_fit_elasticity.py']
+phillyparking.elasticity.identification                 nontest=2 tests=2 ['scripts/04_fit_elasticity.py', 'src/phillyparking/elasticity/hierarchical_bayes.py']
+phillyparking.elasticity.priors                         nontest=0 tests=1 []
+phillyparking.elasticity.scenarios                      nontest=3 tests=2 ['app/pages/3_Revenue_Forecast.py', 'scripts/05_run_scenarios.py', 'src/phillyparking/scenarios/runner.py']
+phillyparking.ingest.ppa                                nontest=4 tests=1 
+phillyparking.io._bbox                                  nontest=5 tests=0 
+phillyparking.io.census                                 nontest=3 tests=1 ['scripts/01_download_public_data.py', 'scripts/02_build_segments.py', 'src/phillyparking/cli.py']
+phillyparking.io.gtfs_loader                            nontest=3 tests=1 ['scripts/01_download_public_data.py', 'scripts/02_build_segments.py', 'src/phillyparking/cli.py']
+phillyparking.io.lodes                                  nontest=3 tests=0 ['scripts/01_download_public_data.py', 'scripts/02_build_segments.py', 'src/phillyparking/cli.py']
+phillyparking.io.opendataphilly                         nontest=4 tests=1 
+phillyparking.io.osm_loader                             nontest=3 tests=1 ['scripts/01_download_public_data.py', 'scripts/02_build_segments.py', 'src/phillyparking/cli.py']
+phillyparking.io.ppa_stub                               nontest=2 tests=3 ['scripts/03b_ingest_ppa.py', 'src/phillyparking/demand/occupancy_estimator.py']
+phillyparking.io.raw_cache                              nontest=8 tests=1 
+phillyparking.pricing.arnott_inci                       nontest=2 tests=1 ['src/phillyparking/pricing/optimizer.py', 'src/phillyparking/scenarios/runner.py']
+phillyparking.pricing.optimizer                         nontest=0 tests=1 []
+phillyparking.pricing.priced_hours                      nontest=9 tests=3 
+phillyparking.pricing.seattle_rule                      nontest=2 tests=2 ['src/phillyparking/pricing/targeting_rules.py', 'src/phillyparking/scenarios/runner.py']
+phillyparking.pricing.targeting_rules                   nontest=1 tests=1 ['src/phillyparking/scenarios/cm_sweep.py']
+phillyparking.revenue.allocation                        nontest=1 tests=3 ['src/phillyparking/scenarios/runner.py']
+phillyparking.revenue.forecast                          nontest=3 tests=2 ['app/pages/3_Revenue_Forecast.py', 'scripts/06_export_paper_figures.py', 'src/phillyparking/scenarios/runner.py']
+phillyparking.scenarios.cm_sweep                        nontest=4 tests=1 
+phillyparking.scenarios.compare                         nontest=4 tests=4 
+phillyparking.scenarios.provenance                      nontest=4 tests=0 
+phillyparking.scenarios.ranges                          nontest=1 tests=1 ['scripts/05_run_scenarios.py']
+phillyparking.scenarios.runner                          nontest=6 tests=7 
+phillyparking.spatial.join                              nontest=1 tests=2 ['scripts/02_build_segments.py']
+phillyparking.spatial.segments                          nontest=7 tests=4 
+phillyparking.spatial.synthetic                         nontest=5 tests=7 
+phillyparking.spatial.zones                             nontest=2 tests=2 ['scripts/02_build_segments.py', 'src/phillyparking/spatial/segments.py']
+phillyparking.validation.calibration                    nontest=1 tests=1 ['src/phillyparking/validation/crossval.py']
+phillyparking.validation.crossval                       nontest=0 tests=0 []
+phillyparking.validation.manual_counts                  nontest=0 tests=0 []
+phillyparking.viz.charts                                nontest=3 tests=1 ['app/pages/3_Revenue_Forecast.py', 'app/pages/4_Equity_Analysis.py', 'scripts/06_export_paper_figures.py']
+phillyparking.viz.maps                                  nontest=1 tests=0 ['app/pages/1_Map.py']
+phillyparking.viz.report_figures                        nontest=1 tests=1 ['scripts/07_export_report_assets.py']
+phillyparking.viz.tables                                nontest=1 tests=1 ['scripts/07_export_report_assets.py']
+phillyparking.welfare.consumer_surplus                  nontest=0 tests=1 []
+phillyparking.welfare.cruising_dwl                      nontest=1 tests=1 ['src/phillyparking/scenarios/runner.py']
+phillyparking.welfare.incidence                         nontest=0 tests=1 []
+phillyparking.welfare.targeting_welfare                 nontest=2 tests=1 ['src/phillyparking/scenarios/cm_sweep.py', 'src/phillyparking/viz/report_figures.py']

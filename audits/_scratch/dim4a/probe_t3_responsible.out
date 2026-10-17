@@ -1,0 +1,16 @@
+segments mapped to a centerline row: 58833 of 58966 (unmapped = multipart parts, expect few)
+priced by responsible party (segments, spaces):
+            count   sum
+responsibl             
+CITY         1366  9392
+DRPA           14   120
+FAM           879  6210
+PRIVATE        58   462
+STATE         823  6423
+STRICKEN        3    28
+NaN             2    18
+priced by st_type top: {'ST': 2573, 'AVE': 420, 'BLVD': 80, 'DR': 15, 'PL': 11, 'CIR': 7, 'BRG': 7, 'MALL': 5, 'CT': 4, 'SQ': 4, 'ALY': 4, 'TUNL': 4}
+priced by oneway: {'FT': 1076, 'TF': 1047, 'B': 1020} ; multi_rep>0: 247 spaces 2039
+priced on PRIVATE/PHA/PIDC/FAIRMOUNT PARK/DRPA/AIRPORT: 72 spaces 582
+priced STATE-responsible streets (top names): {'S BROAD ST': 638, 'SPRING GARDEN ST': 555, 'MARKET ST': 533, 'CHESTNUT ST': 530, 'WALNUT ST': 388, 'N BROAD ST': 368, 'W GIRARD AVE': 329, 'VINE ST': 322}
+priced PRIVATE streets (top names): {'N 9TH ST': 36, 'REED ST': 30, 'EAST SERVICE DR': 22, 'WARREN ST': 22, 'CURIE BLVD': 20, 'GERMANTOWN AVE': 20, 'PEARL ST': 20, 'N 8TH ST': 20}

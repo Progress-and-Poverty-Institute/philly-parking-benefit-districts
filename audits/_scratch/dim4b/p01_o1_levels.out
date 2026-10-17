@@ -1,0 +1,18 @@
+=== o1_mid
+baseline priced-hour mean occupancy by zone:
+{'cca': 0.562, 'ccc': 0.638, 'fishtown': 0.513, 'south_philly': 0.492, 'ucity': 0.569}
+                      status_quo      seattle     full_pbd
+total_revenue       1.504861e+08  94154060.49  97141573.21
+mean_price_ccc      4.000000e+00         2.83         3.52
+mean_price_cca      3.500000e+00         1.33         1.00
+cruising_dwl_total  7.947295e+05   5152649.34   4891589.16
+cs_change_total     0.000000e+00  76767747.29  71655902.05
+=== o1_high
+baseline priced-hour mean occupancy by zone:
+{'cca': 0.635, 'ccc': 0.701, 'fishtown': 0.592, 'south_philly': 0.574, 'ucity': 0.643}
+                      status_quo       seattle      full_pbd
+total_revenue       1.682276e+08  1.317886e+08  1.341117e+08
+mean_price_ccc      4.000000e+00  3.500000e+00  4.100000e+00
+mean_price_cca      3.500000e+00  2.170000e+00  1.810000e+00
+cruising_dwl_total  1.640358e+06  5.229465e+06  4.932144e+06
+cs_change_total     0.000000e+00  5.166582e+07  4.667355e+07

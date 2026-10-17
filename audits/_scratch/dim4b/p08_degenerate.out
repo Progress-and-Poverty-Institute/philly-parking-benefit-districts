@@ -1,0 +1,20 @@
+cells x rules at year 8: 270
+rule-cells whose welfare_change is identical across all 100 replications: 70 of 270
+block_dispersion  observation_noise
+0.0               0.0                  45
+                  0.1                  13
+0.3               0.0                   3
+                  0.1                   3
+0.6               0.0                   3
+                  0.1                   3
+dtype: int64
+paired: cells with zero spread in welfare_diff: 45 of 216
+by tau,sigma, share of cells degenerate:
+ block_dispersion  observation_noise
+0.0               0.0                  1.000000
+                  0.1                  0.027778
+0.3               0.0                  0.027778
+                  0.1                  0.027778
+0.6               0.0                  0.083333
+                  0.1                  0.083333
+Name: deg, dtype: float64

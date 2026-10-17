@@ -1,0 +1,72 @@
+.................................s...................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+.................................FF..................................... [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+_____ test_dwl_scored_over_priced_hours_at_default_threshold[status_quo] ______
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'status_quo'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+        tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+>       assert r.diagnostics["dwl_target_vacancy"] == tv
+E       assert 0.3 == 0.15
+
+tests\test_scenario_hours.py:150: AssertionError
+_______ test_dwl_scored_over_priced_hours_at_default_threshold[seattle] _______
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+name = 'seattle'
+
+    @pytest.mark.parametrize("name", ["status_quo", "seattle", "full_pbd"])
+    def test_dwl_scored_over_priced_hours_at_default_threshold(results, fixture_data, name):
+        segs, _ = fixture_data
+        r = results[name]
+        default = _raw("pricing_rules")["arnott_inci"]["target_vacancy"]
+        tv = _raw("scenarios")["scenarios"][name]["pricing_policy"].get("target_vacancy", default)
+>       assert r.diagnostics["dwl_target_vacancy"] == tv
+E       assert 0.3 == 0.15
+
+tests\test_scenario_hours.py:150: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_scenario_hours.py::test_dwl_scored_over_priced_hours_at_default_threshold[status_quo]
+FAILED tests/test_scenario_hours.py::test_dwl_scored_over_priced_hours_at_default_threshold[seattle]
+2 failed, 333 passed, 1 skipped, 1 deselected, 8 warnings in 57.06s
+done g1_target_vacancy exit 1

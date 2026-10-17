@@ -1,0 +1,8 @@
+sweep rows 216000 = {'mean_band': 43200, 'mean_zone': 43200, 'peak_band': 43200, 'peak_zone': 43200, 'seattle_rule': 43200}
+mean_zone vs peak_zone: cells 432; max|csv breakeven median - independent| = 4.95e-06; NaN agree: True; searches_more share check max diff skipped
+mean_band vs peak_band: cells 432; max|csv breakeven median - independent| = 4.99e-06; NaN agree: True; searches_more share check max diff skipped
+seattle_rule vs peak_band: cells 432; max|csv breakeven median - independent| = 4.86e-05; NaN agree: True; searches_more share check max diff skipped
+peak_band vs peak_zone: cells 432; max|csv breakeven median - independent| = 0.00114; NaN agree: True; searches_more share check max diff skipped
+max |welfare_diff - (cs+rev-search)| over all pairs/reps: 4.6566128730773926e-09
+search_cost/search_cost_per_minute unique: [5.]
+peak_band peak_zone rep-years with |scd|<=1e-9 (breakeven NaN): 24018 of 43200 ; with 1e-9<|scd|<0.1 $/min: 0

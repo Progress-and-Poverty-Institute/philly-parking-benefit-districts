@@ -1,0 +1,18 @@
+statistic     max (coded)  mean    q75    q90    q95
+zone                                                
+cca                 1.000   1.0  1.000  1.000  1.000
+ccc                 2.855   1.0  1.571  2.672  2.855
+fishtown            0.500   0.5  0.500  0.500  0.500
+south_philly        0.500   0.5  0.500  0.500  0.500
+ucity               1.000   1.0  1.000  1.000  1.000
+
+unclipped one-step price (what the statistic alone says):
+statistic     max (coded)   mean    q75    q90    q95
+zone                                                 
+cca                 0.747 -0.727  0.303  0.629  0.747
+ccc                 2.855  0.517  1.571  2.672  2.855
+fishtown            0.147 -0.685 -0.098  0.100  0.100
+south_philly       -0.215 -0.860 -0.416 -0.379 -0.215
+ucity               0.588 -0.403 -0.092  0.508  0.588
+
+zones at a floor, by statistic: {'max (coded)': 4, 'mean': 5, 'q75': 4, 'q90': 4, 'q95': 4}

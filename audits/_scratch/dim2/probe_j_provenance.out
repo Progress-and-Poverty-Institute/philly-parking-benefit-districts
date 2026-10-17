@@ -1,0 +1,10 @@
+sweep meta git: {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': True} created 2026-10-16T18:19:09+00:00
+config hashes equal to current W/config: {'allocation': True, 'demand_baseline': True, 'elasticity_priors': True, 'ppa_ingest': True, 'pricing_rules': True, 'scenarios': True, 'zones': True}
+status_quo git {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} created 2026-10-16T17:14:07+00:00 hashes equal: True
+seattle git {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} created 2026-10-16T17:14:11+00:00 hashes equal: True
+full_pbd git {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} created 2026-10-16T17:14:15+00:00 hashes equal: True
+
+files changed 7744eeb..HEAD under src/ config/ scripts/: ''
+files changed in f779618 (the regeneration commit) outside outputs/: ''
+tracked under outputs/ at 7744eeb: 29 files
+=> git_state() reports dirty when any TRACKED file is modified (provenance.py:37 'git status --porcelain --untracked-files=no'); outputs/tables and outputs/figures are tracked, so after scripts 05 and 06 rewrote them the tree was dirty when 07 --rebuild-cm-sweep ran (18:19Z vs 17:14Z).

@@ -1,0 +1,15 @@
+segments in file 58966 zones {'other': 55821, 'cca': 1115, 'ccc': 993, 'south_philly': 407, 'fishtown': 376, 'ucity': 254}
+named segs 3145 unique segs in sq panel 3145 rows 528360 segs in panel not in named: 0 named not in panel: 0
+capacity total (named) 22653
+status_quo panel cols ['segment_id', 'hour_of_week', 'occupancy', 'occupancy_sd', 'zone_id', 'price_usd_per_hr'] prices cols ['segment_id', 'zone_id', 'price_usd_per_hr']
+status_quo revenue (52 x sum occ*cap*panel price over priced rows) = 140663329.77 ; table total_revenue = 140663329.77 diff 2.9802322387695312e-08
+   rows per segment: [168]
+   target vacancy used by runner: 0.15  DWL recomputed 204704.7
+seattle panel cols ['segment_id', 'hour_of_week', 'occupancy', 'occupancy_sd', 'zone_id', 'price_usd_per_hr'] prices cols ['segment_id', 'zone_id', 'band', 'band_start', 'band_end', 'price_usd_per_hr']
+seattle revenue (52 x sum occ*cap*panel price over priced rows) = 75720702.53 ; table total_revenue = 75720702.53 diff 1.4901161193847656e-08
+   rows per segment: [168]
+   target vacancy used by runner: 0.15  DWL recomputed 4034864.03
+full_pbd panel cols ['segment_id', 'hour_of_week', 'occupancy', 'occupancy_sd', 'zone_id', 'price_usd_per_hr'] prices cols ['segment_id', 'zone_id', 'price_usd_per_hr']
+full_pbd revenue (52 x sum occ*cap*panel price over priced rows) = 81959676.06 ; table total_revenue = 81959676.06 diff 1.4901161193847656e-08
+   rows per segment: [168]
+   target vacancy used by runner: 0.15  DWL recomputed 3849969.04

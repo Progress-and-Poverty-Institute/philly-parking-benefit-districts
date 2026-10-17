@@ -1,0 +1,16 @@
+real panel (528360, 4) ['segment_id', 'hour_of_week', 'occupancy', 'occupancy_sd'] key f1027dbb9a5d5daa65227f6b5cf030b72a2b915c0c206f9977cf232004af2227
+runA (528360, 4) columns equal True
+   segment_id equal True
+   hour_of_week equal True
+   occupancy max abs diff 0.0 exactly equal True
+   occupancy_sd max abs diff 0.0 exactly equal True
+  key equal: True
+  file sha256 equal: True
+runB (528360, 4) columns equal True
+   segment_id equal True
+   hour_of_week equal True
+   occupancy max abs diff 0.0 exactly equal True
+   occupancy_sd max abs diff 0.0 exactly equal True
+  key equal: True
+  file sha256 equal: True
+runA == runB: True

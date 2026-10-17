@@ -1,0 +1,53 @@
+.................................s...................................... [ 21%]
+.......FF............................................................... [ 42%]
+........................................................................ [ 64%]
+........................................................................ [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+____________________________ test_cbd_central_mean ____________________________
+
+    def test_cbd_central_mean():
+        p = central_prior("cbd")
+>       assert p.mean == pytest.approx(-0.40)
+E       assert -0.1 == -0.4 ± 4.0e-07
+E         
+E         comparison failed
+E         Obtained: -0.1
+E         Expected: -0.4 ± 4.0e-07
+
+tests\test_elasticity_priors.py:17: AssertionError
+__________________________ test_context_shifts_apply __________________________
+
+    def test_context_shifts_apply():
+>       assert central_prior("mixed_use").mean == pytest.approx(-0.45)
+E       assert -0.15000000000000002 == -0.45 ± 4.5e-07
+E         
+E         comparison failed
+E         Obtained: -0.15000000000000002
+E         Expected: -0.45 ± 4.5e-07
+
+tests\test_elasticity_priors.py:22: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_elasticity_priors.py::test_cbd_central_mean - assert -0.1 =...
+FAILED tests/test_elasticity_priors.py::test_context_shifts_apply - assert -0...
+2 failed, 333 passed, 1 skipped, 1 deselected, 8 warnings in 57.09s
+done g4b_central_mean exit 1

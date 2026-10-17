@@ -1,0 +1,28 @@
+2026-10-16 16:08:29,169 INFO __main__: Loaded priced segments (n=3145 of 58966)
+2026-10-16 16:08:29,240 INFO __main__: Running scenario: status_quo
+2026-10-16 16:08:30,175 INFO __main__:   saved -> C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\status_quo (revenue=$140663330)
+2026-10-16 16:08:30,176 INFO __main__: Running scenario: seattle
+2026-10-16 16:08:33,772 INFO __main__:   saved -> C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\seattle (revenue=$75720703)
+2026-10-16 16:08:33,772 INFO __main__: Running scenario: full_pbd
+2026-10-16 16:08:37,245 INFO __main__:   saved -> C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\full_pbd (revenue=$81959676)
+2026-10-16 16:08:37,270 INFO __main__: Comparison table:
+                      status_quo       seattle      full_pbd
+total_revenue       1.406633e+08  7.572070e+07  8.195968e+07
+mean_price_ccc      4.000000e+00  2.333333e+00  2.751302e+00
+mean_price_cca      3.500000e+00  1.000000e+00  1.000000e+00
+n_zones_at_ceiling  0.000000e+00  0.000000e+00  0.000000e+00
+cruising_dwl_total  2.047047e+05  4.034864e+06  3.849969e+06
+cs_change_total     0.000000e+00  8.792856e+07  8.061491e+07
+gf_to_general_fund  3.500000e+07  3.500000e+07  3.500000e+07
+sdp_revenue         1.056633e+08  4.072070e+07  2.237177e+07
+pbd_revenue         0.000000e+00  0.000000e+00  2.458790e+07
+pbd_unfunded        0.000000e+00  0.000000e+00  0.000000e+00
+review_year         0.000000e+00  5.000000e+00  5.000000e+00
+converged           1.000000e+00  1.000000e+00  1.000000e+00
+2026-10-16 16:08:37,288 INFO __main__: Wrote C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\comparison_table.csv
+2026-10-16 16:08:37,288 WARNING __main__: Segments are not the synthetic fixture; nothing in the run depends on the seed, so no seed range is computed (n_seeds ignored).
+2026-10-16 16:08:37,311 INFO __main__: Elasticity scenario pessimistic at seed 42
+2026-10-16 16:08:46,784 INFO __main__: Elasticity scenario optimistic at seed 42
+2026-10-16 16:08:54,853 INFO __main__: Wrote C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\scenario_runs.csv and C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models\scenario_ranges.csv
+scenarios complete: ['status_quo', 'seattle', 'full_pbd'] -> C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\outputs\models
+exit 0

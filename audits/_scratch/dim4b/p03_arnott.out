@@ -1,0 +1,7 @@
+peak_occ reported 0.925 expected 0.6; price 4.845573880280631 hand 4.845573880280631
+current 3, posted 4: 3.8455738802806314 hand 3.8455738802806314
+low-occupancy zone price (unclipped would be -24.33213344056216 ) ->  1.0 (ccc ceiling 8.0)
+full zone price unclipped 5.6251892949777496 -> 5.6251892949777496
+e=-0.05: unclipped 17.001514359821996 -> 8.0 (ceiling 8.0 binds)
+e=-2, occ .05: unclipped -1.6664266881124323 -> 1.0 (floor 1.0 binds)
+after repricing, peak priced-hour zone occupancy: 0.85 (target 0.85); hour57: 0.7810810810810811

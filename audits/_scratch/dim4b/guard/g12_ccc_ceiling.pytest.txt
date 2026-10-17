@@ -1,0 +1,163 @@
+.................................s...................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+...............................F.........FFFFFF...F..................... [ 85%]
+................................................                         [100%]
+================================== FAILURES ===================================
+____________ test_arnott_prices_busiest_priced_zone_hour_to_target ____________
+
+results = {'full_pbd': ScenarioResults(name='full_pbd', elasticity_scenario='central', prices=   segment_id       zone_id  price...c3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}, 'elasticity': {'scenario': 'central', 'central': -0.4, 'sd': 0.15}})}
+fixture_data = (   segment_id  ... transit_trips_per_hr
+0       T0000  ...            38.713122
+1       T0001  ...            37.7979...        166   0.291111      0.051644
+10079      T0059           167   0.291111      0.051644
+
+[10080 rows x 4 columns])
+
+    def test_arnott_prices_busiest_priced_zone_hour_to_target(results, fixture_data):
+        segs, _ = fixture_data
+        r = results["full_pbd"]
+        target = 1.0 - _raw("scenarios")["scenarios"]["full_pbd"]["pricing_policy"]["target_vacancy"]
+        zones = {z["id"]: z for z in _raw("zones")["zones"]}
+        prices = r.prices.drop_duplicates("zone_id").set_index("zone_id")["price_usd_per_hr"].dropna()
+        peak = _busiest_priced_zone_hour(r, segs)
+        checked = 0
+        for zid, p in prices.items():
+            if np.isclose(p, zones[zid]["floor"]) or np.isclose(p, zones[zid]["ceiling"]):
+                continue
+>           assert peak[zid] == pytest.approx(target, abs=2e-3), zid
+E           AssertionError: ccc
+E           assert np.float64(0.9365157365050574) == 0.85 ± 0.002
+E             
+E             comparison failed
+E             Obtained: 0.9365157365050574
+E             Expected: 0.85 ± 0.002
+
+tests\test_scenario_hours.py:121: AssertionError
+____________________ test_raise_just_above_high_threshold _____________________
+
+    def test_raise_just_above_high_threshold():
+        new, diag = adjust_price(4.00, CFG.occ_high + EPS, CFG, zone_id="ccc")
+        assert diag["direction"] == "up" and diag["n_steps"] == 1
+>       assert new == pytest.approx(4.00 + CFG.step_usd)
+E       assert 3.0 == 4.5 ± 4.5e-06
+E         
+E         comparison failed
+E         Obtained: 3.0
+E         Expected: 4.5 ± 4.5e-06
+
+tests\test_seattle_rule.py:24: AssertionError
+______________________ test_cut_just_below_low_threshold ______________________
+
+    def test_cut_just_below_low_threshold():
+        new, diag = adjust_price(4.00, CFG.occ_low - EPS, CFG, zone_id="ccc")
+        assert diag["direction"] == "down"
+>       assert new == pytest.approx(4.00 - CFG.step_usd)
+E       assert 3.0 == 3.5 ± 3.5e-06
+E         
+E         comparison failed
+E         Obtained: 3.0
+E         Expected: 3.5 ± 3.5e-06
+
+tests\test_seattle_rule.py:30: AssertionError
+_______________________ test_hold_inside_dead_band[0.7] _______________________
+
+occ = 0.7
+
+    @pytest.mark.parametrize("occ", [CFG.occ_low, (CFG.occ_low + CFG.occ_high) / 2, CFG.occ_high])
+    def test_hold_inside_dead_band(occ):
+        new, diag = adjust_price(4.00, occ, CFG, zone_id="ccc")
+        assert diag["direction"] == "hold"
+>       assert new == 4.00
+E       assert 3.0 == 4.0
+
+tests\test_seattle_rule.py:37: AssertionError
+_______________ test_hold_inside_dead_band[0.7749999999999999] ________________
+
+occ = 0.7749999999999999
+
+    @pytest.mark.parametrize("occ", [CFG.occ_low, (CFG.occ_low + CFG.occ_high) / 2, CFG.occ_high])
+    def test_hold_inside_dead_band(occ):
+        new, diag = adjust_price(4.00, occ, CFG, zone_id="ccc")
+        assert diag["direction"] == "hold"
+>       assert new == 4.00
+E       assert 3.0 == 4.0
+
+tests\test_seattle_rule.py:37: AssertionError
+______________________ test_hold_inside_dead_band[0.85] _______________________
+
+occ = 0.85
+
+    @pytest.mark.parametrize("occ", [CFG.occ_low, (CFG.occ_low + CFG.occ_high) / 2, CFG.occ_high])
+    def test_hold_inside_dead_band(occ):
+        new, diag = adjust_price(4.00, occ, CFG, zone_id="ccc")
+        assert diag["direction"] == "hold"
+>       assert new == 4.00
+E       assert 3.0 == 4.0
+
+tests\test_seattle_rule.py:37: AssertionError
+_________________________ test_two_steps_at_very_high _________________________
+
+    def test_two_steps_at_very_high():
+        new, diag = adjust_price(4.00, CFG.occ_very_high, CFG, zone_id="ccc")
+        assert diag["n_steps"] == CFG.max_step_per_cycle
+>       assert new == pytest.approx(4.00 + CFG.max_step_per_cycle * CFG.step_usd)
+E       assert 3.0 == 5.0 ± 5.0e-06
+E         
+E         comparison failed
+E         Obtained: 3.0
+E         Expected: 5.0 ± 5.0e-06
+
+tests\test_seattle_rule.py:43: AssertionError
+__________________ test_each_band_moves_on_its_own_statistic __________________
+
+    def test_each_band_moves_on_its_own_statistic():
+        panel = _panel("ccc", lambda d, h: 0.97 if 8 <= h < 12 else 0.75 if 12 <= h < 16 else 0.40)
+        out = adjust_zone_prices(panel, pd.DataFrame({"zone_id": ["ccc"], "price_usd_per_hr": [4.0]}), BANDS, config=CFG)
+        got = out.set_index("band")["price_usd_per_hr"].to_dict()
+>       assert got == pytest.approx({
+            "8-12": 4.0 + CFG.max_step_per_cycle * CFG.step_usd,
+            "12-16": 4.0,
+            "16-20": 4.0 - CFG.step_usd,
+        })
+E       AssertionError: assert {'12-16': 3.0..., '8-12': 3.0} == approx({'8-12....5 ± 3.5e-06})
+E         
+E         comparison failed. Mismatched elements: 3 / 3:
+E         Max absolute difference: 2.0
+E         Max relative difference: 0.4
+E         Index | Obtained | Expected     
+E         8-12  | 3.0      | 5.0 ± 5.0e-06
+E         12-16 | 3.0      | 4.0 ± 4.0e-06
+E         16-20 | 3.0      | 3.5 ± 3.5e-06
+
+tests\test_seattle_rule.py:81: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_scenario_hours.py::test_arnott_prices_busiest_priced_zone_hour_to_target
+FAILED tests/test_seattle_rule.py::test_raise_just_above_high_threshold - ass...
+FAILED tests/test_seattle_rule.py::test_cut_just_below_low_threshold - assert...
+FAILED tests/test_seattle_rule.py::test_hold_inside_dead_band[0.7] - assert 3...
+FAILED tests/test_seattle_rule.py::test_hold_inside_dead_band[0.7749999999999999]
+FAILED tests/test_seattle_rule.py::test_hold_inside_dead_band[0.85] - assert ...
+FAILED tests/test_seattle_rule.py::test_two_steps_at_very_high - assert 3.0 =...
+FAILED tests/test_seattle_rule.py::test_each_band_moves_on_its_own_statistic
+8 failed, 327 passed, 1 skipped, 1 deselected, 8 warnings in 60.31s (0:01:00)
+done g12_ccc_ceiling exit 1

@@ -1,0 +1,28 @@
+config dir: C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\config
+floors in force: {'ccc': 1.0, 'cca': 1.0, 'ucity': 1.0, 'south_philly': 0.5, 'fishtown': 0.5}
+
+Busiest priced capacity-weighted zone-hour (status quo): {'cca': 0.621, 'ccc': 0.758, 'fishtown': 0.593, 'south_philly': 0.538, 'ucity': 0.641}
+
+--- elasticity -0.2: q(0)/q(p_ref) under the exponential law = exp(|e|) = 1.221
+        zone  posted  floor  busiest  arnott_unclipped  clipped  busiest_needed_to_clear_floor  busiest_needed_for_nonneg_price  occ_at_zero_price
+         ccc     4.0    1.0    0.758             1.709    1.709                          0.732                            0.696              0.926
+         cca     3.5    1.0    0.621            -2.007    1.000                          0.737                            0.696              0.758
+       ucity     2.0    1.0    0.641            -0.824    1.000                          0.769                            0.696              0.783
+south_philly     1.5    0.5    0.538            -1.930    0.500                          0.744                            0.696              0.657
+    fishtown     1.5    0.5    0.593            -1.205    0.500                          0.744                            0.696              0.724
+
+--- elasticity -0.4: q(0)/q(p_ref) under the exponential law = exp(|e|) = 1.492
+        zone  posted  floor  busiest  arnott_unclipped  clipped  busiest_needed_to_clear_floor  busiest_needed_for_nonneg_price  occ_at_zero_price
+         ccc     4.0    1.0    0.758             2.855    2.855                          0.630                             0.57              1.131
+         cca     3.5    1.0    0.621             0.747    1.000                          0.639                             0.57              0.926
+       ucity     2.0    1.0    0.641             0.588    1.000                          0.696                             0.57              0.956
+south_philly     1.5    0.5    0.538            -0.215    0.500                          0.651                             0.57              0.803
+    fishtown     1.5    0.5    0.593             0.147    0.500                          0.651                             0.57              0.884
+
+--- elasticity -0.7: q(0)/q(p_ref) under the exponential law = exp(|e|) = 2.014
+        zone  posted  floor  busiest  arnott_unclipped  clipped  busiest_needed_to_clear_floor  busiest_needed_for_nonneg_price  occ_at_zero_price
+         ccc     4.0    1.0    0.758             3.346    3.346                          0.503                            0.422              1.526
+         cca     3.5    1.0    0.621             1.927    1.927                          0.516                            0.422              1.250
+       ucity     2.0    1.0    0.641             1.193    1.193                          0.599                            0.422              1.291
+south_philly     1.5    0.5    0.538             0.520    0.520                          0.533                            0.422              1.083
+    fishtown     1.5    0.5    0.593             0.727    0.727                          0.533                            0.422              1.193

@@ -1,0 +1,6 @@
+min_commercial_share 0.9: rows 58966 (base 58966), priced 2131 (base 3145), priced capacity 15699 (base 22653), same priced ids as base: False; classes in table [2, 3, 4, 5, 13, 18]
+   priced by zone: {'cca': {'count': 701, 'sum': 5036}, 'ccc': {'count': 869, 'sum': 6457}, 'fishtown': {'count': 196, 'sum': 1358}, 'south_philly': {'count': 197, 'sum': 1417}, 'ucity': {'count': 168, 'sum': 1431}}
+   rule: no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.9
+no_curb_classes []: rows 64192 (base 58966), priced 3145 (base 3145), priced capacity 22653 (base 22653), same priced ids as base: True; classes in table [1, 2, 3, 4, 5, 6, 9, 10, 12, 13, 14, 15, 18]
+   priced by zone: {'cca': {'count': 1115, 'sum': 7777}, 'ccc': {'count': 993, 'sum': 7328}, 'fishtown': {'count': 376, 'sum': 2655}, 'south_philly': {'count': 407, 'sum': 2728}, 'ucity': {'count': 254, 'sum': 2165}}
+   rule: no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5

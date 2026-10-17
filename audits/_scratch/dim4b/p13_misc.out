@@ -1,0 +1,14 @@
+ordering_violations(mean_zone,peak_zone): 12 violating rep-years of 43200
+ordering_violations(mean_band,peak_band): 12 violating rep-years of 43200
+negative control ordering_violations(peak_zone, mean_zone): 39831 violations (guard fires)
+E4 rate change 3.0->4.0: truth e at posted 4.0 = -0.4; local elasticity at old price -0.300; log-log slope returned -0.3476  (-13.1% vs the prior-slot meaning)
+E4 rate change 2.5->3.5: truth e at posted 3.5 = -0.4; local elasticity at old price -0.286; log-log slope returned -0.3397  (-15.1% vs the prior-slot meaning)
+E4 rate change 3.0->4.0: truth e at posted 4.0 = -0.7; local elasticity at old price -0.525; log-log slope returned -0.6083  (-13.1% vs the prior-slot meaning)
+Traceback (most recent call last):
+  File "C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim4b\p13_misc.py", line 33, in <module>
+    print(f"A3 {sc}: rows where one-shot != sequential: {(d.abs()>1e-9).sum()} of {len(d)}; max diff {d.abs().max():.4f}; one-shot - sequential cars (capacity-weighted, summed over week) {((c.occupancy_one-c.occupancy_seq)*c.capacity).sum():.2f}; sign: one-shot higher in {(d>1e-9).sum()}, lower in {(d<-1e-9).sum()}")
+                                                                                                                                                                                                                               ^^^^^^^^^^
+  File "C:\Users\druss\miniconda3\Lib\site-packages\pandas\core\generic.py", line 6321, in __getattr__
+    return object.__getattribute__(self, name)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AttributeError: 'DataFrame' object has no attribute 'capacity'. Did you mean: 'capacity_x'?

@@ -1,0 +1,4 @@
+fixture priced blocks: 112 capacity: {'count': 112.0, 'mean': 8.8, 'std': 3.5, 'min': 4.0, '25%': 6.0, '50%': 8.0, '75%': 12.0, 'max': 15.0}
+fixture share of blocks with capacity <= 3: 0.0
+real priced blocks: 3145 share capacity <= 3: 0.082  share <= 5: 0.28  share == 0: 0.004
+sweep parquet columns: ['elasticity', 'start_occupancy', 'block_dispersion', 'observation_noise', 'rule', 'replication', 'year', 'welfare_change', 'cs_change', 'revenue', 'search_cost', 'search_cost_per_minute', 'cruising_dwl', 'share_block_hours_above_high', 'share_block_hours_below_low', 'mean_price'] rows: 216000

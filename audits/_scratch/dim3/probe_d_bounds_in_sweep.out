@@ -1,0 +1,14 @@
+fixture priced block-hours 7812; zone shares {np.str_('ccc'): 0.267, np.str_('cca'): 0.23, np.str_('fishtown'): 0.194, np.str_('south_philly'): 0.161, np.str_('ucity'): 0.147}
+mean price if every zone at its floor: 0.823; at its ceiling: 6.055
+mean_zone    : cells (of 54) with year-8 median mean price == all-floor  9, == all-ceiling  0
+mean_band    : cells (of 54) with year-8 median mean price == all-floor  2, == all-ceiling  0
+seattle_rule : cells (of 54) with year-8 median mean price == all-floor  1, == all-ceiling  0
+peak_zone    : cells (of 54) with year-8 median mean price == all-floor  0, == all-ceiling  0
+peak_band    : cells (of 54) with year-8 median mean price == all-floor  0, == all-ceiling  0
+mean_zone vs peak_zone: cells where the mean rule is at the floors AND the peak rule at the ceilings: 0; either: 9 of 54
+by start_occupancy, cells with either side bound-set:
+Traceback (most recent call last):
+  File "C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\audits\_scratch\dim3\probe_d_bounds_in_sweep.py", line 36, in <module>
+    e = (np.isclose(mz, floor_mean, atol=1e-3) | np.isclose(pz.reindex(mz.index), ceil_mean, atol=1e-3)).groupby(level="start_occupancy").sum()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'numpy.ndarray' object has no attribute 'groupby'

@@ -1,0 +1,25 @@
+
+seattle per zone ($M; share of priced block-hours at the zone floor):
+               d_rev    dwl      cs  share_bh_at_floor
+zone_id                                               
+cca          -33.472  1.817  44.179                1.0
+ccc          -20.858  1.373  29.208                0.0
+fishtown      -4.008  0.338   5.407                1.0
+south_philly  -3.277  0.222   4.418                1.0
+ucity         -3.327  0.286   4.717                1.0
+  share of total in the four floor zones: d_rev 0.679  dwl 0.660  cs 0.668
+
+full_pbd per zone ($M; share of priced block-hours at the zone floor):
+               d_rev    dwl      cs  share_bh_at_floor
+zone_id                                               
+cca          -33.472  1.817  44.179                1.0
+ccc          -14.619  1.188  21.894                0.0
+fishtown      -4.008  0.338   5.407                1.0
+south_philly  -3.277  0.222   4.418                1.0
+ucity         -3.327  0.286   4.717                1.0
+  share of total in the four floor zones: d_rev 0.751  dwl 0.691  cs 0.728
+
+share of priced block-hours with identical price under both reforms, by zone:
+{'cca': 1.0, 'ccc': 0.0, 'fishtown': 1.0, 'south_philly': 1.0, 'ucity': 1.0}
+CCC-only difference between reforms ($M): d_rev 6.24  dwl -0.18  cs -7.31
+table totals check: seattle d_rev -64.94 full_pbd d_rev -58.7

@@ -1,0 +1,42 @@
+fixed point: no zone moves by >0.001 at review 6 (converged_year 5 )
+hand prices: {'ccc': 2.751302, 'cca': 1.0, 'ucity': 1.0, 'south_philly': 0.5, 'fishtown': 0.5}
+saved full_pbd: {'south_philly': 0.5, 'ccc': 2.751302, 'cca': 1.0, 'ucity': 1.0, 'fishtown': 0.5}
+max abs diff hand vs saved 0.0
+saved diagnostics years_run/conv_year 5 5
+ccc peak priced-hour occ at fixed point 0.8499 price 2.7513 floor 1.0
+cca peak priced-hour occ at fixed point 0.7831 price 1.0 floor 1.0
+ucity peak priced-hour occ at fixed point 0.7755 price 1.0 floor 1.0
+south_philly peak priced-hour occ at fixed point 0.7022 price 0.5 floor 0.5
+fishtown peak priced-hour occ at fixed point 0.7695 price 0.5 floor 0.5
+     zone_id  band  price_usd_per_hr
+         cca 12-16               1.0
+         cca 16-20               1.0
+         cca  8-12               1.0
+         ccc 12-16               3.5
+         ccc 16-20               1.5
+         ccc  8-12               2.0
+    fishtown 12-16               0.5
+    fishtown 16-20               0.5
+    fishtown  8-12               0.5
+south_philly 12-16               0.5
+south_philly 16-20               0.5
+south_philly  8-12               0.5
+       ucity 12-16               1.0
+       ucity 16-20               1.0
+       ucity  8-12               1.0
+ccc            8-12 stat=0.7019 price=2.00 next=2.00 holds  
+ccc           12-16 stat=0.7027 price=3.50 next=3.50 holds  
+ccc           16-20 stat=0.7041 price=1.50 next=1.50 holds  
+cca            8-12 stat=0.6409 price=1.00 next=1.00 holds  (at floor)
+cca           12-16 stat=0.7114 price=1.00 next=1.00 holds  (at floor)
+cca           16-20 stat=0.7045 price=1.00 next=1.00 holds  (at floor)
+ucity          8-12 stat=0.6106 price=1.00 next=1.00 holds  (at floor)
+ucity         12-16 stat=0.6920 price=1.00 next=1.00 holds  (at floor)
+ucity         16-20 stat=0.6197 price=1.00 next=1.00 holds  (at floor)
+south_philly   8-12 stat=0.5555 price=0.50 next=0.50 holds  (at floor)
+south_philly  12-16 stat=0.6056 price=0.50 next=0.50 holds  (at floor)
+south_philly  16-20 stat=0.6218 price=0.50 next=0.50 holds  (at floor)
+fishtown       8-12 stat=0.5450 price=0.50 next=0.50 holds  (at floor)
+fishtown      12-16 stat=0.6161 price=0.50 next=0.50 holds  (at floor)
+fishtown      16-20 stat=0.6912 price=0.50 next=0.50 holds  (at floor)
+bands that would still move: 0

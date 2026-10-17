@@ -1,0 +1,7 @@
+R=  140,663,329.77 share=0.0: GF    35,000,000 PBD             0 unfunded             0 SDP   105,663,330 | hand-match True | conserves True
+R=   75,720,702.53 share=0.0: GF    35,000,000 PBD             0 unfunded             0 SDP    40,720,703 | hand-match True | conserves True
+R=   81,959,676.06 share=0.3: GF    35,000,000 PBD    24,587,903 unfunded             0 SDP    22,371,773 | hand-match True | conserves True
+R=   81,959,676.06 share=0.9: GF    35,000,000 PBD    46,959,676 unfunded    26,804,032 SDP             0 | hand-match True | conserves True
+R=   20,000,000.00 share=0.3: GF    20,000,000 PBD             0 unfunded     6,000,000 SDP             0 | hand-match True | conserves True
+R=   35,000,000.00 share=0.3: GF    35,000,000 PBD             0 unfunded    10,500,000 SDP             0 | hand-match True | conserves True
+R=   35,000,000.10 share=0.3: GF    35,000,000 PBD             0 unfunded    10,500,000 SDP             0 | hand-match True | conserves True

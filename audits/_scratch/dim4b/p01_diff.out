@@ -1,0 +1,27 @@
+comparison_table.csv scratch vs tracked: shape (12, 4), max abs numeric diff 0, nonnumeric equal True; cells compared 48
+comparison_table.csv scratch vs saved-main: shape (12, 4), max abs numeric diff 0, nonnumeric equal True; cells compared 48
+ raw bytes sha equal scratch/tracked: 1e69bdd32d16 1e69bdd32d16
+scenario_ranges.csv scratch vs tracked: shape (27, 12), max abs numeric diff 0, nonnumeric equal True; cells compared 324
+scenario_ranges.csv scratch vs saved-main: shape (27, 12), max abs numeric diff 0, nonnumeric equal True; cells compared 324
+ raw bytes sha equal scratch/tracked: f93da0c8e543 f93da0c8e543
+scenario_runs.csv scratch vs tracked: shape (81, 6), max abs numeric diff 0, nonnumeric equal True; cells compared 486
+scenario_runs.csv scratch vs saved-main: shape (81, 6), max abs numeric diff 0, nonnumeric equal True; cells compared 486
+ raw bytes sha equal scratch/tracked: 5b441ef8f7b3 5b441ef8f7b3
+status_quo occupancy (528360, 6) identical
+status_quo prices (3145, 3) identical
+status_quo revenue (5, 4) identical
+status_quo cruising_dwl (5, 2) identical
+status_quo meta alloc equal: True cs equal True diagnostics equal True | saved commit {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} | scratch commit {'commit': 'b27c7b2d7ec3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}
+   config hashes equal: True
+seattle occupancy (528360, 6) identical
+seattle prices (9435, 6) identical
+seattle revenue (5, 4) identical
+seattle cruising_dwl (5, 2) identical
+seattle meta alloc equal: True cs equal True diagnostics equal True | saved commit {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} | scratch commit {'commit': 'b27c7b2d7ec3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}
+   config hashes equal: True
+full_pbd occupancy (528360, 6) identical
+full_pbd prices (3145, 3) identical
+full_pbd revenue (5, 4) identical
+full_pbd cruising_dwl (5, 2) identical
+full_pbd meta alloc equal: True cs equal True diagnostics equal True | saved commit {'commit': '7744eebf1e20f1e3370f839fcc21b0ed28c6f4bc', 'dirty': False} | scratch commit {'commit': 'b27c7b2d7ec3ad0a6bd74890d86d8600f4d36c87', 'dirty': False}
+   config hashes equal: True

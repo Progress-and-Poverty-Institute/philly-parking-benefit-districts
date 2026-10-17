@@ -1,0 +1,6 @@
+load_pois default rows 6893 ; load_pois(tags={'amenity':['school']}) rows 6893 identical frame: True
+ marker source of the second call: OpenStreetMap features (osmnx, Overpass), tags {'amenity': ['restaurant', 'cafe', 'bar'], 'shop': True, 'office': True}
+ tag columns present: ['amenity', 'shop', 'office'] ; amenity values top: {'restaurant': 1363, 'cafe': 375, 'bar': 221, 'marketplace': 49, 'post_office': 12, 'pharmacy': 4}
+feed google_bus service date used 20260929 dow Tuesday feed dates 20260927 .. 20270220 ; n active trips that date 14910
+feed google_rail service date used 20260929 dow Tuesday feed dates 20260927 .. 20261121 ; n active trips that date 634
+stops 14278 trips_per_hour quantiles {0.0: 0.0, 0.5: 3.0, 0.9: 8.0, 0.99: 17.5, 1.0: 89.0} service dates ['20260929']

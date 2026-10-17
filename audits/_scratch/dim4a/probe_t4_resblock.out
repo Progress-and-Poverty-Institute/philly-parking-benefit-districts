@@ -1,0 +1,15 @@
+
+residential South Philly local blocks (lat 39.925-39.930, lon -75.178..-75.170): 72
+     street_name  street_class      zone_box  priced_curb  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr  median_hh_income  pct_renter rpp_zone neighborhood
+7528  S HICKS ST             5  south_philly        False         8                       0.09             156.0           8     26686.44                 153.0          78736.70        0.55     None      Newbold
+7529  S HICKS ST             5  south_philly        False         8                       0.09             161.0           8     13602.50                 147.5          78496.07        0.35     None      Newbold
+7530  S HICKS ST             5  south_philly        False         8                       0.01             438.0           8     11096.88                 148.5          78305.72        0.31     None      Newbold
+7534   S MOLE ST             5  south_philly        False         8                       0.04             116.0           9     18854.37                 140.5          60599.67        0.45     None      Newbold
+
+Walnut St (ccc):
+      street_name  street_class zone_box  priced_curb  capacity  commercial_frontage_share  jobs_within_200m  pois_count  pop_density  transit_trips_per_hr  median_hh_income  pct_renter rpp_zone neighborhood
+15597   WALNUT ST             2      ccc         True         8                        1.0            9087.0          30     17331.35                 657.5         114260.11        0.84     None  Rittenhouse
+15598   WALNUT ST             2      ccc         True         8                        1.0            9156.0          38     18283.10                 575.0         113838.78        0.82     None  Rittenhouse
+
+baseline weekly peak: Walnut ccc blocks: [0.92, 0.92, 0.92, 0.92, 0.92]
+south_philly priced blocks peak: median 0.694

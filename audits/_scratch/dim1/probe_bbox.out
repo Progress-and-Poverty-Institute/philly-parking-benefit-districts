@@ -1,0 +1,29 @@
+ccc priced segs lon -75.16996345045135 -75.14008380523182 lat 39.94502849277775 39.95997258009265 993
+ARCH lat None
+LOCUST lat None
+VINE lat None
+SPRING GARDEN lat None
+BAINBRIDGE lat None
+SOUTH lat None
+CHESTNUT lat None
+4TH lon None
+20TH lon None
+18TH lon None
+BROAD lon None
+2ND lon None
+FRONT lon None
+22ND lon None
+['54TH DR', '74TH AVE', 'E 64TH AVE', 'N 24TH ST', 'N 34TH ST', 'N 44TH ST', 'N 4TH ST', 'N 54TH ST', 'N 64TH ST', 'S 24TH ST']
+E ARCH ST|W ARCH ST|ARCH ST lat (97, np.float64(39.957), np.float64(39.9518), np.float64(39.9643))
+LOCUST ST|E LOCUST ST|W LOCUST ST lat (88, np.float64(39.9533), np.float64(39.9451), np.float64(39.9585))
+SPRING GARDEN ST|E SPRING GARDEN ST|W SPRING GARDEN ST lat (143, np.float64(39.9623), np.float64(39.9601), np.float64(39.9648))
+BAINBRIDGE ST|E BAINBRIDGE ST|W BAINBRIDGE ST lat (71, np.float64(39.9423), np.float64(39.9402), np.float64(39.9452))
+VINE ST|W VINE ST|E VINE ST lat (103, np.float64(39.9582), np.float64(39.9554), np.float64(39.9679))
+N 4TH ST|S 4TH ST lon (199, np.float64(-75.1442), np.float64(-75.155), np.float64(-75.1247))
+N 20TH ST|S 20TH ST lon (255, np.float64(-75.171), np.float64(-75.1833), np.float64(-75.1501))
+N 18TH ST|S 18TH ST lon (223, np.float64(-75.1688), np.float64(-75.1816), np.float64(-75.1453))
+N 2ND ST|S 2ND ST lon (224, np.float64(-75.1392), np.float64(-75.1515), np.float64(-75.1222))
+N FRONT ST|S FRONT ST lon (226, np.float64(-75.1353), np.float64(-75.1522), np.float64(-75.1186))
+ccc priced segments north of Arch (lat>39.9534?) 455 south of Locust (lat<39.9472) 64 west of 18th(<-75.1703) 0 total 993
+Arch lat 39.9537 Locust lat 39.9476 Vine lat 39.9574 Spring Garden lat 39.9618 Bainbridge 39.9417
+4th lon -75.1471 20th lon -75.174 18th lon -75.1707 Front lon -75.1418 2nd lon -75.1432 Broad lon -75.164 7th -75.1523

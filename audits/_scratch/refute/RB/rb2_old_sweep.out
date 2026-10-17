@@ -1,0 +1,30 @@
+== pre-PR-#12 sweep (commit 55be807, PR #11 rebuild): window_dependence
+rule,reference,year,n_cells,welfare_diff_median_cells_median,welfare_diff_median_cells_min,welfare_diff_median_cells_max,breakeven_minutes_median_cells_median,breakeven_minutes_median_cells_min,breakeven_minutes_median_cells_max,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,cells_welfare_better,cells_dwl_better,cells_revenue_better
+mean_band,peak_band,8,54,-4.54726e+06,-8.96891e+06,1.97791e+06,1.82699,0.946225,13.8899,3.93184,1.0338,17995.2,0.624791,0.198314,0.870833,6,0,0
+mean_zone,peak_zone,8,54,-3.98872e+06,-1.12043e+07,2.56183e+06,1.90491,0.744399,18.5107,3.52055,1.00471,44138,0.593681,0.198314,0.970606,8,0,0
+peak_band,peak_zone,8,54,0,-38184,112553,15.2923,-18.8353,280.833,1,0.185504,7.19673,1,0.961391,1.00368,24,7,4
+seattle_rule,peak_band,8,54,-4.4301e+06,-7.91473e+06,1.83233e+06,1.87037,0.961108,13.3989,3.84914,1.03265,15931.7,0.637126,0.200124,0.871536,6,0,0
+
+== same at 14642ea (n=200 old design) exists?
+rule,year,n_cells,dwl_ratio_median_cells_median,dwl_ratio_median_cells_min,dwl_ratio_median_cells_max,dwl_ratio_priced_median_cells_median,dwl_ratio_priced_median_cells_min,dwl_ratio_priced_median_cells_max,revenue_ratio_median_cells_median,revenue_ratio_median_cells_min,revenue_ratio_median_cells_max,revenue_ratio_priced_median_cells_median,revenue_ratio_priced_median_cells_min,revenue_ratio_priced_median_cells_max,cells_dwl_better,cells_dwl_better_priced,cells_revenue_better
+avg_occupancy,5,24,54.6547,10.5773,253.169,51.7458,9.0544,184.531,0.513751,0.305409,0.7757,0.512202,0.307251,0.732707,0,0,0
+avg_priced_bands,5,24,8.68098,3.16869,44.4451,12.0832,3.24029,38.9405,0.82879,0.512706,0.951194,0.813298,0.483783,0.937147,0,0,0
+
+== 55be807 paired: max breakeven_minutes_median per pair, and count of cells welfare<0 at last year
+years [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5), np.int64(6), np.int64(7), np.int64(8)] cols has breakeven: True
+mean_band vs peak_band: breakeven median med/min/max 1.83/0.95/13.89; cells welfare_diff_median<0 (peak better at 5 min) 48 of 54
+mean_zone vs peak_zone: breakeven median med/min/max 1.90/0.74/18.51; cells welfare_diff_median<0 (peak better at 5 min) 46 of 54
+peak_band vs peak_zone: breakeven median med/min/max 15.29/-18.84/280.83; cells welfare_diff_median<0 (peak better at 5 min) 4 of 54
+seattle_rule vs peak_band: breakeven median med/min/max 1.87/0.96/13.40; cells welfare_diff_median<0 (peak better at 5 min) 48 of 54
+old mean_zone/peak_zone breakeven by start x tau:
+block_dispersion   0.0   0.3   0.6
+start_occupancy                   
+0.60              1.17  1.47  2.18
+0.75              1.42  1.96  3.34
+0.90              1.31  2.29  7.14
+by elasticity:
+            median    max
+elasticity               
+-0.7          1.81   3.66
+-0.4          1.92   7.22
+-0.2          2.32  18.51

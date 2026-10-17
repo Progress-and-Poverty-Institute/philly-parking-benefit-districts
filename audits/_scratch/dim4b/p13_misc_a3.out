@@ -1,0 +1,2 @@
+A3 seattle: rows where one-shot != sequential: 0 of 528360; max diff 0.0000; one-shot - sequential cars (capacity-weighted, summed over week) -0.00; sign: one-shot higher in 0, lower in 0
+A3 full_pbd: rows where one-shot != sequential: 0 of 528360; max diff 0.0000; one-shot - sequential cars (capacity-weighted, summed over week) -0.00; sign: one-shot higher in 0, lower in 0

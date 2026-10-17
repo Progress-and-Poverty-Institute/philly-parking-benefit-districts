@@ -1,0 +1,24 @@
+# Statutory waterfall for Philadelphia on-street parking revenue, read by
+# phillyparking.revenue.allocation.
+#
+# Source (primary): Act of Jul. 2, 2012, P.L. 735, No. 84 (HB 254), adding 75 Pa.C.S.
+# s. 6109(g)(2)-(3). Text retrieved 2026-10-15 from
+# https://www.legis.state.pa.us/WU01/LI/LI/US/PDF/2012/0/0084..PDF
+#   (g)(2): from the fiscal year ending 2015 the authority transfers the revenues of the
+#           on-street system, NET of the system's operating and administrative expenses:
+#           (i) up to $35,000,000 to the city; (ii) all of the excess to the general fund
+#           of the school district of the first class.
+#   (g)(3): the (i) amount rises each year by $35,000,000 x the percentage increase, if any,
+#           in the system's GROSS revenue; no adjustment if gross revenue did not rise.
+# Secondary confirmation that the City's amount is paid first, is not reduced by expenses
+# and leaves the School District only the remainder: Pennsylvania Auditor General,
+# "A Performance Audit: Philadelphia Parking Authority" (Dec. 2017), Finding 1, pp. 14-16.
+# Act 9 of 2004 (former 53 Pa.C.S. s. 5508.1(q.1)) set the same split with a $25,000,000
+# first tier; Act 84 replaced it. The 1982 On-Street Agreements originally sent all net
+# revenue to the city.
+
+# The City (General Fund) tier, before the escalator in (g)(3). The model does not apply
+# the escalator (it was about $38.9M in FY2017 per the Auditor General's table) and does
+# not deduct operating and administrative expenses, so its "net revenue" is gross meter
+# revenue; both make the model's School District residual larger than the statute's.
+general_fund_minimum_usd: 3500000

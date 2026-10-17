@@ -1,0 +1,27 @@
+
+== mix under anchor set philadelphia: mean weights by zone; share of segments with dominant weight > .9
+              office  retail  resid
+zone                               
+cca            0.264   0.271  0.465
+ccc            0.540   0.242  0.218
+fishtown       0.074   0.365  0.561
+south_philly   0.156   0.273  0.571
+ucity          0.395   0.236  0.369
+  share with any weight>0.9: 0.385 ; share resid>0.9: 0.168 ; office>0.9: 0.165 ; retail>0.9: 0.051
+
+== mix under anchor set synthetic_fixture: mean weights by zone; share of segments with dominant weight > .9
+              office  retail  resid
+zone                               
+cca            0.388   0.053  0.559
+ccc            0.712   0.060  0.228
+fishtown       0.181   0.095  0.724
+south_philly   0.292   0.058  0.650
+ucity          0.518   0.052  0.431
+  share with any weight>0.9: 0.534 ; share resid>0.9: 0.247 ; office>0.9: 0.282 ; retail>0.9: 0.004
+
+sd of the mix inputs (mix_weight * centred log1p) on philadelphia priced: {'jobs_within_200m': 1.562, 'pois_count': 1.136, 'pop_density': 1.711}
+same sds implied by the fixture scales (fixture's own spread): {'jobs_within_200m': 1.07, 'pois_count': 1.164, 'pop_density': 0.648}
+pop_density z: share < -3: 0.0391 ; z quantiles {0.0: -4.55, 0.05: -0.89, 0.5: 0.26, 0.95: 0.7, 1.0: 1.12}
+sd of lambda contributions: jobs 0.551 pois 0.349 pop 0.250 transit 0.151
+
+fixture segments under fixture anchors: share with any mix weight>0.9: 0.292 ; mean weights [0.333, 0.382, 0.285]

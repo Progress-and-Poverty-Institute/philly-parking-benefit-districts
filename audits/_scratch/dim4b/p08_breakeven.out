@@ -1,0 +1,53 @@
+cells 54
+                                      983
+elasticity                           -0.4
+start_occupancy                       0.9
+block_dispersion                      0.0
+observation_noise                     0.0
+rule                            peak_band
+reference                       peak_zone
+year                                    8
+n_replications                        100
+welfare_diff_median              122471.0
+welfare_diff_min                 122471.0
+welfare_diff_max                 122471.0
+cs_diff_median                   117130.0
+cs_diff_min                      117130.0
+cs_diff_max                      117130.0
+revenue_diff_median               5187.01
+revenue_diff_min                  5187.01
+revenue_diff_max                  5187.01
+search_cost_diff_median          -154.502
+search_cost_diff_min             -154.502
+search_cost_diff_max             -154.502
+breakeven_minutes_median         -3958.41
+breakeven_minutes_min            -3958.41
+breakeven_minutes_max            -3958.41
+dwl_ratio_median                 0.995339
+dwl_ratio_min                    0.995339
+dwl_ratio_max                    0.995339
+revenue_ratio_median              1.00047
+revenue_ratio_min                 1.00047
+revenue_ratio_max                 1.00047
+share_welfare_better                  1.0
+share_dwl_better                      1.0
+share_revenue_better                  1.0
+share_comparator_searches_more        0.0
+
+distribution of breakeven_minutes_median in peak_band vs peak_zone, year 8:
+ count      44.000000
+mean      -61.815648
+std       602.043824
+min     -3958.410000
+25%         7.426732
+50%        13.403250
+75%        42.157950
+max       160.955000
+Name: breakeven_minutes_median, dtype: float64
+cells with |search_cost_diff_median|<1000 $/yr: 22  with exactly 0 diff all reps: 10
+cells with share_comparator_searches_more in (0,1) (sign of search diff mixed across reps): 36
+cells with breakeven_minutes_median<0: 3
+     elasticity  start_occupancy  block_dispersion  observation_noise  welfare_diff_median  cs_diff_median  revenue_diff_median  search_cost_diff_median  breakeven_minutes_median  breakeven_minutes_min  breakeven_minutes_max  share_comparator_searches_more
+439        -0.7             0.90               0.0                0.1              27663.1         15002.3              7275.35                -5385.430                  -20.6833               -20.6833               218.5490                            0.01
+791        -0.4             0.75               0.0                0.0              34882.9         41383.1            -16321.00                -9820.790                  -12.7597               -12.7597               -12.7597                            0.00
+983        -0.4             0.90               0.0                0.0             122471.0        117130.0              5187.01                 -154.502                -3958.4100             -3958.4100             -3958.4100                            0.00

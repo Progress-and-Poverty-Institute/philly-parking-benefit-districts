@@ -1,0 +1,16 @@
+zone_id  band  band_start  band_end  band_occ  n_hours
+    ccc  8-12           8        12    0.7000       24
+  ucity  8-12           8        12    0.6999       24
+    ccc 12-16          12        16    0.6400       24
+  ucity 12-16          12        16    0.8500       24
+    ccc 16-20          16        20    0.9500       24
+  ucity 16-20          16        20    0.8501       24
+zone_id  band  previous_price  price_usd_per_hr  band_occ direction
+    ccc  8-12             4.0               3.5    0.7000      down
+  ucity  8-12             2.0               1.5    0.6999      down
+    ccc 12-16             4.0               3.5    0.6400      down
+  ucity 12-16             2.0               2.0    0.8500      hold
+    ccc 16-20             4.0               4.5    0.9500        up
+  ucity 16-20             2.0               2.5    0.8501        up
+expected vs got: {('ccc', '8-12'): (4.0, 3.5), ('ccc', '12-16'): (3.5, 3.5), ('ccc', '16-20'): (5.0, 4.5), ('ucity', '8-12'): (1.5, 1.5), ('ucity', '12-16'): (2.0, 2.0), ('ucity', '16-20'): (2.5, 2.5)} MISMATCH
+n_hours per band (ccc priced Mon-Sat 8-20, 4 hrs/band x 6 days = 24): [24, 24, 24]

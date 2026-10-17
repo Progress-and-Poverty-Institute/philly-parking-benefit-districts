@@ -1,0 +1,80 @@
+.................................s...................................... [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+..............FFFF...................................................... [ 85%]
+..........F.....................................                         [100%]
+================================== FAILURES ===================================
+__________________ test_no_pbd_share_full_gf_residual_to_sdp __________________
+
+    def test_no_pbd_share_full_gf_residual_to_sdp():
+        a = allocate(total_revenue_usd=50_000_000, pbd_share=0.0)
+        assert a.pbd_usd == 0
+>       assert a.general_fund_usd == 35_000_000
+E       assert 3500000.0 == 35000000
+E        +  where 3500000.0 = RevenueAllocation(total_revenue_usd=50000000, general_fund_minimum_usd=3500000.0, pbd_share=0.0).general_fund_usd
+
+tests\test_revenue_allocation.py:10: AssertionError
+_____________ test_pbd_share_30_pct_comes_out_of_the_sdp_residual _____________
+
+    def test_pbd_share_30_pct_comes_out_of_the_sdp_residual():
+        a = allocate(total_revenue_usd=50_000_000, pbd_share=0.30)
+>       assert a.general_fund_usd == 35_000_000
+E       assert 3500000.0 == 35000000
+E        +  where 3500000.0 = RevenueAllocation(total_revenue_usd=50000000, general_fund_minimum_usd=3500000.0, pbd_share=0.3).general_fund_usd
+
+tests\test_revenue_allocation.py:16: AssertionError
+___ test_pbd_share_larger_than_the_residual_is_capped_and_the_rest_reported ___
+
+    def test_pbd_share_larger_than_the_residual_is_capped_and_the_rest_reported():
+        a = allocate(total_revenue_usd=40_000_000, pbd_share=0.30)
+>       assert a.general_fund_usd == 35_000_000
+E       assert 3500000.0 == 35000000
+E        +  where 3500000.0 = RevenueAllocation(total_revenue_usd=40000000, general_fund_minimum_usd=3500000.0, pbd_share=0.3).general_fund_usd
+
+tests\test_revenue_allocation.py:24: AssertionError
+___________________ test_below_gf_minimum_sdp_and_pbd_zero ____________________
+
+    def test_below_gf_minimum_sdp_and_pbd_zero():
+        a = allocate(total_revenue_usd=30_000_000, pbd_share=0.30)
+>       assert a.pbd_usd == 0
+E       assert 9000000.0 == 0
+E        +  where 9000000.0 = RevenueAllocation(total_revenue_usd=30000000, general_fund_minimum_usd=3500000.0, pbd_share=0.3).pbd_usd
+
+tests\test_revenue_allocation.py:32: AssertionError
+_________________ test_general_fund_minimum_comes_from_config _________________
+
+    def test_general_fund_minimum_comes_from_config():
+        with open(project_root() / "config" / "allocation.yaml", encoding="utf-8") as f:
+>           assert statutory_general_fund_minimum_usd() == float(yaml.safe_load(f)["general_fund_minimum_usd"])
+E           assert 3500000.0 == 35000000.0
+E            +  where 3500000.0 = statutory_general_fund_minimum_usd()
+E            +  and   35000000.0 = float(35000000)
+
+tests\test_uncertainty_allocation_cs.py:41: AssertionError
+============================== warnings summary ===============================
+..\..\..\..\..\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113
+  C:\Users\druss\miniconda3\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+    warnings.warn(
+
+tests/test_ml_occupancy.py::test_sigmoid_output_bounded
+  C:\projects\philly-parking-benefit-districts\.claude\worktrees\audit-2026-10-16-1cfc47\src\phillyparking\demand\ml_occupancy.py:20: RuntimeWarning: overflow encountered in exp
+    return 1.0 / (1.0 + np.exp(-x))
+
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_non_line_rows_are_counted_when_dropped
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_spatial_joins.py::test_neighborhood_survives_the_join_and_rpp_points_attach
+tests/test_zones.py::test_other_fallback
+tests/test_zones.py::test_other_fallback
+  C:\Users\druss\miniconda3\Lib\site-packages\pyproj\transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_revenue_allocation.py::test_no_pbd_share_full_gf_residual_to_sdp
+FAILED tests/test_revenue_allocation.py::test_pbd_share_30_pct_comes_out_of_the_sdp_residual
+FAILED tests/test_revenue_allocation.py::test_pbd_share_larger_than_the_residual_is_capped_and_the_rest_reported
+FAILED tests/test_revenue_allocation.py::test_below_gf_minimum_sdp_and_pbd_zero
+FAILED tests/test_uncertainty_allocation_cs.py::test_general_fund_minimum_comes_from_config
+5 failed, 330 passed, 1 skipped, 1 deselected, 8 warnings in 58.41s
+done g3_gf_minimum exit 1
