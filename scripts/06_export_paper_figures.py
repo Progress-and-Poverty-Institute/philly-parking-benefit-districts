@@ -25,6 +25,12 @@ from phillyparking.viz.charts import (
 )
 from phillyparking.demand.response import FORMS
 from phillyparking.elasticity.priors import named_scenario
+from phillyparking.pricing.priced_hours import hourly_prices
+from phillyparking.scenarios.runner import _zone_current_prices
+from phillyparking.validation.revenue_benchmark import (
+    annualised_usd, gap_decomposition, load_benchmarks, primary_benchmark_key, revenue_benchmark,
+    revenue_identity,
+)
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +67,30 @@ def _placeholder_incidence() -> pd.DataFrame:
         "mean_payment": np.full(10, 50.0),
         "mean_cs_change": np.full(10, -10.0),
     })
+
+
+def _write_revenue_benchmark(segs: pd.DataFrame, panel: pd.DataFrame, saved_revenue: float,
+                             tables: Path) -> None:
+    """Model status-quo revenue against the Parking Authority's, and the gap's factors.
+
+    The identity is rebuilt from the segments and panel this script computes; it must reproduce
+    the status-quo revenue script 05 saved, or the two scripts ran on different inputs.
+    """
+    identity = revenue_identity(segs, panel, hourly_prices(_zone_current_prices()))
+    model = float(identity.loc["total", "model_revenue_usd"])
+    if not np.isclose(model, saved_revenue, rtol=1e-6):
+        raise click.ClickException(
+            f"status-quo revenue recomputed here (${model:,.0f}) differs from the saved scenario's "
+            f"(${saved_revenue:,.0f}); rerun scripts/05_run_scenarios.py on the same segments and seed")
+    bench = revenue_benchmark(saved_revenue)
+    bench_path = tables / "revenue_benchmark.csv"
+    bench.to_csv(bench_path, index=False)
+    log.info("Wrote %s", bench_path)
+    primary = annualised_usd(load_benchmarks()[primary_benchmark_key()])
+    decomp = gap_decomposition(identity, primary)
+    decomp_path = tables / "revenue_gap_decomposition.csv"
+    decomp.to_csv(decomp_path, index=False)
+    log.info("Wrote %s", decomp_path)
 
 
 @click.command()
@@ -154,6 +184,11 @@ def main(results_dir: str | None, seed: int, verbose: bool) -> None:
     table_path = tables / "comparison_table.csv"
     table.to_csv(table_path)
     log.info("Wrote %s", table_path)
+
+    if "status_quo" in table.columns:
+        _write_revenue_benchmark(segs, panel, float(table.loc["total_revenue", "status_quo"]), tables)
+    else:
+        log.warning("No status_quo scenario; skipping the revenue benchmark")
 
     for name in ("scenario_ranges.csv", "scenario_runs.csv"):
         src = base / name

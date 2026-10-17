@@ -479,6 +479,44 @@ the saved scenarios' own scale, no multiplier) and the zone map, occupancy/reven
 Chatman-Manville year and breakeven figures from config and saved results. Order: 05, 06, 07.
 `--check` exits 1 if the table is stale; `--rebuild-cm-sweep` reruns the sweep.
 
+## Revenue scale: the model against the Parking Authority's meter revenue
+
+The model's status-quo gross meter revenue is about 3.4 times the Parking Authority's booked
+meter revenue, and nothing in the model is calibrated to close that. The benchmark is the On
+Street Division's "Revenue - Meters" line, twelve months ending 3/31/2025 (fiscal year 2025):
+$40,795,664, from the Authority's monthly statement (`config/benchmarks.yaml` holds the figure,
+URL, page, retrieval date and the reading of what it is). It is unaudited and gross: meter and
+kiosk revenue as booked, before program fees and costs, excluding tickets and RPP; whether
+mobile-app payments sit inside the line is not stated in the statement. It covers every metered
+block in the city and the posted rates before the July 2025 Center City increase, while the
+model covers five zone boxes at the post-increase rates; the nine months to 12/31/2025, annualised
+by 12/9, are carried as a context row (they mix old and new rates). Script 06 writes
+`outputs/tables/revenue_benchmark.csv` (model, benchmark, ratio in both directions); current
+values are there, not here. `tests/test_revenue_benchmark.py` ties the files to the config and
+recomputes the ratio; it bounds nothing about the gap's size.
+
+**The identity.** Per zone, revenue = priced spaces x priced hours per year x capacity-weighted
+mean occupancy over priced hours x capacity-weighted mean posted price x an interaction factor
+(1 within a zone because a zone has one posted rate) x paid share (1.0: full compliance).
+`validation/revenue_benchmark.revenue_identity` computes the factors from the segments and
+baseline panel, raises unless their product reproduces `annual_revenue` per zone and in total, and
+script 06 raises unless that total equals the status-quo revenue script 05 saved. In the city
+total the hours, occupancy and price are capacity-hour weighted and the interaction is the
+cross-zone covariance of price and occupancy. `outputs/tables/revenue_gap_decomposition.csv`
+holds every factor's model value per zone and, for the total, an external value where
+`gap_factors` in `config/benchmarks.yaml` cites one, else "no source found", together with the
+value the factor would need, all else equal, to close the gap (model value x benchmark / model).
+Only the metered space count has sources: the City Controller's 2020 audit (15,406 on-street
+metered spaces) and a Dun & Bradstreet profile (14,500; third party, unverified). The model's
+priced spaces exceed both even though it covers fewer zones. Priced hours, occupancy, price and
+paid share have no source in the repository, and the table does not split the gap among them.
+
+**Capacity counts one curb side** (`spatial/segments.py`: length / 7 m x 0.85, per street
+segment). Counting both sides would double priced spaces and so double the gap. The Right-to-Know
+meter inventory and session data (due from 2026-10-23, `docs/rtkl/`) are what will settle the
+space count, which curb sides are metered and the paid share; until they arrive the occupancy
+levels, spaces and priced windows are stated assumptions and the ratio is a diagnostic.
+
 ## Allocation, consumer surplus, ranges
 
 `revenue/allocation.py` follows 75 Pa.C.S. § 6109(g) (Act 84 of 2012; citation, text and
