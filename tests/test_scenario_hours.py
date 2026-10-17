@@ -102,17 +102,19 @@ def _busiest_priced_zone_hour(r, segs) -> pd.Series:
 
 def _expected_search_cost(r, segs) -> float:
     """The search-cost row recomputed from the raw YAML: served arrivals x minutes passing
-    full blocks (p/(1-p), p = min(o, cap)^K, scaled so a full block of the reference size
-    costs the stated minutes) x value of time, priced rows only, 52 weeks."""
+    full blocks (p/(1-p), p = min(o, cap)^K with K the search unit, not the segment's
+    capacity; a full block costs the per-cruiser level x (1 - cap^K)) x value of time,
+    priced rows only, 52 weeks."""
     pr = _raw("pricing_rules")
     sc, vot = pr["search_cost"], pr["arnott_inci"]["value_of_time_usd_per_hr"]
     df = _with_zone(r, segs)
     priced = _yaml_priced(df["zone_id"].to_numpy(), df["hour_of_week"].to_numpy())
     occ = df["occupancy"].to_numpy(dtype=float)
     cap = df["capacity"].to_numpy(dtype=float)
-    ratio = lambda o, k: o ** k / (1 - o ** k)  # noqa: E731
-    per_block = sc["minutes_at_full_block"] / ratio(sc["occupancy_cap"], sc["reference_capacity"])
-    minutes = per_block * ratio(np.minimum(occ, sc["occupancy_cap"]), np.maximum(cap, 1.0))
+    k = sc["search_unit_spaces"]
+    per_block = sc["cruising_minutes_at_full_block"] * (1 - sc["occupancy_cap"] ** k)
+    p = np.minimum(occ, sc["occupancy_cap"]) ** k
+    minutes = per_block * p / (1 - p)
     arrivals = occ * cap / sc["mean_duration_hr"]
     cost = arrivals * minutes / 60.0 * vot
     return float(cost[priced].sum() * 52)

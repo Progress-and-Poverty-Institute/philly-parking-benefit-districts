@@ -20,15 +20,43 @@ def _one(occ: float, how: int, zone: str = "ccc", capacity: float = 10.0):
     return segments, panel
 
 
-def test_one_full_block_hour_costs_the_stated_minutes_per_arrival():
+def test_one_full_block_hour_costs_the_per_arrival_minutes():
     cfg = load_search_cost_config()
-    segments, panel = _one(1.0, MON_NOON, capacity=cfg.reference_capacity)
+    segments, panel = _one(1.0, MON_NOON, capacity=6.0)
     out = hourly_search_cost(panel, segments)
     assert len(out) == 1
     assert out["search_minutes_per_arrival"].iloc[0] == pytest.approx(cfg.minutes_at_full_block)
-    arrivals = cfg.reference_capacity / cfg.mean_duration_hr
+    arrivals = 6.0 / cfg.mean_duration_hr
     assert out["search_cost_usd"].iloc[0] == pytest.approx(
         arrivals * cfg.minutes_at_full_block / 60.0 * cfg.value_of_time_usd_per_hr)
+
+
+@pytest.mark.parametrize("occ", [0.6, 0.85, 0.95, 1.0])
+def test_search_per_arrival_does_not_depend_on_the_segment_capacity(occ):
+    """The block a driver checks is the search unit, not the centerline segment: segments of
+    1, 4, 10 and 20 spaces at one occupancy charge each arrival the same search, so the cost
+    per space is equal. (A segment-sized unit charged a 1-space segment at the 0.99 cap ten
+    times the search of a 10-space one.)"""
+    cfg = load_search_cost_config()
+    caps = np.array([1.0, 4.0, 10.0, 20.0])
+    per_space = search_cost_usd(np.full(4, occ), caps, cfg) / caps
+    assert np.allclose(per_space, per_space[0], rtol=1e-12)
+
+
+def test_cost_is_additive_over_any_cut_of_the_curb():
+    """One 12-space segment and the same curb cut into segments of 1, 2, 4 and 5 spaces, each
+    at the same occupancy hour by hour, cost the same: where the centerline data happen to
+    break a street does not move the search cost."""
+    hours = [MON_NOON, MON_NOON + 1, MON_NOON + 2, MON_NOON + 3]
+    occ = [0.7, 0.9, 0.97, 1.0]
+    whole = pd.DataFrame({"segment_id": ["w"], "capacity": [12.0], "zone_id": ["ccc"]})
+    pieces = pd.DataFrame({"segment_id": ["a", "b", "c", "d"], "capacity": [1.0, 2.0, 4.0, 5.0],
+                           "zone_id": ["ccc"] * 4})
+    panel_w = pd.DataFrame({"segment_id": "w", "hour_of_week": hours, "occupancy": occ})
+    panel_p = pd.concat([panel_w.assign(segment_id=s) for s in pieces["segment_id"]], ignore_index=True)
+    w = annual_search_cost(panel_w, whole)["annual_search_cost_usd"].sum()
+    p = annual_search_cost(panel_p, pieces)["annual_search_cost_usd"].sum()
+    assert w > 0 and p == pytest.approx(w, rel=1e-12)
 
 
 def test_cost_is_convex_in_occupancy_with_no_target_in_it():

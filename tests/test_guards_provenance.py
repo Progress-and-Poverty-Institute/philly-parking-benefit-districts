@@ -274,8 +274,8 @@ def test_scenario_table_prints_surplus_plus_revenue_and_no_net(results):
     labels = [lab for lab, _, _ in table_rows()]
     assert any("surplus + meter revenue" in lab and "change from status quo" in lab for lab in labels)
     assert not any("first order" in lab.lower() or "dwl" in lab.lower() or "welfare" in lab.lower() for lab in labels)
-    level = load_search_cost_config().minutes_at_full_block
-    assert any(f"{level:g} min per arrival at a full block" in lab for lab in labels)
+    level = load_search_cost_config().cruising_minutes_at_full_block
+    assert any(f"{level:g} min per cruiser when blocks are full" in lab for lab in labels)
     assert "first order" not in tex and "DWL" not in tex
     sq = float(table.loc["total_revenue", "status_quo"])
     for col in table.columns:
