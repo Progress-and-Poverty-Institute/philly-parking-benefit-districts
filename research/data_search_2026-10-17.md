@@ -17,6 +17,8 @@ Compared against: `outputs/tables/revenue_gap_decomposition.csv`, `config/zones.
 
 **Versus the model.** The model uses 8-20 weekday and Saturday, no Sunday (3,744 h/yr), and 8-18 in South Philadelphia (3,120 h/yr). No official source for hours was found, so nothing confirms or contradicts those windows; the unofficial listings suggest hours vary by block and some run past 20:00. The one verified correction is the nine free days, at most about 9/312 = -2.9% of annual hours (Easter Sunday and some others fall on unpriced days, so the true cut is smaller). The model's `52 x weekly hours` ignores them.
 
+**Philadelphia Code, Chapter 12-1000 "Parking Meter Regulations and Penalties"** (code library, read 2026-10-17; §§ 12-1001 to 12-1006 checked) sets no days or hours of meter operation. Hours are therefore not in the ordinance. They are set by posted signs or regulation, and the RTKL meter inventory is the route to them.
+
 **Effort.** Holidays: one config entry plus a small change in `pricing/priced_hours.py`. Hours by block: needs the RTKL meter inventory or the meterUP zone table (each block side has its own meterUP zone number per the Meters page); neither is public.
 **Recommendation.** Use the nine-holiday rule. Hours by area: wait for RTKL. Skip Parkopedia.
 
@@ -41,7 +43,22 @@ No measured on-street occupancy for Philadelphia was found. Everything located i
 | PPA Meters page | Example block (201 Columbus Blvd): $1.50/h, four-hour limit. Overstay doubles then triples the rate. "No current plans to change the parking meter rates." | Verified; the page predates the 2025 increase |
 | Inquirer 2022-04-06 | Overtime ticket $36 Center City, $26 elsewhere | Verified |
 
-**Versus `zones.yaml`.** Core $4.00, Area $3.50 and long-term $2.50 match. University City ($2.00), South Philadelphia and Fishtown ($1.50) have no source in anything read. Floors and ceilings: nothing found; still assumptions.
+**Versus `zones.yaml`.** Core $4.00, Area $3.50 and long-term $2.50 match. University City ($2.00), South Philadelphia and Fishtown ($1.50) have no source in anything read. Floors: nothing found; still assumptions.
+
+**Statutory fee caps, Philadelphia Code § 12-1005** (code library, read 2026-10-17; capture at `research/sources/data_search_2026-10/phila_code_12-1005_capture_2026-10-17.txt`). Verified. The Code sets a maximum hourly fee ("up to"), and the Department sets the rate beneath it:
+
+| Area (Code boundaries) | Code maximum | `zones.yaml` posted | `zones.yaml` ceiling |
+|---|---|---|---|
+| Center City Core: Arch, 4th, Locust, 20th (§ 12-1005(4), Bill 250200, 2025) | $4.00 | $4.00 | $8.00 |
+| Center City Area: Spring Garden, Bainbridge, Schuylkill, Delaware, excluding the Core (§ 12-1005(3)(a), Bill 250200) | $3.50 | $3.50 | $7.00 |
+| University City: Schuylkill, University/Woodland, 40th, Filbert/34th/Arch (§ 12-1005(3)(b), since 2010) | $2.50 | $2.00 | $6.00 |
+| Everywhere else, "except ... as expressly provided for by special ordinances" (§ 12-1005(2), 2014) | $1.00 | $1.50 (South Philadelphia, Fishtown) | $4.00 |
+
+What follows from the table:
+- **The Center City rates are at their legal maxima.** Posted Core and Area rates equal the Code maximum. Any scenario that prices above them (Seattle steps, Arnott-Inci, the sweep) needs Council to amend § 12-1005, as Bill 250200 did in 2025. The `zones.yaml` ceilings are therefore reform ceilings, not current law. That is a property of the scenarios, worth stating in the paper.
+- **The $1.50 outer-neighbourhood rate is above the Code's default cap of $1.00.** Either a special ordinance covers South Philadelphia and Fishtown (not found; the Code library's special ordinances were not searched) or the $1.50 rate is wrong for those areas. **Unresolved.** Check against the RTKL rate schedule.
+- **Rates and caps have different areas and bounds.** The University City rate area in the Code differs from the model's University City box (`bbox` in `zones.yaml`), and the Code's maximum ($2.50) leaves room above the posted $2.00.
+- **Mobile-payment rules are not in the model.** Time beyond the posted limit costs 2x, then 3x, the base fee, up to three times the initial limit (§ 12-1005(5)). The model has no time limits, so it carries none of that premium. A $0.40 processing fee is charged on each app transaction.
 
 **The benchmark year ran at the old rates.** The FY2025 meter revenue ($40.8M, year to 3/31/2025) was booked at $3.00 Core and $2.50 Area. Re-pricing only those two zones in the model's revenue identity (spaces x hours x occupancy x price, from the decomposition csv) gives about 0.77 of the current model revenue, so the ratio would be about 2.7x instead of 3.45x. This is my arithmetic on the csv, not a rerun, and it assumes every Core and Area space is at the zone rate rather than the long-term rate. It also holds occupancy fixed. Under the model's own demand law (exponential, e = -0.60 at the posted rate), occupancy at the old rates is higher by exp(0.6 x 1/3.50) = 1.19 in the Area and exp(0.6 x 1/4.00) = 1.16 in the Core. Model revenue at the old rates is then about $124M, a ratio of about 3.0x. The benchmark-year ratio is therefore about 2.7-3.0x, depending on whether occupancy responds to the rate.
 **Effort.** A config value (prior schedule with effective date) plus one benchmark row; small.
@@ -103,7 +120,7 @@ Revenue per space: PPA FY2025 $40.8M / 15,406 = $2,648 (the space count is from 
 SFpark evaluation and SDOT annual parking study (out-of-city context); Planning Commission 2015 and 2021 Center City parking studies (curb text); Old City 2022 PDF; PPA audited financial statements or board materials; PPA ADA page and Bill 240613-AA; the CBS 2025 story on a $4M on-street net-revenue decline attributed to kiosks; the City Traffic Code on meter hours.
 
 ## Needs the user to fetch
-1. **Resolved; no hours found.** This URL now redirects (checked 2026-10-17) to Philadelphia Code § 12-1117 on American Legal Publishing's code library, saved as `philadelphia-pa-1.pdf` (see 4d). That section has no meter hours, so the official hours source is still unidentified; the next candidate is the meter provisions elsewhere in Code Title 12. Original citation: **City of Philadelphia, "Parking meter laws" (2018), https://www.phila.gov/media/20180806114511/Parking-meter-laws.pdf**: returned 403 to automated download. Need the days and hours metered parking is enforced and holiday rules; it may be the official source for input 1. Save under `research/sources/data_search_2026-10/`.
+1. **Resolved; no hours found.** This URL now redirects (checked 2026-10-17) to Philadelphia Code § 12-1117 on American Legal Publishing's code library, saved as `philadelphia-pa-1.pdf` (see 4d). That section has no meter hours. The meter chapter, Chapter 12-1000, has none either (see section 1), so hours come from signs or regulation and are left to the RTKL inventory. Original citation: **City of Philadelphia, "Parking meter laws" (2018), https://www.phila.gov/media/20180806114511/Parking-meter-laws.pdf**: returned 403 to automated download. Need the days and hours metered parking is enforced and holiday rules; it may be the official source for input 1. Save under `research/sources/data_search_2026-10/`.
 2. **City Planning Commission, "2015 Parking Study", https://www.phila.gov/media/20190724160659/2015_Parking_Study.pdf** (optional): whether it reports on-street occupancy; only off-street figures were seen in snippets.
 3. **PPA, "ADA Accessible Parking", https://philapark.org/adaparking** (optional): exact wording of the 60-minute allowance.
 
