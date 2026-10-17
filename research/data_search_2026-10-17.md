@@ -73,6 +73,12 @@ Revenue per space: PPA FY2025 $40.8M / 15,406 = $2,648 (the space count is from 
 
 ### 4d. Placards
 - Snippets only (PPA ADA page and visitphilly guide, not opened): placard or plate holders get 60 extra minutes beyond the posted limit; wheelchair-lift vehicles park without time limit or kiosk fees where time-limited. **Unverified.** A 2024 ordinance (Bill 240613-AA) amended these provisions; its text was not read.
+- **Philadelphia Code § 12-1117, "Designation and Use of Disability Parking Spaces"** (code-library export, `research/sources/data_search_2026-10/philadelphia-pa-1.pdf`, as amended by Bill No. 240613-AA and Bill No. 250208, both effective 2025-07-07; read in full). Verified:
+  - (2)(c): on each side of each hundred block with metered parking, one space is reserved for vehicles with a disability permit. That space is "regulated by a parking meter", so it is still paid.
+  - (2)(d): only a wheelchair lift-equipped van carrying a person with a disability may park "without limitation as to time and without payment of any parking meter fees".
+  - The section grants placard holders no general exemption from meter fees. The 60-extra-minutes allowance in the snippet above is not in this section; it may sit elsewhere in the Code or in PPA practice (unverified).
+  - So legally exempt non-payment is confined to lift-equipped vans. Any larger unpaid share would be non-compliance, not exempt use.
+  - For capacity: each metered block side's reserved space is still a metered space, so it stays in the count, but general parkers cannot use it.
 - No Philadelphia placard-misuse rate was found. A CBS report of about 80 people ticketed daily is about accessible spaces and ramps, not meters (snippet; unverified).
 
 **Recommendation.** Use the revenue-per-space and fee-line facts as benchmarks; skip placards until RTKL sessions give paid versus unpaid occupancy.
@@ -97,7 +103,7 @@ Revenue per space: PPA FY2025 $40.8M / 15,406 = $2,648 (the space count is from 
 SFpark evaluation and SDOT annual parking study (out-of-city context); Planning Commission 2015 and 2021 Center City parking studies (curb text); Old City 2022 PDF; PPA audited financial statements or board materials; PPA ADA page and Bill 240613-AA; the CBS 2025 story on a $4M on-street net-revenue decline attributed to kiosks; the City Traffic Code on meter hours.
 
 ## Needs the user to fetch
-1. **City of Philadelphia, "Parking meter laws" (2018), https://www.phila.gov/media/20180806114511/Parking-meter-laws.pdf**: returned 403 to automated download. Need the days and hours metered parking is enforced and holiday rules; it may be the official source for input 1. Save under `research/sources/data_search_2026-10/`.
+1. **Still open.** The file supplied for this item is Code § 12-1117 (disability spaces; see 4d), not the meter-laws document. **City of Philadelphia, "Parking meter laws" (2018), https://www.phila.gov/media/20180806114511/Parking-meter-laws.pdf**: returned 403 to automated download. Need the days and hours metered parking is enforced and holiday rules; it may be the official source for input 1. Save under `research/sources/data_search_2026-10/`.
 2. **City Planning Commission, "2015 Parking Study", https://www.phila.gov/media/20190724160659/2015_Parking_Study.pdf** (optional): whether it reports on-street occupancy; only off-street figures were seen in snippets.
 3. **PPA, "ADA Accessible Parking", https://philapark.org/adaparking** (optional): exact wording of the 60-minute allowance.
 
