@@ -109,6 +109,25 @@ the step because blocks busier than the zone average stay over the line; that is
 of one rate per zone, not a bug. Capacity cancels in the formula, so the code passes
 occupancy shares (`capacity=1.0`).
 
+**Floors and ceilings.** The step's rate is the unclipped solution held to the zone's `floor`
+and `ceiling` (`seattle_rule.zone_bounds`, the same bounds the Seattle and Chatman-Manville
+rules use; the global bounds in `pricing_rules.yaml` for a zone without its own). The zone
+floors and ceilings in `zones.yaml` are stated assumptions, with no Parking Authority source in
+the repository, and where one binds it sets the rate. Three things keep that visible. (1) The
+comparison table carries `n_zones_at_floor` beside `n_zones_at_ceiling`, counted against the
+bound in force for the run. (2) A zone whose busiest priced hour is below the target occupancy
+has positive *target slack* (target occupancy minus that hour's occupancy): no rate above the
+floor reaches the target, and the unclipped solution may be below zero. Each Arnott-Inci run
+records per zone, in `diagnostics["zone_pricing"]` (`first_review` against the posted rates,
+`last_review` at the state the run ends in): `peak_occ`, `target_occ`, `target_slack`,
+`unclipped_price`, the clipped rate, the bounds and `at_floor` / `at_ceiling`. (3) The floor
+sensitivity: `run_scenario(..., use_zone_floors=False)` ignores each zone's `floor` (the global
+floor still applies; ceilings unchanged) and records `diagnostics["use_zone_floors"]`. Script 05
+runs all three scenarios that way at the central elasticity and headline seed and writes the
+`no_zone_floors_lo` / `_hi` columns of `scenario_ranges.csv` (rows with `floors == global_only`
+in `scenario_runs.csv`). A run with the floors removed is a different run, not a spread of the
+same one, so it never enters the seed range.
+
 ## Demand form: one law for every price response
 
 `demand/response.py` is the only place demand moves with price. The elasticity priors
@@ -407,7 +426,8 @@ nothing depends on the seed (the panel is deterministic in the covariates and th
 is an integral), so the seed loop is skipped and only the elasticity range is written.
 `pessimistic` (-0.7) gives the highest revenue because both reforms are net price cuts. A Seattle
 two-cycle pools both phases in each range cell. The ranges carry `search_cost_total`,
-`cs_change_total` and `surplus_plus_revenue_change` like any other row. `incidence_by_decile.png`
+`cs_change_total`, `surplus_plus_revenue_change` and the at-bound counts like any other row.
+`incidence_by_decile.png`
 is a constant placeholder, stamped as such in the figure; `Report.tex` still includes it.
 
 ## Streamlit app
@@ -424,3 +444,13 @@ The full suite takes about 10 minutes, almost all of it in one test:
 on this machine ("g++ not detected"), so PyMC samples in pure Python. Every other test,
 including the e2e test, runs in seconds. For rapid iteration, skip the PyMC test with
 `-k "not hierarchical_bayes"`.
+
+**Artifacts are tied to the config.** `scenarios/provenance.config_hashes()` hashes every
+`config/*.yaml` (CRLF read as LF, so a Windows and a Linux checkout agree), and the scenario
+`meta.json` files and `cm_sweep.meta.json` record it. `tests/test_config_ties.py` compares each
+recorded hash set with the tree's and fails naming the script to rerun (05, 06, 07 for the
+scenarios; `07 --rebuild-cm-sweep` for the sweep). Any edit to a config file, a comment
+included, therefore stales the tracked sweep until it is rebuilt. The same file pins
+direction of change instead of values: raising `peak_target` or `low_demand_peak` raises baseline
+revenue and each zone's unclipped Arnott-Inci price, and raising `search_cost.cruising_minutes_at_full_block`
+scales every scenario's search cost by the same factor and leaves revenue alone.

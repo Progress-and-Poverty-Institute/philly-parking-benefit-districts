@@ -79,6 +79,7 @@ def main() -> None:
     st.subheader("Highlight a metric")
     options = [m for m, _ in metrics] + [
         "search_cost_total",
+        "n_zones_at_floor",
         "n_zones_at_ceiling",
         "pbd_revenue",
     ]

@@ -13,12 +13,27 @@ from pathlib import Path
 from phillyparking._config import config_dir, project_root
 
 
+def file_sha256(path: Path) -> str:
+    """SHA-256 of a text file with CRLF read as LF: a Windows checkout (`core.autocrlf`) and a
+    Linux one hold the same file and must give the same hash."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def config_hashes() -> dict[str, str]:
     """SHA-256 of every `config/*.yaml` file in use (the directory `load_config` reads)."""
-    return {
-        p.stem: hashlib.sha256(p.read_bytes()).hexdigest()
-        for p in sorted(config_dir().glob("*.yaml"))
-    }
+    return {p.stem: file_sha256(p) for p in sorted(config_dir().glob("*.yaml"))}
+
+
+def config_mismatches(recorded: dict[str, str]) -> list[str]:
+    """Config files whose current hash differs from `recorded` (an artifact's `config_sha256`):
+    changed, absent from the tree, or new since. Empty when the artifact was made under the
+    config in the tree."""
+    now = config_hashes()
+    return sorted(
+        [f"{k} (changed)" for k in recorded if k in now and recorded[k] != now[k]]
+        + [f"{k} (no longer in the tree)" for k in recorded if k not in now]
+        + [f"{k} (not recorded by the artifact)" for k in now if k not in recorded]
+    )
 
 
 def git_state() -> dict:
@@ -33,6 +48,9 @@ def git_state() -> dict:
         except (OSError, subprocess.SubprocessError):
             return None
 
+    # A file rewritten with identical content (a generated table, CRLF/LF under autocrlf) has a
+    # stale stat entry that `status` reports as modified until the index is refreshed.
+    _git("update-index", "-q", "--refresh")
     commit = _git("rev-parse", "HEAD")
     status = _git("status", "--porcelain", "--untracked-files=no")
     return {"commit": commit, "dirty": None if status is None else bool(status)}

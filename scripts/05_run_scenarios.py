@@ -15,7 +15,7 @@ from phillyparking.demand.synthetic_baseline import (anchor_set_for_source, base
 from phillyparking.scenarios.provenance import describe_file_source, segment_source
 from phillyparking.scenarios.runner import default_results_dir, run_scenario
 from phillyparking.scenarios.compare import comparison_table
-from phillyparking.scenarios.ranges import run_values, summarize
+from phillyparking.scenarios.ranges import NO_ZONE_FLOORS, run_values, summarize
 from phillyparking.elasticity.scenarios import all_scenarios
 from phillyparking.spatial.synthetic import make_synthetic_segments
 
@@ -108,7 +108,8 @@ def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None,
 
     The scenario results and comparison table are the headline run: the central elasticity
     at --seed. With every scenario selected the script also runs the other two named
-    elasticities at that seed and the central elasticity at fixture seeds 0..n-1, and writes
+    elasticities at that seed, the central elasticity with the zone floors removed (the global
+    floor still applies) and the central elasticity at fixture seeds 0..n-1, and writes
     scenario_ranges.csv (min / max per scenario and metric) and scenario_runs.csv (every run).
     """
     logging.basicConfig(
@@ -177,6 +178,12 @@ def main(scenario: str | None, seed: int, n_seeds: int, out_dir: str | None,
                                     elasticity_scenario=ename, segment_source=seg_source)
                     for n in ALL_SCENARIOS
                 }, ename, seed))
+            log.info("Floor sensitivity: zone floors removed at seed %d", seed)
+            runs.append(run_values({
+                n: run_scenario(n, segments=segs, baseline_panel=panel, seed=seed,
+                                segment_source=seg_source, use_zone_floors=False)
+                for n in ALL_SCENARIOS
+            }, HEADLINE_ELASTICITY, seed, floors=NO_ZONE_FLOORS))
             for s in range(n_seeds):
                 log.info("Seed %d (%d of %d)", s, s + 1, n_seeds)
                 sg, pn, src = inputs_for_seed(s)

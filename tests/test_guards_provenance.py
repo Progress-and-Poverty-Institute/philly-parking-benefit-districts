@@ -143,7 +143,8 @@ def test_provenance_records_segments_config_commit_and_elasticity(results, tmp_p
     assert prov["segment_source"]["n_segments"] == 40
     assert prov["seed"] == 3
 
-    on_disk = {p.stem: hashlib.sha256(p.read_bytes()).hexdigest() for p in config_dir().glob("*.yaml")}
+    on_disk = {p.stem: hashlib.sha256(p.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+               for p in config_dir().glob("*.yaml")}
     assert prov["config_sha256"] == on_disk
     assert set(on_disk) >= {"zones", "scenarios", "pricing_rules", "elasticity_priors"}
 
@@ -176,7 +177,8 @@ def test_provenance_hash_changes_with_config(fixture_data, tmp_path, monkeypatch
     finally:
         monkeypatch.delenv("PHILLYPARKING_CONFIG_DIR")
         load_config.cache_clear()
-    assert r.provenance["config_sha256"]["zones"] == hashlib.sha256(z.read_bytes()).hexdigest()
+    assert r.provenance["config_sha256"]["zones"] == hashlib.sha256(
+        z.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def test_explicit_segment_source_overrides_attrs(fixture_data):

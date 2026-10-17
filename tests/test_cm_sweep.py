@@ -337,25 +337,34 @@ def test_ordering_check_fails_when_the_comparator_statistic_exceeds_the_peak(mon
     assert not ordering_violations(bad).empty
 
 
-def test_welfare_ordering_is_not_an_identity():
-    """The cruising cost level decides which rule gives more welfare: cheap cruising favours the
-    mean rule, costly cruising the peak rule. Both signs occur on the same price paths."""
-    s = chatman_manville_sweep(segments=SEGS, elasticity_values=[-0.4], start_occupancy=[0.75],
-                               block_dispersion=[0.3], observation_noise=[0.0], n_replications=1,
-                               rolls_forward_years=6, rules=["peak_zone", "mean_zone"])
-    p = paired_table(s, [("mean_zone", "peak_zone")])
-    last = p[(p.year == 6) & (p.occupancy_cap == cm_sweep.load_search_cost_config().occupancy_cap)].iloc[0]
-    assert last["share_comparator_searches_more"] == 1.0   # the mean rule prices lower
-    c_star = last["breakeven_cruising_minutes_median"]
-    assert 0 < c_star < 60
+def test_breakeven_level_agrees_with_which_rule_has_the_higher_welfare_at_the_configured_level():
+    """The breakeven c* is where welfare_diff(c) = gain - c x (search cost per cruising minute)
+    changes sign, so at the configured level c0 the comparator's welfare is higher exactly when
+    c0 < c* if it searches more and when c0 > c* if it searches less. `welfare_better` is scored
+    from the rules' own welfare columns, c* from the parts, so the two can disagree if either is
+    wrong. One replication per cell: each row is one rule-pair-year, and the cells span
+    elasticity, start level, cap and both a same-instrument and a cross-instrument pair."""
+    s = chatman_manville_sweep(segments=SEGS, elasticity_values=[-0.4, -0.7], start_occupancy=[0.6, 0.9],
+                               block_dispersion=[0.3], observation_noise=[0.0], occupancy_cap=[0.95, 0.999],
+                               n_replications=1, rolls_forward_years=4,
+                               rules=["peak_zone", "mean_zone", "seattle_rule", "peak_band"])
     cfg = cm_sweep.load_search_cost_config()
-    gain = last["cs_diff_median"] + last["revenue_diff_median"]
-    per_min = last["search_cost_diff_median"] / cfg.cruising_minutes_at_full_block
-    assert gain - 0.5 * c_star * per_min > 0 > gain - 2.0 * c_star * per_min
+    p = paired_table(s, [("mean_zone", "peak_zone"), ("seattle_rule", "peak_band")])
+    p = p[p["breakeven_cruising_minutes_median"].notna()]
+    assert len(p) >= 16 and (p["n_replications"] == 1).all()
+    searches_more = p["share_comparator_searches_more"] == 1.0
+    assert searches_more.any() and (~searches_more).any()    # both directions occur in this grid
+    c_star = p["breakeven_cruising_minutes_median"]
+    better = p["share_welfare_better"] == 1.0
+    expected = np.where(searches_more, cfg.cruising_minutes_at_full_block < c_star, cfg.cruising_minutes_at_full_block > c_star)
+    tie = np.isclose(c_star, cfg.cruising_minutes_at_full_block, rtol=1e-6)
+    assert (better.to_numpy()[~tie] == expected[~tie]).all()
     # The secondary column is the same level in minutes at the 95% reference block-hour.
     from phillyparking.welfare.search_cost import reference_minutes_per_cruising_minute
-    assert last["breakeven_reference_minutes_median"] == pytest.approx(
-        c_star * reference_minutes_per_cruising_minute(cfg))
+    for cap, g in p.groupby("occupancy_cap"):
+        factor = reference_minutes_per_cruising_minute(cm_sweep.load_search_cost_config(occupancy_cap=cap))
+        assert g["breakeven_reference_minutes_median"].to_numpy() == pytest.approx(
+            g["breakeven_cruising_minutes_median"].to_numpy() * factor)
 
 
 def test_same_instrument_breakeven_sign_is_a_property_of_the_design():
