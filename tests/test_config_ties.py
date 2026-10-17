@@ -27,7 +27,9 @@ SCENARIOS = ("status_quo", "seattle", "full_pbd")
 # --- artifacts tied to the config that made them -------------------------------------------
 
 SWEEP_META = project_root() / "outputs" / "tables" / "cm_sweep.meta.json"
+FORM_META = project_root() / "outputs" / "tables" / "cm_sweep_form_sensitivity.meta.json"
 RERUN_SWEEP = "scripts/07_export_report_assets.py --rebuild-cm-sweep"
+RERUN_FORM_SWEEP = "scripts/07_export_report_assets.py --rebuild-cm-form-sensitivity"
 RERUN_SCENARIOS = "scripts/05_run_scenarios.py, then 06 and 07 (the order is 05, 06, 07)"
 
 
@@ -41,7 +43,7 @@ def _recorded_hashes(path):
     return meta["config_sha256"] if "config_sha256" in meta else meta["provenance"]["config_sha256"]
 
 
-_ARTIFACTS = [(SWEEP_META, RERUN_SWEEP)] + [(p, RERUN_SCENARIOS) for p in _saved_scenario_metas()]
+_ARTIFACTS = [(SWEEP_META, RERUN_SWEEP), (FORM_META, RERUN_FORM_SWEEP)] + [(p, RERUN_SCENARIOS) for p in _saved_scenario_metas()]
 
 
 @pytest.mark.parametrize("path, rerun", _ARTIFACTS, ids=[p.parent.name + "/" + p.name for p, _ in _ARTIFACTS])

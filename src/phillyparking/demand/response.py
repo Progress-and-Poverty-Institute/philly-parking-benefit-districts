@@ -6,14 +6,24 @@ moves away from that price is the `demand_form` in the same config, and every pr
 in the package comes from here: `apply_elasticity` (the scenario runner, the app), the
 revenue curve, the Arnott-Inci inversion, the Chatman-Manville sweep and its surplus term.
 
+The form and the elasticities are stated assumptions. Lehner and Peer (2019) support the sign
+of the rise of elasticity with the price level (p. 186; the coefficient on the price per hour
+relative to daily GDP per capita is negative in Table 3, EPO, and Table 5, EPV) and nothing
+about its rate: the paper estimates no functional form, and its slope (EPV -0.03 against a
+constant of -0.33) is much shallower than the exponential's proportional rise. Neither the
+central value nor the pessimistic / optimistic bracket is a reported estimate of the paper
+(`config/elasticity_priors.yaml` has the comparison with its Table 6). Constant elasticity
+(no rise) and the exponential bracket the paper's gradient; linear rises faster than either.
+`scripts/05_run_scenarios.py` and `scripts/07_export_report_assets.py
+--rebuild-cm-form-sensitivity` report how the results move across the three forms below.
+
 Forms, with q_ref the demand at the reference price p_ref and e the elasticity there:
 
   exponential          q(p) = q_ref exp(e (p - p_ref) / p_ref)
                        Elasticity e p / p_ref, rising in proportion to the price: the
-                       semi-log demand of a logit choice model with utility linear in
-                       price, and the pattern Lehner and Peer (2019) report (higher
-                       prevailing prices, more elastic demand). Revenue p q(p) peaks at
-                       p_ref / |e|. The default.
+                       semi-log demand of a logit choice model with utility linear in price
+                       when the parking share is small. Revenue p q(p) peaks at p_ref / |e|.
+                       The default.
   linear               q(p) = q_ref (1 + e (p - p_ref) / p_ref), zero above the choke price
                        p_ref (1 - 1/e). Elasticity rises faster than the price; revenue peaks
                        at p_ref (1 - e) / (2 |e|).
@@ -23,6 +33,15 @@ Forms, with q_ref the demand at the reference price p_ref and e the elasticity t
 Every form is path independent: moving from p_old to p_new multiplies demand by
 `demand_factor`, which depends on the two prices and p_ref only. Consumer surplus change is
 the exact integral -int_{p_ref}^{p} q(x) dx of the same law, in closed form.
+
+**Where the elasticity is anchored.** The scenario runner applies the prior at each zone's own
+posted rate (`reference_price=` the posted rates): e = -0.40 is the elasticity at $1.50 in
+Fishtown and at $4.00 in Center City Core, so the zones do not share one demand curve. The
+alternative is one citywide law anchored at a single reference price p0 with elasticity e
+there; `citywide_zone_elasticities` gives each zone's elasticity at its posted rate under it,
+and passing that as the run's elasticity makes the zone-anchored machinery follow the single
+law exactly (for every form, re-anchoring a law at another price on the same curve leaves the
+curve unchanged).
 """
 from __future__ import annotations
 
@@ -97,6 +116,23 @@ def elasticity_at(p, elasticity, p_ref, form: str | None = None) -> np.ndarray:
     if form == "constant_elasticity":
         return np.broadcast_to(e, np.broadcast(p, e).shape).astype(float)
     raise ValueError(f"unknown demand form {form!r}")
+
+
+def citywide_zone_elasticities(posted, elasticity: float, p_ref_city: float,
+                               form: str | None = None):
+    """Each zone's elasticity at its posted rate under one law anchored at (p_ref_city, elasticity).
+
+    `posted` is a (zone_id, price_usd_per_hr) frame or a Series of posted rates indexed by
+    zone_id; the result is a Series indexed by zone_id. Passing it as the elasticity with
+    `reference_price=` the posted rates reproduces the single law: the curve through
+    (p_zone, q_zone) with local elasticity `elasticity_at(p_zone, e, p_ref_city)` is the
+    single citywide curve rescaled by q_zone, for each of the three forms.
+    """
+    import pandas as pd
+    if isinstance(posted, pd.DataFrame):
+        posted = posted.set_index("zone_id")["price_usd_per_hr"]
+    values = elasticity_at(posted.to_numpy(dtype=float), elasticity, p_ref_city, form)
+    return pd.Series(values, index=posted.index, name="elasticity", dtype=float)
 
 
 def revenue_maximising_price(elasticity: float, p_ref, form: str | None = None):

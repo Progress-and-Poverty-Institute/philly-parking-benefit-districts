@@ -1,0 +1,90 @@
+{
+  "config_sha256": {
+    "allocation": "6746cd7879eef61cbbd6a3993474b5111b8353a2f2d8992a542ad25047c3b6ca",
+    "demand_baseline": "f610a9e7124576071d749fd9d6898b82cd0673f9ccaeae21ddc9c581ce0c3489",
+    "elasticity_priors": "287d9d28997e48028b253a431c1c5a6245796afb80ad241d93e1be7da5bd6a80",
+    "ppa_ingest": "ca374e19d82ef7f0ebe668d4c69c3f6087d0eb2d4be956114062e8b53d775486",
+    "pricing_rules": "990fb801a7904c74777692a629dea3f82ed4e5466fdd865a9c1e2e7c6936f92b",
+    "scenarios": "ffd27adb56731b4551e346d067946e0a18b91027dbab00bab165cb88881401d2",
+    "zones": "3759a0af8d64c4a46b1532373429d7bb81463f7bac503a53128a0e79a1558bef"
+  },
+  "created_utc": "2026-10-17T18:21:07+00:00",
+  "forms": [
+    "exponential",
+    "linear",
+    "constant_elasticity"
+  ],
+  "git": {
+    "commit": "0d7ccb911ac15dea51de313037cdcd6a7c3e19f2",
+    "dirty": false
+  },
+  "headline": "outputs/tables/cm_sweep.meta.json (config's form and replications)",
+  "n_replications": 20,
+  "per_form_created_utc": {
+    "constant_elasticity": "2026-10-17T18:21:05+00:00",
+    "exponential": "2026-10-17T18:20:28+00:00",
+    "linear": "2026-10-17T18:20:24+00:00"
+  },
+  "per_form_demand_form": {
+    "constant_elasticity": "constant_elasticity",
+    "exponential": "exponential",
+    "linear": "linear"
+  },
+  "same_inputs_across_forms": {
+    "baseline": "baseline_occupancy(segments, seed=seed, anchor_set='synthetic_fixture')",
+    "block_dispersion": [
+      0.0,
+      0.3,
+      0.6
+    ],
+    "elasticity_values": [
+      -0.2,
+      -0.4,
+      -0.7
+    ],
+    "observation_noise": [
+      0.0,
+      0.1
+    ],
+    "occupancy_cap": [
+      0.95,
+      0.99,
+      0.999
+    ],
+    "pairing": "block draw u and yearly observation draws z fixed per replication; shared by all rules, elasticities, dispersions and noise levels",
+    "rolls_forward_years": 8,
+    "rules": [
+      "peak_zone",
+      "mean_zone",
+      "peak_band",
+      "mean_band",
+      "seattle_rule"
+    ],
+    "search_cost": {
+      "cruising_minutes_at_full_block": 8.1,
+      "level_units": "cruising minutes per cruiser when every block (search_unit_spaces spaces) is full; occupancy_cap is swept (see occupancy_cap)",
+      "mean_duration_hr": 1.5,
+      "occupancy_cap": 0.99,
+      "reference_occupancy": 0.95,
+      "search_unit_spaces": 10.0,
+      "value_of_time_usd_per_hr": 20.0
+    },
+    "segment_source": {
+      "function": "make_synthetic_segments",
+      "kind": "synthetic_fixture",
+      "n": 120,
+      "n_priced_block_hours_per_week": 7812,
+      "n_priced_segments": 112,
+      "n_segments": 120,
+      "seed": 42
+    },
+    "start_occupancy": [
+      0.6,
+      0.75,
+      0.9
+    ],
+    "start_price_usd": 2.0,
+    "welfare_population": "served cars: surplus on min(demand, capacity), revenue and search cost on served arrivals"
+  },
+  "seed": 42
+}

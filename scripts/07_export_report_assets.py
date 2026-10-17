@@ -12,6 +12,15 @@ Chatman-Manville sweep table (with its `.meta.json` provenance), and writes:
   outputs/tables/cm_sweep_paired.csv              each configured comparison, same replication
   outputs/tables/cm_sweep_window_dependence.csv   per comparison and cap, across cells, last year
 
+`--rebuild-cm-form-sensitivity` runs only the demand-form sensitivity and writes
+outputs/tables/cm_sweep_form_sensitivity.csv (per comparison, cap and form: the breakeven's
+median and range over cells and the welfare-better cell count),
+cm_sweep_form_beyond_peak.csv (the rules' prices against each form's revenue peak) and
+cm_sweep_form_sensitivity.meta.json (provenance). It reruns the sweep at the config's grid
+under the exponential, linear and constant-elasticity forms, 20 replications each, in three
+processes; about 15 minutes. The exponential rows there are the headline form at the same 20
+replications.
+
 `--check` regenerates the table in memory and exits 1 if the file on disk differs (the
 figures are not compared byte for byte). `--rebuild-cm-sweep` reruns the sweep at the
 config's size (`chatman_manville_sweep` in config/scenarios.yaml) and rewrites
@@ -31,8 +40,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from phillyparking._config import outputs_dir  # noqa: E402
 from phillyparking.scenarios.cm_sweep import (  # noqa: E402
-    cell_table, chatman_manville_sweep, comparisons_from_config, load_sweep, paired_table,
-    save_sweep, window_dependence,
+    FORM_SENSITIVITY_REPLICATIONS, cell_table, chatman_manville_sweep, comparisons_from_config,
+    form_sensitivity_sweeps, load_sweep, paired_table, save_form_sensitivity, save_sweep,
+    window_dependence,
 )
 from phillyparking.scenarios.runner import default_results_dir, load_saved_scenarios  # noqa: E402
 from phillyparking.viz.report_figures import (  # noqa: E402
@@ -59,11 +69,22 @@ def render_scenario_table() -> str:
 @click.option("--check", is_flag=True, help="Exit 1 if scenario_comparison.tex is stale; write nothing.")
 @click.option("--rebuild-cm-sweep", is_flag=True,
               help="Rerun the Chatman-Manville sweep at the config size and rewrite its parquet first.")
+@click.option("--rebuild-cm-form-sensitivity", is_flag=True,
+              help="Only: rerun the sweep under each demand form (20 replications) and write the "
+                   "form-sensitivity tables. Run alone; writes nothing else.")
 @click.option("--seed", default=42, type=int)
 @click.option("--verbose", "-v", is_flag=True)
-def main(check: bool, rebuild_cm_sweep: bool, seed: int, verbose: bool) -> None:
+def main(check: bool, rebuild_cm_sweep: bool, rebuild_cm_form_sensitivity: bool, seed: int,
+         verbose: bool) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    if rebuild_cm_form_sensitivity:
+        log.info("Rerunning the sweep under each demand form, %d replications", FORM_SENSITIVITY_REPLICATIONS)
+        sweeps = form_sensitivity_sweeps(seed=seed)
+        for written in save_form_sensitivity(sweeps, outputs_dir() / "tables"):
+            log.info("Wrote %s", written)
+        return
 
     tex = render_scenario_table()
     path = table_path()

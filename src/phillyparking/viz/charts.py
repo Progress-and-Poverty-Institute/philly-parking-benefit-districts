@@ -126,3 +126,42 @@ def laffer_curve(
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_to, dpi=150, bbox_inches="tight")
     return fig
+
+
+def laffer_curve_forms(
+    curves: dict[str, pd.DataFrame],
+    posted_price: float | None = None,
+    elasticity: float | None = None,
+    zone_label: str = "Center City Core",
+    save_to: Path | None = None,
+):
+    """Revenue against price under each demand form on the same axes.
+
+    `curves` maps a form name to its `revenue_curve` frame for one zone. A form whose revenue
+    peaks inside the grid is marked at the peak; one that does not (constant elasticity at
+    |e| < 1) is labelled as having none in the range shown. `posted_price` marks the rate the
+    elasticity is anchored at, where the three curves meet.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    for form, curve in curves.items():
+        rc = curve.sort_values("price").reset_index(drop=True)
+        (line,) = ax.plot(rc["price"], rc["revenue"], marker="o", ms=3, label=form.replace("_", " "))
+        k = int(rc["revenue"].idxmax())
+        if 0 < k < len(rc) - 1:
+            ax.plot(rc.loc[k, "price"], rc.loc[k, "revenue"], marker="*", ms=14, color=line.get_color(),
+                    label=f"{form.replace('_', ' ')} peak at ${rc.loc[k, 'price']:.2f}")
+        else:
+            ax.plot([], [], " ", label=f"{form.replace('_', ' ')}: no peak in the range shown")
+    if posted_price is not None:
+        ax.axvline(posted_price, color="grey", linestyle=":", label=f"posted rate ${posted_price:.2f}")
+    ax.set_xlabel("Price (USD/hr)")
+    ax.set_ylabel("Revenue (USD)")
+    tail = "" if elasticity is None else f" at elasticity {elasticity:g} at the posted rate"
+    ax.set_title(f"{zone_label}: revenue against price under three demand forms{tail}", fontsize=10)
+    ax.legend(fontsize=8)
+    if save_to is not None:
+        Path(save_to).parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_to, dpi=150, bbox_inches="tight")
+    return fig

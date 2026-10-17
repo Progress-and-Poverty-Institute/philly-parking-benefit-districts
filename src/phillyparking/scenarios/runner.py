@@ -146,6 +146,7 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
                         use_zone_floors: bool = True):
     """Next zone rates under the Arnott-Inci step; `reference_prices` are the posted rates the
     elasticity applies at (`demand.response`), `current_prices` the rates in force.
+    `elasticity` is a scalar or a Series by zone_id (see `run_scenario`).
 
     Besides `price_usd_per_hr` (the unclipped solution held to the zone's floor and ceiling,
     `seattle_rule.zone_bounds`) each row carries the review's `_ARNOTT_REVIEW_COLS`. The target
@@ -192,7 +193,7 @@ def _arnott_zone_prices(panel, segments, current_prices, target_vacancy, elastic
             base_demand=peak_occ,
             base_price=base_price,
             capacity=1.0,
-            elasticity=elasticity,
+            elasticity=float(elasticity[zid]) if isinstance(elasticity, pd.Series) else elasticity,
             target_vacancy=target_vacancy,
             reference_price=float(ref[zid]) if zid in ref.index else base_price,
         )
@@ -261,7 +262,7 @@ def _annual_cs_change(
     baseline_panel: pd.DataFrame,
     baseline_prices: pd.DataFrame,
     scenario_prices: pd.DataFrame,
-    elasticity: float,
+    elasticity: float | pd.Series,
 ) -> float:
     """Annual consumer-surplus change in USD: the integral of served demand over every
     priced block-hour, commensurable with annual revenue.
@@ -278,7 +279,7 @@ def _annual_cs_change(
 
     `baseline_prices` is zone-level; `scenario_prices` is zone-level or (zone_id,
     hour_of_week) from `hourly_prices`. A zone with priced block-hours must have a price in
-    both; none is invented.
+    both; none is invented. `elasticity` is a scalar or a Series by zone_id.
     """
     from phillyparking.demand.response import cs_change_served
     from phillyparking.pricing.priced_hours import frame_priced_mask
@@ -301,8 +302,25 @@ def _annual_cs_change(
         raise KeyError(f"zones {zones} have priced block-hours but no baseline or scenario price")
     cap = panel["capacity"].to_numpy(dtype=float)
     q_ref = panel["occupancy"].to_numpy(dtype=float) * cap
-    per_hour = cs_change_served(q_ref, panel["_p_ref"].to_numpy(), panel["_p"].to_numpy(), elasticity, cap)
+    eps = panel["zone_id"].map(elasticity).to_numpy(dtype=float) if isinstance(elasticity, pd.Series) else elasticity
+    per_hour = cs_change_served(q_ref, panel["_p_ref"].to_numpy(), panel["_p"].to_numpy(), eps, cap)
     return float(per_hour.sum() * 52)
+
+
+def citywide_reference_price(segments: pd.DataFrame, posted: pd.DataFrame | None = None) -> float:
+    """The reference price p0 of the citywide-law sensitivity: the capacity-weighted mean posted
+    rate over the segments in zones `zones.yaml` prices.
+
+    The central prior is one number for the city, not for any zone, so it is placed at the
+    price of the average priced space; the zone rates range from $1.50 to $4.00 and a zone's
+    own rate would make that zone the reference and the others extrapolations. The value
+    depends on the segment set (the fixture's zone mix differs from the real curb's).
+    """
+    posted = _zone_current_prices() if posted is None else posted
+    seg = segments.merge(posted.rename(columns={"price_usd_per_hr": "_posted"}), on="zone_id", how="inner")
+    if seg.empty:
+        raise ValueError("citywide_reference_price: no segment lies in a zone that zones.yaml prices")
+    return float(np.average(seg["_posted"], weights=seg["capacity"]))
 
 
 def run_scenario(
@@ -314,9 +332,17 @@ def run_scenario(
     seed: int = 42,
     segment_source: dict | None = None,
     use_zone_floors: bool = True,
+    citywide_reference_price: float | None = None,
 ) -> ScenarioResults:
     """Run one scenario. `use_zone_floors=False` is the floor sensitivity: the `floor` of each
-    zone in `zones.yaml` is ignored and only the global floor bounds a rate from below."""
+    zone in `zones.yaml` is ignored and only the global floor bounds a rate from below.
+
+    By default the elasticity prior applies at each zone's own posted rate. With
+    `citywide_reference_price` p0 it applies at p0 instead, as one law for every zone
+    (`demand.response.citywide_zone_elasticities`): each zone's elasticity at its posted rate
+    then follows from the law, and `diagnostics["demand_law"]` records them.
+    """
+    from phillyparking.demand.response import citywide_zone_elasticities, load_demand_form
     from phillyparking.elasticity.scenarios import get_scenario, apply_elasticity
 
     cfg = load_config("scenarios")["scenarios"]
@@ -332,6 +358,15 @@ def run_scenario(
     elasticity = elasticity_spec.elasticity
 
     current_prices = _zone_current_prices()
+    if citywide_reference_price is None:
+        zone_elasticity = {str(z): float(elasticity) for z in current_prices["zone_id"]}
+        demand_law = {"anchoring": "per_zone", "reference_price": None}
+    else:
+        elasticity = citywide_zone_elasticities(current_prices, elasticity, float(citywide_reference_price))
+        zone_elasticity = {str(z): float(v) for z, v in elasticity.items()}
+        demand_law = {"anchoring": "citywide", "reference_price": float(citywide_reference_price)}
+    demand_law.update(form=load_demand_form(), headline_elasticity=float(elasticity_spec.elasticity),
+                      zone_elasticity_at_posted_rate=zone_elasticity)
     baseline_with_price = baseline_panel.merge(
         segments[["segment_id", "zone_id"]], on="segment_id", how="left"
     ).merge(current_prices, on="zone_id", how="left")
@@ -346,7 +381,8 @@ def run_scenario(
     panel = baseline_with_price.copy()
     prices = current_prices.copy()
     diagnostics: dict = {"policy": policy_kind, "max_years": rolls_forward_years,
-                         "target_vacancy": target_vac, "use_zone_floors": bool(use_zone_floors)}
+                         "target_vacancy": target_vac, "use_zone_floors": bool(use_zone_floors),
+                         "demand_law": demand_law}
     # Zones the fixture or the real segments carry that zones.yaml does not configure have
     # no price and no priced hours: they earn nothing and are not scored for cruising.
     configured = set(current_prices["zone_id"])
