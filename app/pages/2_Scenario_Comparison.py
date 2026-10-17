@@ -68,8 +68,9 @@ def main() -> None:
     cfg = load_search_cost_config()
     st.caption(
         f"Annual search cost of parkers under the project's one cruising model "
-        f"(welfare/search_cost.py), scored at {cfg.minutes_at_full_block:g} minutes per arrival at a "
-        f"full block of {cfg.reference_capacity:g} spaces, cap {cfg.occupancy_cap:g}. The level is a "
+        f"(welfare/search_cost.py), scored at {cfg.cruising_minutes_at_full_block:g} minutes of "
+        f"cruising per cruiser when every {cfg.search_unit_spaces:g}-space block is full "
+        f"({cfg.minutes_at_full_block:.1f} per arrival), cap {cfg.occupancy_cap:g}. The level is a "
         f"stated assumption, not a measurement: read the row on its own, not netted against the "
         f"surplus row above."
     )

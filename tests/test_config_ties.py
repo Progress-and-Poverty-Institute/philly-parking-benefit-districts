@@ -140,13 +140,13 @@ def test_raising_a_baseline_occupancy_level_raises_baseline_revenue_and_the_arno
 
 
 def test_raising_the_search_cost_level_raises_every_scenarios_search_cost_proportionally(segs, edit_config):
-    """Search cost is linear in `search_cost.minutes_at_full_block` and feeds nothing back into
+    """Search cost is linear in `search_cost.cruising_minutes_at_full_block` and feeds nothing back into
     the prices, so doubling it doubles every scenario's search cost and leaves its revenue alone."""
     panel = baseline_occupancy(segs, seed=4)
-    minutes = float(load_config("pricing_rules")["search_cost"]["minutes_at_full_block"])
-    edit_config({"pricing_rules": {"search_cost.minutes_at_full_block": minutes}})
+    minutes = float(load_config("pricing_rules")["search_cost"]["cruising_minutes_at_full_block"])
+    edit_config({"pricing_rules": {"search_cost.cruising_minutes_at_full_block": minutes}})
     lo = {n: run_scenario(n, segments=segs, baseline_panel=panel, seed=4) for n in SCENARIOS}
-    edit_config({"pricing_rules": {"search_cost.minutes_at_full_block": 2.0 * minutes}})
+    edit_config({"pricing_rules": {"search_cost.cruising_minutes_at_full_block": 2.0 * minutes}})
     hi = {n: run_scenario(n, segments=segs, baseline_panel=panel, seed=4) for n in SCENARIOS}
     for n in SCENARIOS:
         s_lo = float(lo[n].search_cost["annual_search_cost_usd"].sum())

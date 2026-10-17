@@ -256,22 +256,20 @@ def test_welfare_is_surplus_plus_revenue_minus_search_cost(sweep):
     rhs = (a["cs_change"] - b["cs_change"]) + (a["revenue"] - b["revenue"]) - (a["search_cost"] - b["search_cost"])
     assert np.allclose(lhs, rhs, rtol=1e-9, atol=1e-6)
     assert (a["search_cost"] > 0).all() and (a["revenue"] > 0).all()
-    minutes = cm_sweep.load_search_cost_config().minutes_at_full_block
-    assert np.allclose(a["search_cost_per_full_block_minute"] * minutes, a["search_cost"])
+    minutes = cm_sweep.load_search_cost_config().cruising_minutes_at_full_block
+    assert np.allclose(a["search_cost_per_cruising_minute"] * minutes, a["search_cost"])
 
 
 def test_cap_is_scored_on_one_price_path(sweep):
     """The rules never see the cap: across caps a rule-year has the same prices, revenue and
-    surplus. The level is pinned at a full block, so a higher cap makes a full block cost the
-    same and every block short of full cost less: the search cost falls in the cap."""
+    surplus; only the search cost differs (how the cap moves it is tested on the scorer,
+    `test_targeting_welfare.py`)."""
     keys = [a for a in cm_sweep.AXES if a != "occupancy_cap"] + ["rule", "replication", "year"]
     g = sweep.groupby(keys)
     assert (g["occupancy_cap"].nunique() == 2).all()
     for col in ("mean_price", "revenue", "cs_change", "share_block_hours_above_high"):
         assert (g[col].nunique() == 1).all(), col
-    lo = sweep[sweep["occupancy_cap"] == 0.95].set_index(keys)["search_cost"]
-    hi = sweep[sweep["occupancy_cap"] == 0.99].set_index(keys)["search_cost"].reindex(lo.index)
-    assert (hi <= lo + 1e-9).all() and (hi < lo).any()
+    assert (g["search_cost"].nunique() == 2).all()
 
 
 def test_every_welfare_term_counts_the_cars_that_park():
@@ -340,7 +338,7 @@ def test_ordering_check_fails_when_the_comparator_statistic_exceeds_the_peak(mon
 
 
 def test_breakeven_level_agrees_with_which_rule_has_the_higher_welfare_at_the_configured_level():
-    """The breakeven c* is where welfare_diff(c) = gain - c x (search cost per full-block minute)
+    """The breakeven c* is where welfare_diff(c) = gain - c x (search cost per cruising minute)
     changes sign, so at the configured level c0 the comparator's welfare is higher exactly when
     c0 < c* if it searches more and when c0 > c* if it searches less. `welfare_better` is scored
     from the rules' own welfare columns, c* from the parts, so the two can disagree if either is
@@ -352,21 +350,21 @@ def test_breakeven_level_agrees_with_which_rule_has_the_higher_welfare_at_the_co
                                rules=["peak_zone", "mean_zone", "seattle_rule", "peak_band"])
     cfg = cm_sweep.load_search_cost_config()
     p = paired_table(s, [("mean_zone", "peak_zone"), ("seattle_rule", "peak_band")])
-    p = p[p["breakeven_full_block_minutes_median"].notna()]
+    p = p[p["breakeven_cruising_minutes_median"].notna()]
     assert len(p) >= 16 and (p["n_replications"] == 1).all()
     searches_more = p["share_comparator_searches_more"] == 1.0
     assert searches_more.any() and (~searches_more).any()    # both directions occur in this grid
-    c_star = p["breakeven_full_block_minutes_median"]
+    c_star = p["breakeven_cruising_minutes_median"]
     better = p["share_welfare_better"] == 1.0
-    expected = np.where(searches_more, cfg.minutes_at_full_block < c_star, cfg.minutes_at_full_block > c_star)
-    tie = np.isclose(c_star, cfg.minutes_at_full_block, rtol=1e-6)
+    expected = np.where(searches_more, cfg.cruising_minutes_at_full_block < c_star, cfg.cruising_minutes_at_full_block > c_star)
+    tie = np.isclose(c_star, cfg.cruising_minutes_at_full_block, rtol=1e-6)
     assert (better.to_numpy()[~tie] == expected[~tie]).all()
     # The secondary column is the same level in minutes at the 95% reference block-hour.
-    from phillyparking.welfare.search_cost import reference_minutes_per_full_block_minute
+    from phillyparking.welfare.search_cost import reference_minutes_per_cruising_minute
     for cap, g in p.groupby("occupancy_cap"):
-        factor = reference_minutes_per_full_block_minute(cm_sweep.load_search_cost_config(occupancy_cap=cap))
+        factor = reference_minutes_per_cruising_minute(cm_sweep.load_search_cost_config(occupancy_cap=cap))
         assert g["breakeven_reference_minutes_median"].to_numpy() == pytest.approx(
-            g["breakeven_full_block_minutes_median"].to_numpy() * factor)
+            g["breakeven_cruising_minutes_median"].to_numpy() * factor)
 
 
 def test_same_instrument_breakeven_sign_is_a_property_of_the_design():
@@ -380,7 +378,7 @@ def test_same_instrument_breakeven_sign_is_a_property_of_the_design():
     for comp, ref in (("mean_zone", "peak_zone"), ("mean_band", "peak_band")):
         assert ordering_violations(s, comp, ref).empty
         p = paired_table(s, [(comp, ref)])
-        assert (p["breakeven_full_block_minutes_min"].fillna(0) >= -1e-9).all()
+        assert (p["breakeven_cruising_minutes_min"].fillna(0) >= -1e-9).all()
         assert (p["cs_diff_min"] + p["revenue_diff_min"] >= -1e-6).all() or (
             (p["cs_diff_median"] + p["revenue_diff_median"]) >= -1e-6).all()
 
@@ -394,7 +392,8 @@ def test_sweep_records_and_roundtrips_provenance(sweep, tmp_path):
     assert prov["seed"] == 42 and prov["n_replications"] == 3
     assert prov["start_occupancy"] == [0.75] and prov["block_dispersion"] == [0.0, 0.3]
     assert {"scenarios", "pricing_rules", "zones"} <= set(prov["config_sha256"])
-    assert prov["search_cost"]["minutes_at_full_block"] == cm_sweep.load_search_cost_config().minutes_at_full_block
+    assert (prov["search_cost"]["cruising_minutes_at_full_block"]
+            == cm_sweep.load_search_cost_config().cruising_minutes_at_full_block)
     assert prov["occupancy_cap"] == [0.95, 0.99] and "served" in prov["welfare_population"]
     path = save_sweep(sweep, tmp_path / "cm.parquet")
     assert path.with_suffix(".meta.json").exists()
@@ -415,7 +414,8 @@ def test_tracked_sweep_carries_provenance_for_a_fixture_it_names():
     assert prov["n_replications"] == cfg["n_replications"]
     assert prov["rules"] == cfg["rules"] and prov["start_occupancy"] == cfg["start_occupancy"]
     assert prov["occupancy_cap"] == cfg["occupancy_cap"]
-    assert prov["search_cost"]["minutes_at_full_block"] == cm_sweep.load_search_cost_config().minutes_at_full_block
+    assert (prov["search_cost"]["cruising_minutes_at_full_block"]
+            == cm_sweep.load_search_cost_config().cruising_minutes_at_full_block)
 
 
 # --------------------------------------------------------------------------- summaries
@@ -429,7 +429,7 @@ def _tiny() -> pd.DataFrame:
             rows.append({"elasticity": -0.4, "start_occupancy": 0.75, "block_dispersion": 0.0,
                          "observation_noise": 0.1, "occupancy_cap": 0.95, "rule": rule, "replication": rep,
                          "year": 1, "welfare_change": cs + rev - cost, "cs_change": cs, "revenue": rev,
-                         "search_cost": cost, "search_cost_per_full_block_minute": cost / 5.0})
+                         "search_cost": cost, "search_cost_per_cruising_minute": cost / 5.0})
     return pd.DataFrame(rows)
 
 
@@ -439,9 +439,9 @@ def test_paired_table_is_per_replication_and_breakeven_is_exact():
     # a: welfare diff = (40 - -10) + (50 - 100) - (5c+1 - c) per replication: c = 10 -> -41, 20 -> -81, 0 -> -1
     assert a["welfare_diff_median"] == -41 and a["welfare_diff_min"] == -81 and a["welfare_diff_max"] == -1
     assert a["share_welfare_better"] == 0.0 and a["share_comparator_searches_more"] == 1.0
-    # breakeven: gain 0 / per-minute search diff ((4c+1)/5): 0 at every replication; at cap
-    # 0.95 the reference block-hour is the full block, so the two units coincide
-    assert a["breakeven_full_block_minutes_median"] == 0.0 and a["breakeven_reference_minutes_median"] == 0.0
+    # breakeven: gain 0 / per-minute search diff ((4c+1)/5): 0 at every replication, in
+    # either unit
+    assert a["breakeven_cruising_minutes_median"] == 0.0 and a["breakeven_reference_minutes_median"] == 0.0
     # b: searches less; gain = -50 + 50 = 0 -> breakeven 0; NaN where both costs are 0 (rep 3)
     assert b["share_comparator_searches_more"] == 0.0
     assert b["share_search_cost_better"] == pytest.approx(2 / 3) and b["share_revenue_better"] == 1.0
@@ -463,7 +463,7 @@ def test_cell_and_window_tables_never_pool_cells(sweep):
     assert len(w) == len(cm_sweep.comparisons_from_config()) * 2
     assert (w["n_cells"] == N_CELLS // 2).all() and (w["year"] == 4).all()
     assert (w["cells_welfare_better"] <= w["n_cells"]).all()
-    assert {"breakeven_full_block_minutes_median_cells_median", "breakeven_reference_minutes_median_cells_median",
+    assert {"breakeven_cruising_minutes_median_cells_median", "breakeven_reference_minutes_median_cells_median",
             "cells_search_cost_better"} <= set(w.columns)
 
 
@@ -476,7 +476,7 @@ def test_breakeven_chart_draws_the_cited_range_per_cap(sweep, tmp_path):
     paired = paired_table(sweep, [("mean_zone", "peak_zone")])
     fig = cm_breakeven_chart(paired, ("mean_zone", "peak_zone"), save_to=tmp_path / "b.png")
     try:
-        assert fig.axes[0].get_ylabel().startswith("Breakeven minutes per arrival")
+        assert fig.axes[0].get_ylabel().startswith("Breakeven cruising minutes")
         assert len(fig.axes) == 2 * 1   # one row per cap, one column per start level
         labels = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
         assert any("those who cruise" in lab for lab in labels)

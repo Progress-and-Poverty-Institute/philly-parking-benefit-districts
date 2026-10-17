@@ -41,8 +41,8 @@ def rows() -> tuple:
     """
     from phillyparking.welfare.search_cost import load_search_cost_config
     cfg = load_search_cost_config()
-    search_label = (f"Annual search cost of parkers, at {cfg.minutes_at_full_block:g} min per "
-                    f"arrival at a full block")
+    search_label = (f"Annual search cost of parkers, at {cfg.cruising_minutes_at_full_block:g} min "
+                    f"per cruiser when blocks are full")
     return (
         ("Annual meter revenue", "total_revenue", _usd_m),
         ("Revenue to neighborhoods (PBD)", "pbd_revenue", _usd_m),
