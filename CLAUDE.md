@@ -135,27 +135,35 @@ same one, so it never enters the seed range.
 form (`demand_form`, default `exponential`: q = q_ref exp(e (p - p_ref) / p_ref), elasticity
 e p / p_ref) says what happens away from it, so revenue peaks at p_ref / |e| and the Laffer
 figure has an interior maximum (audit finding 14). `constant_elasticity` and `linear` are
-selectable for sensitivity. **The form and the elasticities (-0.40 central, the -0.2 / -0.7
-bracket, the context shifts) are stated assumptions.** Lehner and Peer (2019, TR-A 121: 177-191;
-copy in `research/`) support only the sign of the rise of elasticity with price: a significantly
-negative coefficient on the hourly price relative to daily GDP per capita (p. 186; EPO -0.10 to
--0.15 in Table 3, EPV -0.03 in all three specifications of Table 5; a cross-study gradient). The
-paper estimates no functional form, and its EPV slope against a constant of -0.33 is far shallower
-than the exponential's proportional rise: its gradient lies between constant elasticity and the
-exponential, and the three forms of the sensitivity bracket it (linear rises faster than
-either). Neither -0.40 nor the bracket is a reported estimate; for comparison Table 6
-(revealed preference, non-commuting) has 95% intervals EPV -0.45 / -0.18, EPD -0.46 / -0.15 and
-EPO -0.72 / -0.54, and the pooled mean EPV of published papers is -0.38 (p. 185). The prior is
-labelled the volume elasticity and the model applies it to occupancy, which in the paper's terms
-is EPO = EPD + EPV (p. 178). What the form implies is the content to state: elasticity doubles
-when the price doubles, and revenue peaks at p_ref / |e| ($10 for Center City Core at -0.4,
-$5.71 at -0.7; the sweep's $2 start price peaks at $5.00 and $2.86). The research note's "revenue rises monotonically" for the central case is
-the constant-elasticity reading (no peak for |e| < 1), which the default form does not share.
+selectable for sensitivity. **The priors are elasticities of occupancy (EPO), the quantity the
+model moves, and the form and the elasticities (-0.60 central, the -0.40 / -0.90 bracket, the
+context shifts) are stated assumptions.** In Lehner and Peer (2019, TR-A 121: 177-191; copy in
+`research/`) EPO = EPD + EPV (p. 178). The values are informed by, never read from, the paper:
+central -0.60 is rounded from the revealed-preference (RP) non-commuting EPO baseline of -0.63
+(Section 6; 95% interval -0.72 / -0.54, Table 6, p. 188); optimistic -0.40 is about the upper
+end of the RP commuting EPO interval, -0.63 / -0.41 (baseline -0.52; Table 6), and of the
+low-substitution settings of Fig. 3 (p. 188), where EPO falls in magnitude as mode and parking
+location substitutes become unavailable; pessimistic -0.90 lies inside the stated-preference
+non-commuting EPV interval, -0.98 / -0.75 (Table 6), reflecting that RP estimates may be biased
+toward zero by latent demand, since occupancy cannot exceed 100% (pp. 186, 188), while the
+model's elasticity acts on latent demand. `central.sd` 0.125 makes plus or minus 2 sd (-0.85 /
+-0.35) about as wide as the bracket; `dwell_time` carries the paper's EPD (-0.30; -0.46 / -0.15,
+Table 6) and nothing reads it. The paper supports only the sign of the rise of elasticity with
+price: a significantly negative coefficient on the hourly price relative to daily GDP per capita
+(p. 186; EPO -0.10 to -0.15 in Table 3, EPV -0.03 in all three specifications of Table 5; a
+cross-study gradient). It estimates no functional form, and its EPV slope against a constant of
+-0.33 is far shallower than the exponential's proportional rise: its gradient lies between
+constant elasticity and the exponential, and the three forms of the sensitivity bracket it
+(linear rises faster than either). What the form implies is the content to state: elasticity
+doubles when the price doubles, and revenue peaks at p_ref / |e| ($6.67 for Center City Core at
+-0.60 and $4.44 at -0.90; the sweep's $2 start price peaks at $3.33 and $2.22). The research
+note's "revenue rises monotonically" for the central case is the constant-elasticity reading (no
+peak for |e| < 1), which the default form does not share.
 
 **Per-zone anchoring is an assumption.** Each zone's prior is its elasticity at that zone's own
-posted rate, so -0.40 is the elasticity at $1.50 in Fishtown and at $4.00 in Center City Core;
-the zones therefore do not share one demand curve. A single exponential law with -0.40 at
-$1.50 would give -1.07 at $4.00. The sensitivity is one citywide law: e at a single reference
+posted rate, so -0.60 is the elasticity at $1.50 in Fishtown and at $4.00 in Center City Core;
+the zones therefore do not share one demand curve. A single exponential law with -0.60 at
+$1.50 would give -1.60 at $4.00. The sensitivity is one citywide law: e at a single reference
 price p0, each zone's elasticity at its posted rate following from the law
 (`citywide_zone_elasticities`; re-anchoring a law at a point on its own curve leaves the curve
 unchanged, so the runner's per-zone machinery follows the single law exactly when given those
@@ -208,7 +216,12 @@ as both phases (`diagnostics["phases"]`, and `<name>_phase_a` / `_phase_b` colum
 comparison table), never as one year's state. With the dead band, a cycle can still occur where
 one $0.50 step moves demand across the whole band: under the exponential demand form a step
 multiplies demand by exp(|e| 0.5 / p_ref), which exceeds 0.85/0.70 only when |e| / p_ref is
-above about 0.39 (Fishtown at the pessimistic elasticity; no zone at the central one).
+above about 0.39. That holds for Fishtown and South Philadelphia ($1.50) at the central elasticity
+(0.40) and the pessimistic one (0.60), not at the optimistic one (0.27); at the central one the
+cycle needs the band's occupancy to land in a thin window (a $1.00 occupancy between 0.696 and
+0.70), and no named scenario on the real segments cycles. `full_pbd` needs more than 10 reviews to
+reach its fixed point at the central and pessimistic elasticities and with the zone floors removed,
+so its `rolls_forward_years` is 20.
 
 ## Chatman-Manville sweep: one rule module, paired runs, scored on welfare
 
@@ -288,18 +301,19 @@ range over cells of the per-cell median breakeven and welfare difference, `n_cel
 price, the share of rule-years whose mean price is above it, over all years and in the last year)
 and `cm_sweep_form_sensitivity.meta.json` (provenance; tied to the config like the sweep's).
 The forms agree near the start price and disagree where the rules go: the peak rules settle
-at roughly two to two and a half times the start price, where the exponential elasticity is
-that multiple of e, and at e = -0.7 the
-exponential revenue peak ($2.86) is below that price, so most peak-rule rule-years there sit
-beyond the point where the law's own revenue falls (the beyond-peak file has the share; the
-mean and Seattle rules stay below the peak). The cells at -0.7 are statements about a law
-extrapolated past its revenue peak; the -0.2 cells sit below it and the -0.4 cells are split
-(the last-year share beyond the peak is the file's column). Constant elasticity has no peak at
-|e| < 1 and the linear form has a choke price, so a statement about the sweep is a statement
-about its form until the form-sensitivity rows agree. On the same-instrument pairs the breakeven
-is a few minutes lower under constant elasticity than under the exponential and a little higher
-under the linear form, and the welfare-better cell count falls under constant elasticity; read
-the sizes in the file.
+at roughly one and a half to one and three quarter times the $2 start price, where the
+exponential elasticity is that multiple of e. At e = -0.90 the exponential revenue peak ($2.22)
+is below that price, so nearly all peak-rule rule-years there sit beyond the point where the law's
+own revenue falls, and so do a third of the mean and Seattle rule-years; at -0.60 (peak $3.33)
+about three quarters of the peak-rule rule-years in the last year do, and no mean or Seattle
+rule-year; at -0.40 (peak $5.00) about two fifths of the peak-rule last-year rule-years
+(the beyond-peak file has the shares). The cells at -0.90 are statements about a law
+extrapolated past its revenue peak, and the -0.60 and -0.40 cells are split between the rules.
+Constant elasticity has no peak at |e| < 1 and the linear form has a choke price, so a statement
+about the sweep is a statement about its form until the form-sensitivity rows agree. On the
+same-instrument pairs the breakeven is lower under constant elasticity than under the
+exponential (by about one to two minutes) and within about a minute of it under the linear form,
+and constant elasticity has fewer welfare-better cells; read the sizes in the file.
 
 ## Script 06 synthetic fallback
 
@@ -489,13 +503,13 @@ by 06): the other two named elasticities at the headline seed, and the central e
 fixture seeds 0..n-1 (`--n-seeds`, default 20). On segments that are not the synthetic fixture
 nothing depends on the seed (the panel is deterministic in the covariates and the surplus term
 is an integral), so the seed loop is skipped and only the elasticity range is written.
-`pessimistic` (-0.7) gives the highest revenue because both reforms are net price cuts. A Seattle
+`pessimistic` (-0.90) gives the highest revenue because both reforms are net price cuts. A Seattle
 two-cycle pools both phases in each range cell. The ranges carry `search_cost_total`,
 `cs_change_total`, `surplus_plus_revenue_change` and the at-bound counts like any other row.
 `incidence_by_decile.png`
 is a constant placeholder, stamped as such in the figure; `Report.tex` still includes it.
 
-Script 06 draws the Center City Core Laffer curve twice at -0.4: `laffer_curve_ccc.png` under
+Script 06 draws the Center City Core Laffer curve twice at the central elasticity (read from the config, -0.60): `laffer_curve_ccc.png` under
 the configured form, and `laffer_curve_ccc_forms.png` with all three forms on the same axes
 (`viz.charts.laffer_curve_forms`; `revenue_curve(..., form=)`), so the existence and location of
 the peak are visibly the form's.
