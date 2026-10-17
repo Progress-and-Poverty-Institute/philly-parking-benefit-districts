@@ -48,6 +48,9 @@ def git_state() -> dict:
         except (OSError, subprocess.SubprocessError):
             return None
 
+    # A file rewritten with identical content (a generated table, CRLF/LF under autocrlf) has a
+    # stale stat entry that `status` reports as modified until the index is refreshed.
+    _git("update-index", "-q", "--refresh")
     commit = _git("rev-parse", "HEAD")
     status = _git("status", "--porcelain", "--untracked-files=no")
     return {"commit": commit, "dirty": None if status is None else bool(status)}
