@@ -134,6 +134,67 @@ What follows:
 - **Transactions.** About 958,000 app and kiosk-card payments a month is about 11.6M a year, counting the remaining 1% at the same rate. At $40.8M of meter revenue that is about $3.50 per transaction (convenience fees are a separate line, section 4b). This is a cross-check for paid occupancy once rates and durations are known.
 - **Spaces per block.** 15,406 metered spaces (Controller, 2020) over 1,667 kiosks (one per block, FY2025) is about 9 spaces per kiosk block. The two counts are five years apart. This is a cross-check for the RTKL inventory, and for the model's 10-space search unit.
 
+## 6. Meter hours: where they are set (added 2026-10-17)
+
+No public document gives Philadelphia's metered hours by area. Checked:
+
+- **PPA Meters page** (https://philapark.org/meters/). No hours schedule. Its meterUP walkthrough uses one example block, 201 Columbus Boulevard: $1.50 an hour, a four-hour limit, free after 6 p.m. The page also says there are "no current plans to change the parking meter rates", so it predates July 2025. The example is a Center City long-term meter (four- and twelve-hour limits), which the July 2025 increase moved from $1.50 to $2.50. It is not an outer-zone rate, and it does not settle the $1.50 question in section 3.
+- **PPA Laws & Enforcement page** (https://philapark.org/Enforcement). It gives officers' patrol hours, not meter hours: 6:30 a.m. to 11 p.m. Monday to Thursday, 6 a.m. to 3 a.m. Friday and Saturday, and 7:30 a.m. to 10 p.m. Sunday. It points to the Code for the rules.
+- **Regulations of the Department of Streets** (compilation certified 2024-02-27, 244 pp., https://www.phila.gov/media/20240307174251/department-of-streets-regulations-20240227.pdf; local copy). It has only Title I (Sanitation) and Title II (Highway). A text search finds no "parking meter", "metered", "meter zone" or "limited time parking".
+- **A 1982 bill**, seen only as a search snippet and not read. It is said to amend Chapters 12-900 and 12-1000 so that the Streets Department may set limited-time parking regulations in areas named by special ordinances. That would explain why Chapter 12-1000 states no hours: they would be set block by block, by Streets Department regulation, and shown on signs. Unverified.
+- **Parkopedia block listings** (third party, unverified, conflicting). Different blocks show 8 a.m. to 6:30 p.m. Monday to Saturday; 8 a.m. to 10 p.m. Monday to Sunday; and Monday to Wednesday until 6:30 p.m. with Thursday to Saturday until midnight. These are not usable as data. They only suggest that hours vary by block, in both directions, around the model's one window per zone (8 a.m. to 8 p.m. Monday to Saturday; South Philadelphia 8 a.m. to 6 p.m.).
+
+**Conclusion.** Priced hours stay a stated assumption until the RTKL meter inventory arrives. Request A asks for hours by meter. Nothing public says whether the model's windows are too long or too short.
+
+## 7. Occupancy and payment compliance in two US programmes (added 2026-10-17)
+
+These are out-of-city measurements. They bound what is plausible; they are not Philadelphia values. Both programmes set rates to hit an occupancy target, and Philadelphia's rates are not set that way.
+
+### 7a. Seattle, 2019 Annual Paid Parking Study
+
+SDOT, "2019 Paid Parking Study Report" (January 2020), https://www.seattle.gov/documents/Departments/SDOT/ParkingProgram/PaidParking/FINAL_2019_PaidParkingStudy_Report.pdf; local copy, pp. 10-11 table.
+
+**Method.** Every paid block is counted from 8 a.m. to two hours after paid parking ends. Counts are taken on one Tuesday, Wednesday or Thursday in spring. Occupancy is counted cars over legal spaces, whether paid or not. The target is 70-85%, and paid parking ends at 8 p.m. in most areas.
+
+**Space-weighted means over the 2019 columns.** These cover 30 areas and 10,875 spaces. Ballard Locks summer is dropped as a seasonal duplicate. Westlake North and South are dropped because they have no evening value. The script is `research/sources/data_search_2026-10/sdot_avg.py`.
+
+| Period | Space-weighted mean occupancy |
+|---|---|
+| 9-11 a.m. | 0.72 |
+| 11 a.m. - 6 p.m. | 0.84 |
+| 6-8 p.m. | 0.75 |
+| 9 a.m. - 8 p.m., hour-weighted (2, 7, 2 h) | **0.81** |
+| Each area's busiest period | mean 0.87, range 0.29-1.02; a third of areas at 0.92 or above |
+
+**Against the model.** The model's capacity-hour weighted occupancy over priced hours is about 0.54 (`revenue_gap_decomposition.csv`). That covers Monday to Saturday, 8 a.m. to 8 p.m. Its stated weekly peaks are 0.92 at high intensity and 0.62 at low intensity (`demand_baseline.yaml`). These are inside Seattle's range of busiest-period values.
+- So a priced-hour mean of 0.54 is low next to a managed US programme, not high.
+- Unless Philadelphia's metered curb is much emptier than Seattle's, occupancy is not the factor that inflates modelled revenue.
+- Two differences make this a weak bound. Seattle counts midweek days only, while the model averages Saturday in. And Seattle's rates are tuned to its target.
+
+### 7b. San Francisco, SFpark pilot evaluation
+
+SFMTA, "SFpark Pilot Project Evaluation" (June 2014), https://sfmta.com/media/13816/download (full report, 73 pp.), with the summary at https://www.sfmta.com/sites/default/files/reports-and-documents/2018/04/sfpark_eval_summary_2014.pdf; local copies. Ch. 4, "Parking enforcement", printed pp. 80-81.
+
+**Definition.** Payment compliance is the time spaces are paid and occupied, over the time they are occupied. It is measured with in-ground sensors plus meter payment data, on blocks that took part in all ten rate adjustments. The window is Monday to Saturday, 9 a.m. to 6 p.m.
+
+| | Before | After |
+|---|---|---|
+| Weekdays | 45% | 54% |
+| Saturdays | 53% | 60% |
+| By area, weekdays (after) | Downtown 39% to Marina 66% | |
+
+- Only 14 of nearly 200 blocks had compliance of 85% or more.
+- **Disabled placards were "by far the largest source of non-payment".** California exempts placard holders from meter fees. The share of parked vehicles displaying a placard was 21% before and 20% after, in pilot areas.
+- **Occupancy.** In the Fillmore case study, block groups at $2.00 before the pilot averaged 61-86% occupancy, weekdays 9 a.m. to 6 p.m. (printed p. 14 of the summary). The report gives no single average for all areas.
+
+**What transfers to Philadelphia, and what does not.**
+- Philadelphia exempts only wheelchair lift-equipped vans (§ 12-1117, section 4d). So San Francisco's main source of non-payment mostly does not apply, and its compliance figures are not Philadelphia's.
+- *Inference:* if every placard car was unpaid, then among cars without placards San Francisco's weekday compliance was about 0.45/0.80 to 0.54/0.80, or 0.56-0.68. This is an upper reading. Some placard cars paid, and some of the non-placard unpaid time was attended vehicles or other permits.
+- **For the gap.** The model assumes a paid share of 1.0. On its own, paid share would need to be 0.29 to close the gap, or about 0.33-0.37 once the benchmark-year rates are allowed for (section 1's 2.7-3.0x).
+  - A paid share near San Francisco's non-placard range would close roughly half the gap. Taking 0.6 as an illustration, 3.45x becomes about 2.1x, and 2.7-3.0x becomes about 1.6-1.8x.
+  - This is the largest single lever with outside evidence behind it. But the evidence is from another city, and only the RTKL sessions can measure Philadelphia's paid share.
+- **For ingestion.** `config/ppa_ingest.yaml` turns paid minutes into occupancy by dividing by (1 - `unpaid_use.unpaid_share`). With 0.0, paid occupancy stands in for occupancy, which is a lower bound. If compliance in Philadelphia is anything like San Francisco's, that bound sits well below true occupancy. So the unpaid share is a load-bearing statement when the sessions arrive, not a formality. San Francisco's figures (an unpaid share of 0.40-0.55 across weekdays and Saturdays, before and after the pilot, or about 0.32-0.44 among non-placard weekday cars, by the inference above) are the only published range found, and they are out of city.
+
 ## Ranked shortlist (after the reset, Thursday 2026-10-22)
 
 0. **Act 9 threshold** (section 5): FY2025 $48,966,144 in place of the unescalated $35M in `allocation.yaml`, with a dated source. This is the item that bears most on the PBD and School District rows; it is a model input, so it waits for the user's go-ahead to rerun.
@@ -142,18 +203,20 @@ What follows:
 3. **Revenue-per-space row** in `revenue_benchmark.csv`, after RTKL settles spaces; a few lines.
 4. **Violations loader** (about 100 lines): 2012-2017 enforcement geography only. Lowest value for the gap.
 5. **Wait for RTKL (due 2026-10-23)** for occupancy, hours by block and paid share, which nothing public supplies.
+   - When the sessions are ingested, state `unpaid_use.unpaid_share` from evidence rather than leaving 0.0 (section 7b).
+   - The paid share of 1.0 in `revenue.forecast` is the assumption with the most outside evidence against it (section 7b).
 
 ## What was not found
 - Official enforcement days and hours by area.
 - Any measured Philadelphia curb occupancy.
 - Posted rates for University City, South Philadelphia, Fishtown; any PPA floors or ceilings.
-- Any paid-share, compliance or placard-misuse rate for meters.
+- Any Philadelphia paid-share, compliance or placard-misuse rate for meters. San Francisco's are in section 7b.
 - Meter revenue by area (IS2 statements and the FY2025 audit report citywide totals only). Payment counts are in the audit's MD&A (section 5).
 - Any special ordinance setting meter fees outside Center City and University City (code library search, 2026-10-17: § 12-1005 is the only Philadelphia match). The $1.50 outer-zone rate is unresolved.
 - Violations data after 2017.
 
 ## Unread leads
-SFpark evaluation and SDOT annual parking study (out-of-city context); Planning Commission 2015 and 2021 Center City parking studies (curb text); Old City 2022 PDF; PPA audited financial statements or board materials; PPA ADA page and Bill 240613-AA; the CBS 2025 story on a $4M on-street net-revenue decline attributed to kiosks; the City Traffic Code on meter hours.
+Planning Commission 2015 and 2021 Center City parking studies (curb text); Old City 2022 PDF; PPA audited financial statements or board materials; PPA ADA page and Bill 240613-AA; the CBS 2025 story on a $4M on-street net-revenue decline attributed to kiosks; the 1982 bill on Streets Department limited-time regulations (section 6); SDOT's annual study data on data.seattle.gov (block level, 2014 on).
 
 ## Needs the user to fetch
 1. **Resolved; no hours found.** This URL now redirects (checked 2026-10-17) to Philadelphia Code § 12-1117 on American Legal Publishing's code library, saved as `philadelphia-pa-1.pdf` (see 4d). That section has no meter hours. The meter chapter, Chapter 12-1000, has none either (see section 1), so hours come from signs or regulation and are left to the RTKL inventory. Original citation: **City of Philadelphia, "Parking meter laws" (2018), https://www.phila.gov/media/20180806114511/Parking-meter-laws.pdf**: returned 403 to automated download. Need the days and hours metered parking is enforced and holiday rules; it may be the official source for input 1. Save under `research/sources/data_search_2026-10/`.
@@ -161,4 +224,4 @@ SFpark evaluation and SDOT annual parking study (out-of-city context); Planning 
 3. **PPA, "ADA Accessible Parking", https://philapark.org/adaparking** (optional): exact wording of the 60-minute allowance.
 
 ## Documents read
-Controller PPA audit 2020 (keyword pages); Planning Commission Center City Parking Study 2020 (keyword pages); Old City Parking Study 2022 web page; PhillyVoice 2025-06-26; PPA Meters page; PPA Holiday page; Inquirer 2022-04-06; PPA IS2 March 2025 (p. 1); PPA IS2 June 2025 (p. 1); Carto `parking_violations` (schema and aggregate queries). The IS2 URL for August 2026 returned 404.
+Controller PPA audit 2020 (keyword pages); Planning Commission Center City Parking Study 2020 (keyword pages); Old City Parking Study 2022 web page; PhillyVoice 2025-06-26; PPA Meters page; PPA Holiday page; Inquirer 2022-04-06; PPA IS2 March 2025 (p. 1); PPA IS2 June 2025 (p. 1); Carto `parking_violations` (schema and aggregate queries). The IS2 URL for August 2026 returned 404. Added 2026-10-17: PPA Laws & Enforcement page; Regulations of the Department of Streets (2024, text search); SDOT 2019 Paid Parking Study (occupancy table); SFpark Pilot Project Evaluation (Ch. 4) and its summary.
