@@ -202,7 +202,7 @@ SFMTA, "SFpark Pilot Project Evaluation" (June 2014), https://sfmta.com/media/13
 2. **Nine free holidays** (config entry + small `priced_hours` change, about 10-20 lines). Up to -3% on hours.
 3. **Revenue-per-space row** in `revenue_benchmark.csv`, after RTKL settles spaces; a few lines.
 4. **Violations loader** (about 100 lines): 2012-2017 enforcement geography only. Lowest value for the gap.
-5. **Wait for RTKL (due 2026-10-23)** for occupancy, hours by block and paid share, which nothing public supplies.
+5. **Wait for RTKL (due 2026-10-23, extended on 2026-10-22 to 2026-11-21)** for occupancy, hours by block and paid share, which nothing public supplies.
    - When the sessions are ingested, state `unpaid_use.unpaid_share` from evidence rather than leaving 0.0 (section 7b).
    - The paid share of 1.0 in `revenue.forecast` is the assumption with the most outside evidence against it (section 7b).
 

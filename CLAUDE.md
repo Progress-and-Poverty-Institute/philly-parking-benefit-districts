@@ -513,7 +513,7 @@ paid share have no source in the repository, and the table does not split the ga
 
 **Capacity counts one curb side** (`spatial/segments.py`: length / 7 m x 0.85, per street
 segment). Counting both sides would double priced spaces and so double the gap. The Right-to-Know
-meter inventory and session data (due from 2026-10-23, `docs/rtkl/`) are what will settle the
+meter inventory and session data (status and due date in `docs/rtkl/README.md`) are what will settle the
 space count, which curb sides are metered and the paid share; until they arrive the occupancy
 levels, spaces and priced windows are stated assumptions and the ratio is a diagnostic.
 
