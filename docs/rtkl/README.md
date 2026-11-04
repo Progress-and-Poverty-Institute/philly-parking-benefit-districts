@@ -69,8 +69,9 @@ paid sessions into occupancy (see "Using a partial release").
 **Not released on either number:** citations (A item 3), data dictionaries (A item 4), rate and
 time-limit schedules as such (B item 2 — each kiosk's own regulation and rate are in the
 inventories, but no schedule of rate changes since January 2023), occupancy studies (B item 3),
-meter revenue by zone (B item 4), and any record at all for Northern Liberties or Fishtown: only
-University City and South Philadelphia appear.
+meter revenue by zone (B item 4), and any pay-station purchases for Northern Liberties or Fishtown.
+The citywide July 2025 inventory lists almost no kiosks in those two areas (a search of its
+addresses, not a map check), so that absence may mean no meters rather than withheld records.
 
 **The appeal window runs 15 business days from 4 November 2026**, to about 25 November 2026, on
 both numbers — the same date as No. 26-0145's. Reading the two response letters is what settles
@@ -85,7 +86,7 @@ The filled forms and the letters carry the requester's home address and are not 
 
 | Request | Contents | Sent | Tracking no. | Due | Outcome |
 |---|---|---|---|---|---|
-| A | pay-station purchases in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; answered 2026-11-04 with pay-station exports for University City and South Philadelphia only, plus a re-send of No. 26-0145's app exports; no citations, no data dictionaries, nothing for Northern Liberties or Fishtown; appeal by about 2026-11-25 |
+| A | pay-station purchases in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; answered 2026-11-04 with pay-station exports for University City and South Philadelphia only, plus a re-send of No. 26-0145's app exports; no citations, no data dictionaries, no pay-station purchases for Northern Liberties or Fishtown, where the inventory lists almost no kiosks; appeal by about 2026-11-25 |
 | B | space counts, rate changes other than July 2025, occupancy reports, revenue by zone | 2026-10-15 | 26-0152 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; answered 2026-11-04 with meter inventories only, which carry no space counts; no rate-change schedule, occupancy studies, or revenue by zone; appeal by about 2026-11-25 |
 
 ## Requests in flight elsewhere
@@ -206,7 +207,7 @@ the Authority asks before charging.
   City and South Philadelphia across the two periods. The same four obstacles apply to them, and
   one more: with no space counts in any released inventory, spaces per pay station and
   `unpaid_use.unpaid_share` both stay stated assumptions, so a panel built from these files gives
-  paid occupancy, a lower bound. Northern Liberties and Fishtown have no observed data at all and
-  stay on the synthetic baseline.
+  paid occupancy, a lower bound. Northern Liberties and Fishtown have no observed pay-station data, and the inventory lists
+  almost no kiosks there, so they stay on the synthetic baseline.
 - **Redacted fields are acceptable.** The requests ask for nothing that identifies a person or
   vehicle, so a release under Section 708(b) with those fields removed still serves the model.
