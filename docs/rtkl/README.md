@@ -40,23 +40,55 @@ and rate items unchanged. Matching periods matter for the elasticity design: the
 Center City are the unchanged-rate control for the 1 July 2025 rise (see "Using a partial
 release").
 
+**Second narrowing drafted, not yet sent.** The Authority's 4 November 2026 release under
+No. 26-0145 (see "Requests in flight elsewhere") includes ParkMobile (meterUP) app-session
+exports that are citywide, so they already cover this project's three areas for the same four
+months. A follow-up narrowing of Nos. 26-0151 and 26-0152 has been drafted to take out what that
+release supplies. As of 4 November the thread holds no message sent after 26 October; record the
+date here once it goes. The draft:
+
+- **A item 1 (sessions):** app sessions dropped; pay-station purchases only, in the same areas
+  and periods.
+- **B item 1 (inventory):** space counts only, the number of spaces each meter, pay station or
+  meterUP zone serves. The 26-0145 inventories give locations and rates but no spaces.
+- **B item 2 (rate schedules):** rate changes since January 2023 other than the 1 July 2025
+  rise, which the 26-0145 inventories document.
+- **A items 3 and 4, B items 3 and 4:** unchanged.
+
 The filled forms and the letters carry the requester's home address and are not tracked.
 
 | Request | Contents | Sent | Tracking no. | Due | Outcome |
 |---|---|---|---|---|---|
-| A | sessions in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26 |
-| B | meter inventory with spaces, rate schedules, occupancy reports, revenue by zone | 2026-10-15 | 26-0152 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26 |
+| A | pay-station purchases in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; second narrowing drafted 2026-11-04, not sent |
+| B | space counts, rate changes other than July 2025, occupancy reports, revenue by zone | 2026-10-15 | 26-0152 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; second narrowing drafted 2026-11-04, not sent |
 
 ## Requests in flight elsewhere
 
 The sibling project `C:\projects\philly-road-pricing` filed **Request No. 26-0145** on
 2026-10-06: paid on-street sessions inside the area bounded by I-676, I-95, South Street and
-I-76, with that area's meter locations, hours and rate schedules. The request originally asked for
-January 2025 to June 2026; on 26 October 2026 it was narrowed to 1 May to 30 June and 1 September
-to 31 October 2025. The Authority extended its response to **13 November 2026**. Its status is kept in that repo's
-`docs/data_request_priorities.md` (section 1.2). Those records cover Center City Core and most of
-Center City Area across the 1 July 2025 rate rise, which is the price variation the elasticity
-model needs. The requests here exclude them by name.
+I-76, with that area's meter locations, hours and rate schedules. On 26 October 2026 it was
+narrowed to 1 May to 30 June and 1 September to 31 October 2025. **The Authority granted it on
+4 November 2026.** Its status is kept in that repo's `docs/data_request_priorities.md`
+(section 1.2); the files are in that repo's untracked `data/raw/ppa_rtk_26_0145/`. The release
+has three parts:
+
+- **ParkMobile (meterUP) app exports**, one per month (May, June, September and October 2025),
+  each complete for its month and **citywide**, not just the requested area. One row per paid
+  action, with the 6-digit meterUP zone, start and stop, minutes paid and amount; an extension is
+  its own row. No plate or account field. They cover Center City Core and Center City Area
+  across the 1 July 2025 rise, and also University City, the outlying zones and this project's
+  three outer areas for the same four months.
+- **Center City pay-station exports**, one per month, each cut off at 65,000 rows, so each holds
+  only about the second half of its month.
+- **Meter inventories**, citywide, by kiosk, with the hourly rate before 1 July 2025 and after
+  it. They have no space counts.
+
+`philly-road-pricing` measures the July 2025 rise from these files
+(`src/philly_cordon/ppa_parking.py`), with University City and the outlying zones as
+unchanged-rate controls. Neither control is clean: University City's demand follows the academic
+calendar, and the outlying zones are neighborhood commercial streets. Requests A and B here
+excluded No. 26-0145's records by name; the second narrowing above drops what the release turned
+out to cover.
 
 ## Files
 
@@ -105,8 +137,8 @@ the Authority asks before charging.
 
 - **Elasticity needs a price change.** A zone has one posted rate at a time, so a slice of
   sessions without a rate change cannot identify its elasticity (audit finding 5). The useful
-  minimum is any zone observed across the 1 July 2025 rate rise; No. 26-0145 is designed to
-  supply that for the central zones.
+  minimum is any zone observed across the 1 July 2025 rate rise. The No. 26-0145 app exports
+  supply it for Center City Core and Center City Area.
 - **Paid sessions are not occupancy.** Permit holders, placard users and non-payers park without
   paying. Converting sessions to occupancy needs the number of spaces each meter serves
   (Request B, item 1) and some measure of unpaid use (occupancy studies, B item 3, or citation
@@ -114,10 +146,30 @@ the Authority asks before charging.
 - **Elasticity also needs a control.** The model has a calendar-period term, so Center City
   Core and Center City Area alone, both raised on 1 July 2025, do not identify a price
   response: some zone or rate class whose rate did not change must be in the data
-  (`elasticity/identification.py` checks this before any fit).
+  (`elasticity/identification.py` checks this before any fit). The No. 26-0145 app exports have
+  such zones: University City, the outlying zones, and a few Center City Area zones that stayed
+  at $2.50. On a design built from them (rate groups by PPA location class and old and new
+  rate, two periods, hour of week), the check identifies every group whose rate rose. With the
+  unchanged groups removed, it identifies none. The check is a rank test: any unchanged group
+  seen in both periods passes it, and it says nothing about whether that group is a good control.
 - **Loading a release.** Map the export's column names, time format and rate-area labels in
   `config/ppa_ingest.yaml`, then run `scripts/03b_ingest_ppa.py` (panel by block face, period and
   hour), `scripts/04_fit_elasticity.py` and `scripts/05_run_scenarios.py --ppa data/processed/ppa`.
   The ingest stops on anything it would otherwise have to guess.
+- **The No. 26-0145 app exports do not load yet.** Their columns and time format fit the
+  mapping, extensions are separate non-overlapping rows, and the amount paid matches each zone's
+  posted rate. Four things in the ingest's design do not fit:
+  - The inventory must give spaces per location, and these inventories have none (B item 1).
+  - The observation window must be one contiguous range, and these data cover May to June and
+    September to October.
+  - The rate schedule allows one rate per `zones.yaml` zone, but each PPA location class holds
+    several rates.
+  - The rate area must come from the inventory's location class: the exports' `STATION` field
+    is an enforcement quadrant, and the inventories are multi-sheet workbooks keyed by kiosk.
+
+  The posted rates in `zones.yaml` for University City and the outer areas also differ from the
+  inventories, which `runner_inputs` refuses. Mapping them means editing `config/`, which stales
+  every tracked scenario and sweep artifact, so it waits for the batched rerun when Requests A
+  and B are answered.
 - **Redacted fields are acceptable.** The requests ask for nothing that identifies a person or
   vehicle, so a release under Section 708(b) with those fields removed still serves the model.
