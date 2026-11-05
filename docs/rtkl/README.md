@@ -13,8 +13,8 @@ reply in the same thread at 4:38 p.m. The Authority dates receipt to 15 October,
 Nos. 26-0151 and 26-0152, took the 30-day extension on 2026-10-22 (one letter per request, citing
 staffing, legal review of whether the records are public, and redaction of non-public
 information), and answered on 4 November, ahead of the 21 November date those letters gave. The
-extension letters do not say which number is A and which is B; the table below assumes they
-follow the order sent.
+Authority's letters never label the numbers A and B, but the released files do: No. 26-0151 holds
+the data exports and No. 26-0152 the reference records.
 
 **Narrowed on 26 October 2026.** On 23 October the Authority asked whether both requests could
 be narrowed, because its search was producing a large volume of records. The reply of 26 October
@@ -41,9 +41,10 @@ release of that morning turned out to supply. The Authority answered the same da
 never sent and is moot.
 
 **What the Authority released.** Two Google Drive links, one per request, active for 30 days (to
-about 4 December 2026), with one response letter PDF per request. **The two letters have not been
-read**, so their exact grant and denial wording, and any exemption either cites, are not recorded
-here yet; everything below is read off the released files. Those files live in the sibling
+about 4 December 2026), with one response letter PDF per request. **Each letter says "Your request
+is granted"** and that it will "close this record". Neither names anything withheld, denied, or not
+held, and neither cites an exemption, so the letters grant more than the folders contain. The
+account of the contents below is read off the released files. Those files live in the sibling
 project, DVC-tracked, at `C:\projects\philly-road-pricing\data\raw\ppa_rtk_26_0151\` and
 `...\ppa_rtk_26_0152\`, beside No. 26-0145's release. Nothing is copied into this repo.
 
@@ -68,14 +69,19 @@ paid sessions into occupancy (see "Using a partial release").
 
 **Not released on either number:** citations (A item 3), data dictionaries (A item 4), rate and
 time-limit schedules as such (B item 2 — each kiosk's own regulation and rate are in the
-inventories, but no schedule of rate changes since January 2023), occupancy studies (B item 3),
+inventories, but no schedule of rate changes since January 2023 and no meterUP tiered-pricing
+schedule), occupancy studies (B item 3),
 meter revenue by zone (B item 4), and any pay-station purchases for Northern Liberties or Fishtown.
 The citywide July 2025 inventory lists almost no kiosks in those two areas (a search of its
 addresses, not a map check), so that absence may mean no meters rather than withheld records.
 
+**A reply on 5 November 2026 listed all of these items** and asked the Authority to send them or
+say which it does not have.
+
 **The appeal window runs 15 business days from 4 November 2026**, to about 25 November 2026, on
-both numbers — the same date as No. 26-0145's. Reading the two response letters is what settles
-whether a partial denial is on the record to appeal with `oor-appeal-template.md`.
+both numbers — the same date as No. 26-0145's. The letters allow an appeal "for any reason you
+dispute this response". No denial is on the record, so an appeal would rest on the release being
+incomplete. `oor-appeal-template.md` is written against a denial and would need rewriting for that.
 
 **One finding for No. 26-0145.** The per-area, per-month split shows that the 65,004-row ceiling
 every No. 26-0145 pay-station export stops at is a limit of how the export was run, not of the
@@ -86,8 +92,8 @@ The filled forms and the letters carry the requester's home address and are not 
 
 | Request | Contents | Sent | Tracking no. | Due | Outcome |
 |---|---|---|---|---|---|
-| A | pay-station purchases in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; answered 2026-11-04 with pay-station exports for University City and South Philadelphia only, plus a re-send of No. 26-0145's app exports; no citations, no data dictionaries, no pay-station purchases for Northern Liberties or Fishtown, where the inventory lists almost no kiosks; appeal by about 2026-11-25 |
-| B | space counts, rate changes other than July 2025, occupancy reports, revenue by zone | 2026-10-15 | 26-0152 (assumed) | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; answered 2026-11-04 with meter inventories only, which carry no space counts; no rate-change schedule, occupancy studies, or revenue by zone; appeal by about 2026-11-25 |
+| A | pay-station purchases in three outer areas (two periods), meter citations, data dictionaries | 2026-10-15 | 26-0151 | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; granted and closed by letter 2026-11-04, with pay-station exports for University City and South Philadelphia only, plus a re-send of No. 26-0145's app exports; no citations, no data dictionaries, no pay-station purchases for Northern Liberties or Fishtown, where the inventory lists almost no kiosks; missing items requested 2026-11-05; appeal by about 2026-11-25 |
+| B | space counts, rate changes other than July 2025, occupancy reports, revenue by zone | 2026-10-15 | 26-0152 | 2026-11-21 | extended 2026-10-22; narrowed 2026-10-26; granted and closed by letter 2026-11-04, with meter inventories only, which carry no space counts; no rate-change schedule, occupancy studies, or revenue by zone; missing items requested 2026-11-05; appeal by about 2026-11-25 |
 
 ## Requests in flight elsewhere
 
@@ -154,14 +160,12 @@ the Authority asks before charging.
 
 ## Next steps on this release
 
-1. Read the two response letters, and record here what each grants and what it denies, with the
-   exemption cited for anything withheld.
-2. Decide, before about 25 November 2026, whether to appeal under `oor-appeal-template.md`. The
-   candidates are the items nothing came back for: citations, data dictionaries, occupancy
+1. Record the Authority's answer to the 5 November reply: what it sends, and what it says it does
+   not hold.
+2. Decide, before about 25 November 2026, whether to appeal. The candidates are the items still
+   unfilled by then, from: citations, data dictionaries, rate and time-limit schedules, occupancy
    studies, revenue by zone, space counts, and Northern Liberties and Fishtown.
-3. An unanswered item may also be worth one more email rather than an appeal, as No. 26-0145's
-   row-ceiling follow-up was; either way it goes inside the 15-business-day window.
-4. A Council office can still be asked to endorse or transmit a further request
+3. A Council office can still be asked to endorse or transmit a further request
    (`cover-letter-council.md`).
 
 ## Using a partial release
