@@ -96,7 +96,15 @@ Use the sidebar on the left to navigate between pages.
 
     st.success(f"Loaded {len(results)} scenarios: {', '.join(results.keys())}")
     src = next(iter(results.values())).provenance.get("segment_source", {})
-    st.caption(f"Segment source: {src or 'not recorded (results predate provenance)'}")
+    if src:
+        # Counts and the pricing rule only; the dict also holds local file paths.
+        st.caption(
+            f"Segments: {src.get('n_segments', src.get('n_kept', '?'))} priced segments "
+            f"({src.get('kind', 'unknown')} source). Priced-curb rule: "
+            f"{src.get('priced_curb_rule', 'not recorded')}."
+        )
+    else:
+        st.caption("Segment source: not recorded (results predate provenance)")
 
     cols = st.columns(3)
     for col, (name, r) in zip(cols, results.items()):

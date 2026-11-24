@@ -29,12 +29,12 @@ def main() -> None:
 
     st.markdown(
         f"""
-### Rent currently given away under flat ${base_fee:.0f}/yr RPP
+### Rent currently given away under flat \\${base_fee:.0f}/yr RPP
 
 Philadelphia's Residential Permit Parking program currently charges a flat
-${base_fee:.0f}/year regardless of where the permit is used. In the highest-demand
+\\${base_fee:.0f}/year regardless of where the permit is used. In the highest-demand
 zones (Center City Core), the *market-clearing* annual price for a residential
-permit is estimated at **${targets.get('ccc', 2500):,.0f}** — the difference is rent
+permit is estimated at **\\${targets.get('ccc', 2500):,.0f}** — the difference is rent
 the city is giving away to whichever residents happen to hold permits today.
         """
     )
@@ -100,7 +100,7 @@ The white paper argues curb and residential-permit revenue should be treated
 as a **location rent** owed to the public, not a transportation user fee.
 A defensible split:
 
-- **General Fund minimum** — at least **$35M/yr** to backfill prior PPA
+- **General Fund minimum** — at least **\\$35M/yr** to backfill prior PPA
   contributions (avoid a fiscal hole).
 - **School District residual** — Philadelphia's School District has a
   statutory residual claim on city-collected rents; meaningful share above

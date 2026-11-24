@@ -12,7 +12,8 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from phillyparking.spatial.segments import load_segments  # noqa: E402
+from phillyparking._config import data_dir  # noqa: E402
+from phillyparking.spatial.segments import load_priced_segments  # noqa: E402
 from phillyparking.viz.maps import segment_map, zone_choropleth  # noqa: E402
 
 # Pull the shared scenario cache from the landing page.
@@ -25,7 +26,9 @@ st.title("Map: segment-level prices by scenario")
 
 @st.cache_data
 def _load_segments_cached():
-    return load_segments()
+    # Script 02 writes the segment table to data/processed/, the file the scenarios
+    # were run on; the zone-priced filter matches scripts 03/05/06.
+    return load_priced_segments(data_dir() / "processed" / "segments.parquet")
 
 
 def _zone_prices(prices_df: pd.DataFrame) -> pd.DataFrame:
