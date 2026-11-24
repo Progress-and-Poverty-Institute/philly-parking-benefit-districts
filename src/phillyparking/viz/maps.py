@@ -8,9 +8,9 @@ import pandas as pd
 
 
 def _colormap(values: np.ndarray, scale: str = "viridis"):
-    import matplotlib.cm as cm
+    import matplotlib
     import matplotlib.colors as mcolors
-    cmap = cm.get_cmap(scale)
+    cmap = matplotlib.colormaps[scale]  # cm.get_cmap was removed in matplotlib 3.9
     vmin, vmax = float(np.nanmin(values)), float(np.nanmax(values))
     if vmax == vmin:
         vmax = vmin + 1e-9

@@ -38,12 +38,24 @@ data/processed/**
 !data/raw/.gitkeep
 !data/interim/.gitkeep
 !data/processed/.gitkeep
+# The hosted app (requirements.txt) draws its Map from the priced segments, built
+# only from public layers (Open Data Philly, OSM, ACS, LODES); see segments.meta.json.
+!data/processed/segments.parquet
+!data/processed/segments.meta.json
 !data/external/.gitkeep
 !data/external/manual_counts_*.csv
 
 # Outputs — figures and tables are tracked, fitted models and intermediate are not
 outputs/models/**
 !outputs/models/.gitkeep
+# The hosted app loads the three saved scenarios (script 05) and the range tables.
+!outputs/models/status_quo/
+!outputs/models/status_quo/**
+!outputs/models/seattle/
+!outputs/models/seattle/**
+!outputs/models/full_pbd/
+!outputs/models/full_pbd/**
+!outputs/models/*.csv
 outputs/**/*.pkl
 outputs/**/*.joblib
 

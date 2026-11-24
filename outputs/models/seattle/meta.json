@@ -1,0 +1,242 @@
+{
+  "name": "seattle",
+  "elasticity_scenario": "central",
+  "cs_change_total": 78734731.72379029,
+  "allocation": {
+    "total_revenue_usd": 93064931.73984973,
+    "pbd_usd": 0.0,
+    "pbd_claim_usd": 0.0,
+    "pbd_unfunded_usd": 0.0,
+    "general_fund_usd": 35000000.0,
+    "school_district_usd": 58064931.73984973,
+    "pbd_share": 0.0,
+    "general_fund_minimum_usd": 35000000.0
+  },
+  "diagnostics": {
+    "policy": "seattle_rule",
+    "max_years": 20,
+    "target_vacancy": 0.15,
+    "use_zone_floors": true,
+    "demand_law": {
+      "anchoring": "per_zone",
+      "reference_price": null,
+      "form": "exponential",
+      "headline_elasticity": -0.6,
+      "zone_elasticity_at_posted_rate": {
+        "ccc": -0.6,
+        "cca": -0.6,
+        "ucity": -0.6,
+        "south_philly": -0.6,
+        "fishtown": -0.6
+      }
+    },
+    "years_run": 5,
+    "converged": true,
+    "converged_year": 5,
+    "final_prices": [
+      {
+        "zone_id": "cca",
+        "band": "8-12",
+        "band_start": 8,
+        "band_end": 12,
+        "price_usd_per_hr": 1.0,
+        "previous_price": 1.5,
+        "band_occ": 0.6708251223764566,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "ccc",
+        "band": "8-12",
+        "band_start": 8,
+        "band_end": 12,
+        "price_usd_per_hr": 2.5,
+        "previous_price": 2.5,
+        "band_occ": 0.7157702182957398,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "fishtown",
+        "band": "8-12",
+        "band_start": 8,
+        "band_end": 12,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.6080621719007159,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "south_philly",
+        "band": "8-12",
+        "band_start": 8,
+        "band_end": 12,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.6258253271294457,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "ucity",
+        "band": "8-12",
+        "band_start": 8,
+        "band_end": 12,
+        "price_usd_per_hr": 1.0,
+        "previous_price": 1.0,
+        "band_occ": 0.6680236254597555,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "cca",
+        "band": "12-16",
+        "band_start": 12,
+        "band_end": 16,
+        "price_usd_per_hr": 1.5,
+        "previous_price": 1.5,
+        "band_occ": 0.7368651864876475,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "ccc",
+        "band": "12-16",
+        "band_start": 12,
+        "band_end": 16,
+        "price_usd_per_hr": 3.5,
+        "previous_price": 3.5,
+        "band_occ": 0.7201535506007501,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "fishtown",
+        "band": "12-16",
+        "band_start": 12,
+        "band_end": 16,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.6684511065096471,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "south_philly",
+        "band": "12-16",
+        "band_start": 12,
+        "band_end": 16,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.6720791684988742,
+        "n_hours": 24,
+        "direction": "down"
+      },
+      {
+        "zone_id": "ucity",
+        "band": "12-16",
+        "band_start": 12,
+        "band_end": 16,
+        "price_usd_per_hr": 1.0,
+        "previous_price": 1.0,
+        "band_occ": 0.7455332986462032,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "cca",
+        "band": "16-20",
+        "band_start": 16,
+        "band_end": 20,
+        "price_usd_per_hr": 1.5,
+        "previous_price": 1.5,
+        "band_occ": 0.7400284348011867,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "ccc",
+        "band": "16-20",
+        "band_start": 16,
+        "band_end": 20,
+        "price_usd_per_hr": 2.0,
+        "previous_price": 2.0,
+        "band_occ": 0.7323048010067851,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "fishtown",
+        "band": "16-20",
+        "band_start": 16,
+        "band_end": 20,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.7632802697101798,
+        "n_hours": 24,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "south_philly",
+        "band": "16-20",
+        "band_start": 16,
+        "band_end": 20,
+        "price_usd_per_hr": 0.5,
+        "previous_price": 0.5,
+        "band_occ": 0.7000478318870939,
+        "n_hours": 12,
+        "direction": "hold"
+      },
+      {
+        "zone_id": "ucity",
+        "band": "16-20",
+        "band_start": 16,
+        "band_end": 20,
+        "price_usd_per_hr": 1.0,
+        "previous_price": 1.0,
+        "band_occ": 0.683708127864091,
+        "n_hours": 24,
+        "direction": "down"
+      }
+    ]
+  },
+  "provenance": {
+    "created_utc": "2026-10-17T23:15:34+00:00",
+    "seed": 42,
+    "segment_source": {
+      "kind": "file",
+      "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet",
+      "filter": "zone_id priced in config/zones.yaml",
+      "n_in_file": 58966,
+      "n_kept": 3145,
+      "priced_curb_rule": "no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5",
+      "anchor_set": "philadelphia",
+      "panel": {
+        "kind": "file",
+        "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\demand_panel.parquet",
+        "cache_key": "872da08cd25d38a475622f09dcb84916d0b20a8a05b9058677de4729f490d633"
+      },
+      "n_segments": 3145
+    },
+    "config_sha256": {
+      "allocation": "6746cd7879eef61cbbd6a3993474b5111b8353a2f2d8992a542ad25047c3b6ca",
+      "benchmarks": "37015ea6a47a5c84e5bf4281b34564c63e734d4128ad0e3c5090ddbcd486e178",
+      "demand_baseline": "f610a9e7124576071d749fd9d6898b82cd0673f9ccaeae21ddc9c581ce0c3489",
+      "elasticity_priors": "ad278cd5d4dd45216e73862510ba517fcea95f2d1c05db8952aa147060d0b64a",
+      "ppa_ingest": "ca374e19d82ef7f0ebe668d4c69c3f6087d0eb2d4be956114062e8b53d775486",
+      "pricing_rules": "990fb801a7904c74777692a629dea3f82ed4e5466fdd865a9c1e2e7c6936f92b",
+      "scenarios": "b9bbb5723c641f20515681bbda463d55475fd997d24426a8b8779be0c9a9213b",
+      "zones": "3759a0af8d64c4a46b1532373429d7bb81463f7bac503a53128a0e79a1558bef"
+    },
+    "git": {
+      "commit": "f953328bbfdebaf8dd6171071a6e346d2c5df01a",
+      "dirty": false
+    },
+    "elasticity": {
+      "scenario": "central",
+      "central": -0.6,
+      "sd": 0.125
+    }
+  }
+}

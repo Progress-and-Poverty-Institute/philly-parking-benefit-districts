@@ -1,0 +1,228 @@
+{
+  "name": "full_pbd",
+  "elasticity_scenario": "central",
+  "cs_change_total": 71926580.0681049,
+  "allocation": {
+    "total_revenue_usd": 97215285.67763427,
+    "pbd_usd": 29164585.70329028,
+    "pbd_claim_usd": 29164585.70329028,
+    "pbd_unfunded_usd": 0.0,
+    "general_fund_usd": 35000000.0,
+    "school_district_usd": 33050699.97434399,
+    "pbd_share": 0.3,
+    "general_fund_minimum_usd": 35000000.0
+  },
+  "diagnostics": {
+    "policy": "arnott_inci",
+    "max_years": 20,
+    "target_vacancy": 0.15,
+    "use_zone_floors": true,
+    "demand_law": {
+      "anchoring": "per_zone",
+      "reference_price": null,
+      "form": "exponential",
+      "headline_elasticity": -0.6,
+      "zone_elasticity_at_posted_rate": {
+        "ccc": -0.6,
+        "cca": -0.6,
+        "ucity": -0.6,
+        "south_philly": -0.6,
+        "fishtown": -0.6
+      }
+    },
+    "years_run": 6,
+    "converged": true,
+    "converged_year": 6,
+    "final_prices": [
+      {
+        "zone_id": "cca",
+        "price_usd_per_hr": 1.2323645257465647,
+        "peak_occ": 0.8496109659748161
+      },
+      {
+        "zone_id": "ccc",
+        "price_usd_per_hr": 3.162480274255232,
+        "peak_occ": 0.8499269979312917
+      },
+      {
+        "zone_id": "fishtown",
+        "price_usd_per_hr": 0.5,
+        "peak_occ": 0.8380340591216509
+      },
+      {
+        "zone_id": "south_philly",
+        "price_usd_per_hr": 0.5,
+        "peak_occ": 0.787160797951292
+      },
+      {
+        "zone_id": "ucity",
+        "price_usd_per_hr": 1.0,
+        "peak_occ": 0.8208358071590516
+      }
+    ],
+    "zone_pricing": {
+      "first_review": [
+        {
+          "zone_id": "cca",
+          "price_usd_per_hr": 1.6813954809744112,
+          "peak_occ": 0.6223331590306411,
+          "target_occ": 0.85,
+          "target_slack": 0.22766684096935885,
+          "unclipped_price": 1.6813954809744112,
+          "floor": 1.0,
+          "ceiling": 7.0,
+          "at_floor": false,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "ccc",
+          "price_usd_per_hr": 3.232942016425534,
+          "peak_occ": 0.7576167507790027,
+          "target_occ": 0.85,
+          "target_slack": 0.09238324922099728,
+          "unclipped_price": 3.232942016425534,
+          "floor": 1.0,
+          "ceiling": 8.0,
+          "at_floor": false,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "fishtown",
+          "price_usd_per_hr": 0.5650431460669454,
+          "peak_occ": 0.5847904675310066,
+          "target_occ": 0.85,
+          "target_slack": 0.26520953246899337,
+          "unclipped_price": 0.5650431460669454,
+          "floor": 0.5,
+          "ceiling": 4.0,
+          "at_floor": false,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "south_philly",
+          "price_usd_per_hr": 0.5,
+          "peak_occ": 0.5387481657386656,
+          "target_occ": 0.85,
+          "target_slack": 0.3112518342613344,
+          "unclipped_price": 0.36002971816597484,
+          "floor": 0.5,
+          "ceiling": 4.0,
+          "at_floor": true,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "ucity",
+          "price_usd_per_hr": 1.0679152723270153,
+          "peak_occ": 0.6426568626558501,
+          "target_occ": 0.85,
+          "target_slack": 0.20734313734414989,
+          "unclipped_price": 1.0679152723270153,
+          "floor": 1.0,
+          "ceiling": 6.0,
+          "at_floor": false,
+          "at_ceiling": false
+        }
+      ],
+      "last_review": [
+        {
+          "zone_id": "cca",
+          "price_usd_per_hr": 1.2314646223741772,
+          "peak_occ": 0.849868881336923,
+          "target_occ": 0.85,
+          "target_slack": 0.00013111866307702336,
+          "unclipped_price": 1.2314646223741772,
+          "floor": 1.0,
+          "ceiling": 7.0,
+          "at_floor": false,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "ccc",
+          "price_usd_per_hr": 3.162283816662525,
+          "peak_occ": 0.8499749520259965,
+          "target_occ": 0.85,
+          "target_slack": 2.5047974003489237e-05,
+          "unclipped_price": 3.162283816662525,
+          "floor": 1.0,
+          "ceiling": 8.0,
+          "at_floor": false,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "fishtown",
+          "price_usd_per_hr": 0.5,
+          "peak_occ": 0.8380340591216509,
+          "target_occ": 0.85,
+          "target_slack": 0.011965940878349124,
+          "unclipped_price": 0.4645559837876533,
+          "floor": 0.5,
+          "ceiling": 4.0,
+          "at_floor": true,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "south_philly",
+          "price_usd_per_hr": 0.5,
+          "peak_occ": 0.787160797951292,
+          "target_occ": 0.85,
+          "target_slack": 0.06283920204870796,
+          "unclipped_price": 0.3079904891578995,
+          "floor": 0.5,
+          "ceiling": 4.0,
+          "at_floor": true,
+          "at_ceiling": false
+        },
+        {
+          "zone_id": "ucity",
+          "price_usd_per_hr": 1.0,
+          "peak_occ": 0.8208358071590516,
+          "target_occ": 0.85,
+          "target_slack": 0.0291641928409484,
+          "unclipped_price": 0.8836224956235336,
+          "floor": 1.0,
+          "ceiling": 6.0,
+          "at_floor": true,
+          "at_ceiling": false
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "created_utc": "2026-10-17T23:15:36+00:00",
+    "seed": 42,
+    "segment_source": {
+      "kind": "file",
+      "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\segments.parquet",
+      "filter": "zone_id priced in config/zones.yaml",
+      "n_in_file": 58966,
+      "n_kept": 3145,
+      "priced_curb_rule": "no meter inventory: street_class in [2, 3, 4, 5] and commercial_frontage_share >= 0.5",
+      "anchor_set": "philadelphia",
+      "panel": {
+        "kind": "file",
+        "path": "C:\\projects\\philly-parking-benefit-districts\\data\\processed\\demand_panel.parquet",
+        "cache_key": "872da08cd25d38a475622f09dcb84916d0b20a8a05b9058677de4729f490d633"
+      },
+      "n_segments": 3145
+    },
+    "config_sha256": {
+      "allocation": "6746cd7879eef61cbbd6a3993474b5111b8353a2f2d8992a542ad25047c3b6ca",
+      "benchmarks": "37015ea6a47a5c84e5bf4281b34564c63e734d4128ad0e3c5090ddbcd486e178",
+      "demand_baseline": "f610a9e7124576071d749fd9d6898b82cd0673f9ccaeae21ddc9c581ce0c3489",
+      "elasticity_priors": "ad278cd5d4dd45216e73862510ba517fcea95f2d1c05db8952aa147060d0b64a",
+      "ppa_ingest": "ca374e19d82ef7f0ebe668d4c69c3f6087d0eb2d4be956114062e8b53d775486",
+      "pricing_rules": "990fb801a7904c74777692a629dea3f82ed4e5466fdd865a9c1e2e7c6936f92b",
+      "scenarios": "b9bbb5723c641f20515681bbda463d55475fd997d24426a8b8779be0c9a9213b",
+      "zones": "3759a0af8d64c4a46b1532373429d7bb81463f7bac503a53128a0e79a1558bef"
+    },
+    "git": {
+      "commit": "f953328bbfdebaf8dd6171071a6e346d2c5df01a",
+      "dirty": false
+    },
+    "elasticity": {
+      "scenario": "central",
+      "central": -0.6,
+      "sd": 0.125
+    }
+  }
+}
